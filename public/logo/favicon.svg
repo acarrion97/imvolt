@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="IMVOLT">
+  <!-- Isotipo IMVOLT (§03 ISOTIPO): tres piezas geométricas ascendentes.
+       Trazado reconstruido a partir del arte aprobado; sin rayos, sin 3D. -->
+  <defs>
+    <linearGradient id="imvolt-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#04EB40" />
+      <stop offset="100%" stop-color="#075335" />
+    </linearGradient>
+  </defs>
+  <g>
+    <!-- Pieza 1 (carbón) -->
+    <path d="M64 200 L150 156 L150 400 L64 400 Z" fill="#101719" />
+    <!-- Pieza 2 (gradiente esmeralda) -->
+    <path d="M168 148 L300 92 L300 400 L168 400 Z" fill="url(#imvolt-gradient)" />
+    <!-- Pieza 3 (más alta: movimiento ascendente) -->
+    <path d="M318 60 L448 60 L448 400 L318 400 Z" fill="url(#imvolt-gradient)" />
+  </g>
+</svg>

@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ── Tokens IMVOLT (Manual de Marca §04 COLOR) ─────────────────────────────
+   70% blanco o carbón · 20% grises neutros · 10% verde como énfasis. */
+:root {
+  --imvolt-carbon: #101719;      /* Carbón tecnológico */
+  --imvolt-green: #00D94B;       /* Verde IMVOLT (acento) */
+  --imvolt-green-bright: #04EB40;/* Verde luminoso (inicio gradiente) */
+  --imvolt-green-deep: #075335;  /* Verde profundo (fin gradiente) */
+  --imvolt-mist: #F2F7F4;        /* Niebla */
+  --imvolt-white: #FFFFFF;
+
+  /* Light */
+  --imvolt-primary: #075335;
+  --imvolt-primary-bg: #E7F6EC;
+  --imvolt-bg: #F2F7F4;
+  --imvolt-bg-container: #FFFFFF;
+  --imvolt-text: #101719;
+  --imvolt-text-secondary: #3D4A4C;
+  --imvolt-text-tertiary: #6B7A7C;
+  --imvolt-border: #DCE6E0;
+  --imvolt-border-secondary: #EAF1EC;
+  --imvolt-sider-bg: #101719;
+  --imvolt-header-bg: #FFFFFF;
+}
+
+[data-theme="dark"] {
+  --imvolt-primary: #00D94B;
+  --imvolt-primary-bg: #123023;
+  --imvolt-bg: #101719;
+  --imvolt-bg-container: #182224;
+  --imvolt-text: #F2F7F4;
+  --imvolt-text-secondary: #C3D0CE;
+  --imvolt-text-tertiary: #8A9A98;
+  --imvolt-border: #263538;
+  --imvolt-border-secondary: #1E2A2C;
+  --imvolt-sider-bg: #0B1113;
+  --imvolt-header-bg: #182224;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--imvolt-bg);
+  color: var(--imvolt-text);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* ── Tipografía (§05): Inter Display para titulares ─────────────────────── */
+h1, h2, h3,
+.ant-typography h1,
+.ant-typography h2 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Botones primarios sobre fondo oscuro: texto carbón para contraste (§04) */
+[data-theme="dark"] .ant-btn-primary:not(:disabled) {
+  color: var(--imvolt-carbon);
+}
+
+/* Acento verde en la barra lateral activa */
+.imvolt-sider-item-active {
+  border-left: 2px solid var(--imvolt-green);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--imvolt-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--imvolt-text-tertiary);
+}

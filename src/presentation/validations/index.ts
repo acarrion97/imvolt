@@ -1,0 +1,10 @@
+export { proyectoSchema } from "./proyectoSchema";
+export type { ProyectoFormData } from "./proyectoSchema";
+export { propiedadSchema } from "./propiedadSchema";
+export type { PropiedadFormData } from "./propiedadSchema";
+export { plantillaSchema } from "./plantillaSchema";
+export type { PlantillaFormData } from "./plantillaSchema";
+export { campanaSchema } from "./campanaSchema";
+export type { CampanaFormData } from "./campanaSchema";
+export { leadSchema } from "./leadSchema";
+export type { LeadFormData } from "./leadSchema";
