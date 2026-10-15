@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
+import type { CSSProperties } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   App,
   Button,
@@ -8,18 +10,23 @@ import {
   InputNumber,
   Popconfirm,
   Select,
-  Space,
+  Spin,
   Switch,
-  Typography,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import { DataTable } from "@/presentation/components/common/DataTable";
-import { PageToolbar } from "@/presentation/components/common/PageToolbar";
 import {
-  EstadoPropiedadTag,
-  formatPrecio,
-  formatFecha,
-} from "@/presentation/components/common/status";
+  ArrowRightOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  FolderOpenOutlined,
+  PlusOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
+import {
+  badgeDeEstado,
+  CATEGORIA_LABEL,
+  artVariant,
+} from "@/presentation/components/common/propiedadArt";
+import { formatPrecio } from "@/presentation/components/common/status";
 import {
   useCreatePropiedad,
   useDeletePropiedad,
@@ -29,18 +36,6 @@ import {
 } from "@/presentation/hooks";
 import { propiedadSchema } from "@/presentation/validations";
 import type { Propiedad, PropiedadCategoria } from "@/domain/propiedad";
-import type { ColumnsType } from "antd/es/table";
-
-const { Text } = Typography;
-
-const CATEGORIA_LABELS: Record<PropiedadCategoria, string> = {
-  lote: "Lote",
-  casa: "Casa",
-  departamento: "Departamento",
-  oficina: "Oficina",
-  local: "Local",
-  proyecto: "Proyecto",
-};
 
 interface FormValues {
   nombre: string;
@@ -60,9 +55,15 @@ interface FormValues {
   tiene_render_conceptual?: boolean;
 }
 
+/**
+ * Mis propiedades â€” UI Concept 01: rejilla de tarjetas con ilustraciÃ³n,
+ * filtros por tipo/proyecto/estado y alta en Drawer.
+ */
 export function PropiedadesPage() {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState<PropiedadCategoria | undefined>();
   const [filtroProyecto, setFiltroProyecto] = useState<string | undefined>();
   const [filtroEstado, setFiltroEstado] = useState<Propiedad["estado"] | undefined>();
   const [editing, setEditing] = useState<Propiedad | null>(null);
@@ -78,12 +79,13 @@ export function PropiedadesPage() {
 
   const proyectoNombre = useMemo(() => {
     const map = new Map((proyectos ?? []).map((p) => [p.project_id, p.nombre]));
-    return (id: string | null) => (id ? (map.get(id) ?? "—") : "Sin proyecto");
+    return (id: string | null) => (id ? (map.get(id) ?? "â€”") : "Sin proyecto");
   }, [proyectos]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (propiedades ?? []).filter((p) => {
+      if (filtroCategoria && p.categoria !== filtroCategoria) return false;
       if (filtroProyecto && p.project_id !== filtroProyecto) return false;
       if (filtroEstado && p.estado !== filtroEstado) return false;
       if (!q) return true;
@@ -93,7 +95,7 @@ export function PropiedadesPage() {
         (p.ciudad ?? "").toLowerCase().includes(q)
       );
     });
-  }, [propiedades, search, filtroProyecto, filtroEstado]);
+  }, [propiedades, search, filtroCategoria, filtroProyecto, filtroEstado]);
 
   const openCreate = () => {
     setEditing(null);
@@ -166,139 +168,183 @@ export function PropiedadesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deletePropiedad.mutateAsync(id);
-      message.success("Propiedad eliminada.");
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "No se pudo eliminar.");
-    }
+  const handleDelete = (row: Propiedad) => {
+    modal.confirm({
+      title: "Â¿Eliminar esta propiedad?",
+      content: `${row.nombre} se quitarÃ¡ del catÃ¡logo. Las campaÃ±as y leads asociados conservarÃ¡n su referencia.`,
+      okText: "Eliminar",
+      okButtonProps: { danger: true },
+      cancelText: "Cancelar",
+      onOk: async () => {
+        try {
+          await deletePropiedad.mutateAsync(row.property_id);
+          message.success("Propiedad eliminada.");
+        } catch (error) {
+          message.error(error instanceof Error ? error.message : "No se pudo eliminar.");
+        }
+      },
+    });
   };
 
-  const columns: ColumnsType<Propiedad> = [
-    {
-      title: "Propiedad",
-      dataIndex: "nombre",
-      key: "nombre",
-      render: (nombre: string, row) => (
-        <div>
-          <Text strong>{nombre}</Text>
-          <br />
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {CATEGORIA_LABELS[row.categoria]} · {proyectoNombre(row.project_id)}
-          </Text>
-        </div>
-      ),
-    },
-    {
-      title: "Precio",
-      dataIndex: "precio",
-      key: "precio",
-      width: 130,
-      render: (precio: number | null, row) => formatPrecio(precio, row.moneda),
-    },
-    {
-      title: "Ubicación",
-      key: "ubicacion",
-      width: 150,
-      render: (_, row) => row.ciudad ?? "—",
-    },
-    {
-      title: "Render IA",
-      key: "render",
-      width: 110,
-      render: (_, row) =>
-        row.tiene_render_conceptual ? (
-          <Text type="warning" style={{ fontSize: 12 }}>
-            Conceptual
-          </Text>
-        ) : (
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            Real
-          </Text>
-        ),
-    },
-    {
-      title: "Estado",
-      dataIndex: "estado",
-      key: "estado",
-      width: 125,
-      render: (estado: Propiedad["estado"]) => <EstadoPropiedadTag estado={estado} />,
-    },
-    {
-      title: "Creado",
-      dataIndex: "created_at",
-      key: "created_at",
-      width: 125,
-      render: (v: string) => formatFecha(v),
-    },
-    {
-      title: "",
-      key: "acciones",
-      width: 110,
-      render: (_, row) => (
-        <Space>
-          <Button type="text" icon={<EditOutlined />} onClick={() => openEdit(row)} />
-          <Popconfirm
-            title="¿Eliminar esta propiedad?"
-            okText="Eliminar"
-            cancelText="Cancelar"
-            onConfirm={() => handleDelete(row.property_id)}
-          >
-            <Button type="text" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  const iconBtn: CSSProperties = {
+    width: 30,
+    height: 30,
+    borderRadius: 99,
+    border: 0,
+    background: "rgba(255,255,255,.91)",
+    color: "#1c4e32",
+    display: "grid",
+    placeItems: "center",
+    cursor: "pointer",
+    boxShadow: "0 3px 14px rgba(13,38,18,.16)",
+  };
 
   return (
     <div>
-      <PageToolbar
-        title="Propiedades"
-        subtitle="Inventario comercial: lotes, casas, departamentos y más."
-        search={{ value: search, onChange: setSearch, placeholder: "Buscar por nombre, título o ciudad..." }}
-        extra={
-          <Space wrap>
-            <Select
-              allowClear
-              showSearch
-              placeholder="Proyecto"
-              style={{ width: 200 }}
-              optionFilterProp="label"
-              value={filtroProyecto}
-              onChange={setFiltroProyecto}
-              options={(proyectos ?? []).map((p) => ({ value: p.project_id, label: p.nombre }))}
-            />
-            <Select
-              allowClear
-              placeholder="Estado"
-              style={{ width: 150 }}
-              value={filtroEstado}
-              onChange={setFiltroEstado}
-              options={Object.values(["disponible", "reservada", "vendida", "no_disponible"] as const).map(
-                (v) => ({ value: v, label: v.replace(/_/g, " ") }),
-              )}
-            />
-          </Space>
-        }
-        actions={
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            Nueva propiedad
-          </Button>
-        }
-      />
+      <div className="header">
+        <div>
+          <p className="eyebrow">CatÃ¡logo inmobiliario</p>
+          <h1>Mis propiedades</h1>
+          <p className="sub">
+            Unidades del workspace listas para crear creativos y preparar campaÃ±as.
+          </p>
+        </div>
+        <div className="header-actions">
+          <Link to="/proyectos" className="btn btn-outline">
+            <FolderOpenOutlined /> Gestionar proyectos
+          </Link>
+          <button type="button" className="btn btn-primary" onClick={openCreate}>
+            <PlusOutlined /> Nueva propiedad
+          </button>
+        </div>
+      </div>
 
-      <DataTable<Propiedad>
-        columns={columns}
-        dataSource={filtered}
-        rowKey="property_id"
-        loading={isLoading}
-      />
+      <div className="card card-pad" style={{ marginBottom: 20 }}>
+        <div className="filters" style={{ marginBottom: 0 }}>
+          <Input
+            className="search"
+            allowClear
+            prefix={<SearchOutlined style={{ color: "#9db3a8" }} />}
+            placeholder="Buscar por nombre, tÃ­tulo o ciudad..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Select
+            allowClear
+            placeholder="Tipo"
+            style={{ width: 170 }}
+            value={filtroCategoria}
+            onChange={setFiltroCategoria}
+            options={Object.entries(CATEGORIA_LABEL).map(([value, label]) => ({ value, label }))}
+          />
+          <Select
+            allowClear
+            showSearch
+            placeholder="Proyecto"
+            style={{ width: 190 }}
+            optionFilterProp="label"
+            value={filtroProyecto}
+            onChange={setFiltroProyecto}
+            options={(proyectos ?? []).map((p) => ({ value: p.project_id, label: p.nombre }))}
+          />
+          <Select
+            allowClear
+            placeholder="Estado"
+            style={{ width: 160 }}
+            value={filtroEstado}
+            onChange={setFiltroEstado}
+            options={(["disponible", "reservada", "vendida", "no_disponible"] as const).map((v) => ({
+              value: v,
+              label: v.replace(/_/g, " "),
+            }))}
+          />
+          <span className="spacer" />
+          <span className="count-pill">{filtered.length} propiedades</span>
+        </div>
+      </div>
+
+      <Spin spinning={isLoading}>
+        <div className="grid cols3">
+          {filtered.map((p) => {
+            const badge = badgeDeEstado(p.estado);
+            return (
+              <div key={p.property_id} className="card item-card">
+                <div className={`art ${artVariant(p.categoria)}`}>
+                  <span className="tag">{CATEGORIA_LABEL[p.categoria]}</span>
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 11,
+                      right: 11,
+                      zIndex: 2,
+                      display: "flex",
+                      gap: 6,
+                    }}
+                  >
+                    <button type="button" style={iconBtn} onClick={() => openEdit(p)} title="Editar">
+                      <EditOutlined style={{ fontSize: 13 }} />
+                    </button>
+                    <Popconfirm
+                      title="Â¿Eliminar esta propiedad?"
+                      okText="Eliminar"
+                      cancelText="Cancelar"
+                      onConfirm={() => handleDelete(p)}
+                    >
+                      <button type="button" style={iconBtn} title="Eliminar">
+                        <DeleteOutlined style={{ fontSize: 13 }} />
+                      </button>
+                    </Popconfirm>
+                  </div>
+                </div>
+
+                <div className="item-meta">
+                  <h3>{p.nombre}</h3>
+                  <span className="where">
+                    {p.ciudad ?? "Sin ciudad"} Â· {proyectoNombre(p.project_id)}
+                  </span>
+                  <div style={{ display: "flex", gap: 6, marginTop: 9, flexWrap: "wrap" }}>
+                    <span className={badge.cls}>{badge.label}</span>
+                    {p.tiene_render_conceptual && (
+                      <span className="mini-badge warn">Render IA</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="item-bottom">
+                  <span className="price">{formatPrecio(p.precio, p.moneda)}</span>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    style={{ padding: "8px 13px", fontSize: 11 }}
+                    onClick={() => navigate("/estudio", { state: { propertyId: p.property_id } })}
+                  >
+                    Crear <ArrowRightOutlined />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {filtered.length === 0 && !isLoading && (
+            <div className="card card-pad" style={{ gridColumn: "1 / -1", textAlign: "center" }}>
+              <p className="sub">
+                {propiedades?.length
+                  ? "Ninguna propiedad coincide con los filtros."
+                  : "AÃºn no has registrado propiedades."}
+              </p>
+              <div style={{ marginTop: 14 }}>
+                <button type="button" className="btn btn-primary" onClick={openCreate}>
+                  <PlusOutlined /> Nueva propiedad
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Spin>
 
       <Drawer
         title={editing ? "Editar propiedad" : "Nueva propiedad"}
-        width={560}
+        size="large"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         extra={
@@ -316,86 +362,76 @@ export function PropiedadesPage() {
             <Input placeholder="Ej: Lote 12-A Vista Hermosa" maxLength={120} />
           </Form.Item>
 
-          <Space size={12} style={{ display: "flex" }}>
+          <div className="form-grid">
             <Form.Item
               name="categoria"
-              label="Categoría"
-              rules={[{ required: true, message: "Selecciona la categoría." }]}
-              style={{ flex: 1 }}
+              label="CategorÃ­a"
+              rules={[{ required: true, message: "Selecciona la categorÃ­a." }]}
             >
               <Select
-                placeholder="Categoría"
-                options={Object.entries(CATEGORIA_LABELS).map(([value, label]) => ({ value, label }))}
+                placeholder="CategorÃ­a"
+                options={Object.entries(CATEGORIA_LABEL).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
               />
             </Form.Item>
-            <Form.Item name="project_id" label="Proyecto" style={{ flex: 1 }}>
+            <Form.Item name="project_id" label="Proyecto">
               <Select
                 allowClear
                 placeholder="Sin proyecto"
                 options={(proyectos ?? []).map((p) => ({ value: p.project_id, label: p.nombre }))}
               />
             </Form.Item>
-          </Space>
 
-          <Form.Item name="titulo_publicacion" label="Título de publicación">
-            <Input placeholder="Título que verá el cliente" maxLength={150} />
-          </Form.Item>
+            <Form.Item name="titulo_publicacion" label="TÃ­tulo de publicaciÃ³n" className="full">
+              <Input placeholder="TÃ­tulo que verÃ¡ el cliente" maxLength={150} />
+            </Form.Item>
 
-          <Form.Item name="descripcion" label="Descripción">
-            <Input.TextArea rows={3} maxLength={1000} showCount />
-          </Form.Item>
-
-          <Space size={12} style={{ display: "flex" }}>
-            <Form.Item name="precio" label="Precio" style={{ flex: 1 }}>
+            <Form.Item name="precio" label="Precio (USD)">
               <InputNumber min={0} style={{ width: "100%" }} placeholder="USD" />
             </Form.Item>
-            <Form.Item name="superficie_m2" label="Superficie (m²)" style={{ flex: 1 }}>
+            <Form.Item name="superficie_m2" label="Superficie (mÂ²)">
               <InputNumber min={0} style={{ width: "100%" }} />
             </Form.Item>
-          </Space>
 
-          <Space size={12} style={{ display: "flex" }}>
-            <Form.Item name="habitaciones" label="Habitaciones" style={{ flex: 1 }}>
+            <Form.Item name="habitaciones" label="Habitaciones">
               <InputNumber min={0} style={{ width: "100%" }} />
             </Form.Item>
-            <Form.Item name="banos" label="Baños" style={{ flex: 1 }}>
+            <Form.Item name="banos" label="BaÃ±os">
               <InputNumber min={0} style={{ width: "100%" }} />
             </Form.Item>
-            <Form.Item name="estacionamientos" label="Estac." style={{ flex: 1 }}>
-              <InputNumber min={0} style={{ width: "100%" }} />
-            </Form.Item>
-          </Space>
 
-          <Space size={12} style={{ display: "flex" }}>
-            <Form.Item name="direccion" label="Dirección" style={{ flex: 2 }}>
+            <Form.Item name="direccion" label="DirecciÃ³n">
               <Input maxLength={200} />
             </Form.Item>
-            <Form.Item name="ciudad" label="Ciudad" style={{ flex: 1 }}>
+            <Form.Item name="ciudad" label="Ciudad">
               <Input maxLength={100} />
             </Form.Item>
-          </Space>
 
-          <Space size={12} style={{ display: "flex" }}>
-            <Form.Item name="pais" label="País" initialValue="Ecuador" style={{ flex: 1 }}>
+            <Form.Item name="pais" label="PaÃ­s" initialValue="Ecuador">
               <Input maxLength={60} />
             </Form.Item>
             {editing && (
-              <Form.Item name="estado" label="Estado" style={{ flex: 1 }}>
+              <Form.Item name="estado" label="Estado">
                 <Select
-                  options={(["disponible", "reservada", "vendida", "no_disponible"] as const).map((v) => ({
-                    value: v,
-                    label: v.replace(/_/g, " "),
-                  }))}
+                  options={(["disponible", "reservada", "vendida", "no_disponible"] as const).map(
+                    (v) => ({ value: v, label: v.replace(/_/g, " ") }),
+                  )}
                 />
               </Form.Item>
             )}
-          </Space>
+          </div>
+
+          <Form.Item name="descripcion" label="DescripciÃ³n">
+            <Input.TextArea rows={3} maxLength={1000} showCount />
+          </Form.Item>
 
           <Form.Item
             name="tiene_render_conceptual"
             label="Contiene render conceptual (IA)"
             valuePropName="checked"
-            tooltip="§07 fidelidad de contenido: los renders generados con IA deben etiquetarse siempre."
+            tooltip="Â§07 fidelidad de contenido: los renders generados con IA deben etiquetarse siempre."
           >
             <Switch />
           </Form.Item>

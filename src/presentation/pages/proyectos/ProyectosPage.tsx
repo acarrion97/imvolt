@@ -1,8 +1,7 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { App, Button, Drawer, Form, Input, InputNumber, Select, Space, Popconfirm, Typography } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
 import { DataTable } from "@/presentation/components/common/DataTable";
-import { PageToolbar } from "@/presentation/components/common/PageToolbar";
 import { EstadoProyectoTag, formatFecha } from "@/presentation/components/common/status";
 import { useCreateProyecto, useDeleteProyecto, useProyectos, useUpdateProyecto } from "@/presentation/hooks";
 import { proyectoSchema } from "@/presentation/validations";
@@ -12,8 +11,8 @@ import type { ColumnsType } from "antd/es/table";
 const { Text } = Typography;
 
 const TIPO_LABELS: Record<ProyectoTipo, string> = {
-  lotizacion: "Lotización",
-  urbanizacion: "Urbanización",
+  lotizacion: "LotizaciÃ³n",
+  urbanizacion: "UrbanizaciÃ³n",
   edificio: "Edificio",
   proyecto_planos: "Proyecto en planos",
   individual: "Individual",
@@ -121,7 +120,7 @@ export function ProyectosPage() {
           <Text strong>{nombre}</Text>
           <br />
           <Text type="secondary" style={{ fontSize: 12 }}>
-            {row.ubicacion ?? "Sin ubicación"}
+            {row.ubicacion ?? "Sin ubicaciÃ³n"}
           </Text>
         </div>
       ),
@@ -137,7 +136,7 @@ export function ProyectosPage() {
       dataIndex: "total_lotes",
       key: "total_lotes",
       width: 90,
-      render: (v: number | null) => v ?? "—",
+      render: (v: number | null) => v ?? "â€”",
     },
     {
       title: "Estado",
@@ -161,8 +160,8 @@ export function ProyectosPage() {
         <Space>
           <Button type="text" icon={<EditOutlined />} onClick={() => openEdit(row)} />
           <Popconfirm
-            title="¿Eliminar este proyecto?"
-            description="Las propiedades asociadas quedarán sin proyecto."
+            title="Â¿Eliminar este proyecto?"
+            description="Las propiedades asociadas quedarÃ¡n sin proyecto."
             okText="Eliminar"
             cancelText="Cancelar"
             onConfirm={() => handleDelete(row.project_id)}
@@ -176,22 +175,48 @@ export function ProyectosPage() {
 
   return (
     <div>
-      <PageToolbar
-        title="Proyectos"
-        subtitle="Lotizaciones, urbanizaciones y desarrollos de la organización."
-        search={{ value: search, onChange: setSearch, placeholder: "Buscar por nombre o ubicación..." }}
-        actions={
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            Nuevo proyecto
-          </Button>
-        }
-      />
+      <div className="header">
+        <div>
+          <p className="eyebrow">OperaciÃ³n</p>
+          <h1>Proyectos</h1>
+          <p className="sub">Lotizaciones, urbanizaciones y desarrollos de la organizaciÃ³n.</p>
+        </div>
+        <div className="header-actions">
+          <button type="button" className="btn btn-primary" onClick={openCreate}>
+            <PlusOutlined /> Nuevo proyecto
+          </button>
+        </div>
+      </div>
 
-      <DataTable<Proyecto> columns={columns} dataSource={filtered} rowKey="project_id" loading={isLoading} />
+      <div className="card card-pad" style={{ marginBottom: 20 }}>
+        <div className="filters" style={{ marginBottom: 0 }}>
+          <Input
+            className="search"
+            allowClear
+            prefix={<SearchOutlined style={{ color: "#9db3a8" }} />}
+            placeholder="Buscar por nombre o ubicaciÃ³n..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <span className="spacer" />
+          <span className="count-pill">{filtered.length} proyectos</span>
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: "0 16px 8px" }}>
+        <DataTable<Proyecto>
+          card={false}
+          columns={columns}
+          dataSource={filtered}
+          rowKey="project_id"
+          loading={isLoading}
+          pagination={false}
+        />
+      </div>
 
       <Drawer
         title={editing ? "Editar proyecto" : "Nuevo proyecto"}
-        width={480}
+        size="large"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         extra={
@@ -206,7 +231,7 @@ export function ProyectosPage() {
             label="Nombre"
             rules={[{ required: true, message: "Indica el nombre del proyecto." }]}
           >
-            <Input placeholder="Ej: Vista Hermosa Lotización" maxLength={120} />
+            <Input placeholder="Ej: Vista Hermosa LotizaciÃ³n" maxLength={120} />
           </Form.Item>
 
           <Form.Item
@@ -220,7 +245,7 @@ export function ProyectosPage() {
             />
           </Form.Item>
 
-          <Form.Item name="ubicacion" label="Ubicación">
+          <Form.Item name="ubicacion" label="UbicaciÃ³n">
             <Input placeholder="Ciudad, provincia" maxLength={200} />
           </Form.Item>
 
@@ -228,8 +253,8 @@ export function ProyectosPage() {
             <InputNumber min={1} style={{ width: "100%" }} placeholder="Ej: 120" />
           </Form.Item>
 
-          <Form.Item name="descripcion" label="Descripción">
-            <Input.TextArea rows={3} maxLength={500} showCount placeholder="Descripción del desarrollo" />
+          <Form.Item name="descripcion" label="DescripciÃ³n">
+            <Input.TextArea rows={3} maxLength={500} showCount placeholder="DescripciÃ³n del desarrollo" />
           </Form.Item>
 
           {editing && (

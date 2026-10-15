@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import {
   App,
   Button,
@@ -7,12 +7,10 @@ import {
   Input,
   Popconfirm,
   Select,
-  Space,
-  Typography,
+  Spin,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, PhoneOutlined, MailOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { DataTable } from "@/presentation/components/common/DataTable";
-import { PageToolbar } from "@/presentation/components/common/PageToolbar";
 import { EstadoLeadTag, formatFecha } from "@/presentation/components/common/status";
 import {
   useCampanas,
@@ -26,29 +24,38 @@ import { leadSchema } from "@/presentation/validations";
 import type { Lead, LeadEstado, LeadFuente } from "@/domain/lead";
 import type { ColumnsType } from "antd/es/table";
 
-const { Text } = Typography;
-
 const FUENTE_LABELS: Record<LeadFuente, string> = {
-  meta_formulario: "Meta Formulario",
+  meta_formulario: "Meta formulario",
   whatsapp: "WhatsApp",
   landing: "Landing",
   manual: "Manual",
-  lotes_al_mando: "Lotes al mando",
+  lotes_al_mando: "Lotes al Mando",
 };
 
-const ESTADOS: LeadEstado[] = ["nuevo", "contactado", "calificado", "visitado", "cerrado", "perdido"];
+const ESTADO_LABELS: Record<LeadEstado, string> = {
+  nuevo: "Nuevo",
+  contactado: "Contactado",
+  calificado: "Calificado",
+  visitado: "Visitado",
+  cerrado: "Cerrado",
+  perdido: "Perdido",
+};
 
 interface FormValues {
   nombre: string;
-  email?: string | null;
   telefono?: string | null;
+  email?: string | null;
+  fuente: LeadFuente;
   campaign_id?: string | null;
   property_id?: string | null;
-  fuente: LeadFuente;
   estado?: LeadEstado;
   notas?: string | null;
 }
 
+/**
+ * Contactos â€” UI Concept 01: tabla del pipeline de leads con filtros, aviso
+ * de demo y alta manual en Drawer.
+ */
 export function ContactosPage() {
   const { message } = App.useApp();
   const [search, setSearch] = useState("");
@@ -59,17 +66,17 @@ export function ContactosPage() {
   const [form] = Form.useForm<FormValues>();
 
   const { data: leads, isLoading } = useLeads();
-  const { data: campanas } = useCampanas();
   const { data: propiedades } = usePropiedades();
+  const { data: campanas } = useCampanas();
   const createLead = useCreateLead();
   const updateLead = useUpdateLead();
   const deleteLead = useDeleteLead();
   const saving = createLead.isPending || updateLead.isPending;
 
-  const campanaNombre = useMemo(() => {
-    const map = new Map((campanas ?? []).map((c) => [c.campaign_id, c.nombre]));
-    return (id: string | null) => (id ? (map.get(id) ?? "—") : "Orgánico / manual");
-  }, [campanas]);
+  const interesMap = useMemo(() => {
+    const map = new Map((propiedades ?? []).map((p) => [p.property_id, p.nombre]));
+    return (id: string | null) => (id ? (map.get(id) ?? "â€”") : "â€”");
+  }, [propiedades]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -96,11 +103,11 @@ export function ContactosPage() {
     setEditing(row);
     form.setFieldsValue({
       nombre: row.nombre,
-      email: row.email,
       telefono: row.telefono,
+      email: row.email,
+      fuente: row.fuente,
       campaign_id: row.campaign_id,
       property_id: row.property_id,
-      fuente: row.fuente,
       estado: row.estado,
       notas: row.notas,
     });
@@ -123,7 +130,7 @@ export function ContactosPage() {
       telefono: parsed.data.telefono || null,
       campaign_id: parsed.data.campaign_id ?? null,
       property_id: parsed.data.property_id ?? null,
-      estado: parsed.data.estado ?? ("nuevo" as LeadEstado),
+      estado: parsed.data.estado ?? ("nuevo" as const),
       notas: parsed.data.notas ?? null,
     };
 
@@ -133,7 +140,7 @@ export function ContactosPage() {
         message.success("Contacto actualizado.");
       } else {
         await createLead.mutateAsync(payload);
-        message.success("Contacto registrado.");
+        message.success("Contacto creado.");
       }
       setDrawerOpen(false);
     } catch (error) {
@@ -157,46 +164,39 @@ export function ContactosPage() {
       key: "nombre",
       render: (nombre: string, row) => (
         <div>
-          <Text strong>{nombre}</Text>
-          <br />
-          <Space size={8}>
-            {row.telefono && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                <PhoneOutlined /> {row.telefono}
-              </Text>
-            )}
-            {row.email && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                <MailOutlined /> {row.email}
-              </Text>
-            )}
-          </Space>
+          <span style={{ fontWeight: 650, display: "block" }}>{nombre}</span>
+          <span style={{ color: "#8b9a93", fontSize: 11.5 }}>
+            {row.telefono ?? "sin telÃ©fono"} Â· {row.email ?? "sin email"}
+          </span>
         </div>
       ),
     },
     {
-      title: "Fuente",
-      dataIndex: "fuente",
-      key: "fuente",
-      width: 150,
-      render: (fuente: LeadFuente) => FUENTE_LABELS[fuente] ?? fuente,
+      title: "InterÃ©s",
+      dataIndex: "property_id",
+      key: "property_id",
+      render: (id: string | null) => interesMap(id),
     },
     {
-      title: "Campaña",
-      dataIndex: "campaign_id",
-      key: "campaign_id",
-      width: 200,
-      render: (id: string | null) => campanaNombre(id),
+      title: "Origen",
+      dataIndex: "fuente",
+      key: "fuente",
+      width: 160,
+      render: (fuente: LeadFuente) => (
+        <span className={fuente === "manual" ? "mini-badge grey" : "mini-badge"}>
+          {FUENTE_LABELS[fuente]}
+        </span>
+      ),
     },
     {
       title: "Estado",
       dataIndex: "estado",
       key: "estado",
-      width: 130,
+      width: 140,
       render: (estado: LeadEstado) => <EstadoLeadTag estado={estado} />,
     },
     {
-      title: "Registrado",
+      title: "Fecha",
       dataIndex: "created_at",
       key: "created_at",
       width: 130,
@@ -205,61 +205,116 @@ export function ContactosPage() {
     {
       title: "",
       key: "acciones",
-      width: 110,
+      width: 100,
       render: (_, row) => (
-        <Space>
-          <Button type="text" icon={<EditOutlined />} onClick={() => openEdit(row)} />
+        <span style={{ display: "flex", gap: 6 }}>
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ padding: "6px 11px", fontSize: 11 }}
+            onClick={() => openEdit(row)}
+          >
+            <EditOutlined /> Editar
+          </button>
           <Popconfirm
-            title="¿Eliminar este contacto?"
+            title="Â¿Eliminar este contacto?"
             okText="Eliminar"
             cancelText="Cancelar"
             onConfirm={() => handleDelete(row.lead_id)}
           >
-            <Button type="text" danger icon={<DeleteOutlined />} />
+            <button
+              type="button"
+              className="btn btn-danger"
+              style={{ padding: "6px 10px", fontSize: 11 }}
+            >
+              <DeleteOutlined />
+            </button>
           </Popconfirm>
-        </Space>
+        </span>
       ),
     },
   ];
 
   return (
     <div>
-      <PageToolbar
-        title="Contactos"
-        subtitle="Pipeline de leads: de la campaña a la visita y al cierre."
-        search={{ value: search, onChange: setSearch, placeholder: "Buscar por nombre, email o teléfono..." }}
-        extra={
-          <Space wrap>
-            <Select
-              allowClear
-              placeholder="Estado"
-              style={{ width: 150 }}
-              value={filtroEstado}
-              onChange={setFiltroEstado}
-              options={ESTADOS.map((v) => ({ value: v, label: v }))}
-            />
-            <Select
-              allowClear
-              placeholder="Fuente"
-              style={{ width: 170 }}
-              value={filtroFuente}
-              onChange={setFiltroFuente}
-              options={Object.entries(FUENTE_LABELS).map(([value, label]) => ({ value, label }))}
-            />
-          </Space>
-        }
-        actions={
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            Nuevo contacto
-          </Button>
-        }
-      />
+      <div className="header">
+        <div>
+          <p className="eyebrow">Crecimiento</p>
+          <h1>Contactos potenciales</h1>
+          <p className="sub">
+            Pipeline de leads de Meta, WhatsApp y landing con deduplicaciÃ³n por fuente (Â§11).
+          </p>
+        </div>
+        <div className="header-actions">
+          <button type="button" className="btn btn-primary" onClick={openCreate}>
+            <PlusOutlined /> Nuevo contacto
+          </button>
+        </div>
+      </div>
 
-      <DataTable<Lead> columns={columns} dataSource={filtered} rowKey="lead_id" loading={isLoading} />
+      <div className="notice">
+        <strong>Demo interactiva.</strong> Los leads llegan simulados hasta conectar Meta y el
+        webhook de captaciÃ³n.
+      </div>
+
+      <div className="card card-pad" style={{ marginBottom: 20 }}>
+        <div className="filters" style={{ marginBottom: 0 }}>
+          <Input
+            className="search"
+            allowClear
+            prefix={<SearchOutlined style={{ color: "#9db3a8" }} />}
+            placeholder="Buscar por nombre, email o telÃ©fono..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Select
+            allowClear
+            placeholder="Estado"
+            style={{ width: 165 }}
+            value={filtroEstado}
+            onChange={setFiltroEstado}
+            options={(Object.keys(ESTADO_LABELS) as LeadEstado[]).map((v) => ({
+              value: v,
+              label: ESTADO_LABELS[v],
+            }))}
+          />
+          <Select
+            allowClear
+            placeholder="Origen"
+            style={{ width: 175 }}
+            value={filtroFuente}
+            onChange={setFiltroFuente}
+            options={(Object.keys(FUENTE_LABELS) as LeadFuente[]).map((v) => ({
+              value: v,
+              label: FUENTE_LABELS[v],
+            }))}
+          />
+          <span className="spacer" />
+          <span className="count-pill">{filtered.length} contactos</span>
+        </div>
+      </div>
+
+      <Spin spinning={isLoading}>
+        <div className="card" style={{ padding: "0 16px 8px" }}>
+          <DataTable<Lead>
+            card={false}
+            columns={columns}
+            dataSource={filtered}
+            rowKey="lead_id"
+            pagination={filtered.length > 10 ? undefined : false}
+          />
+        </div>
+      </Spin>
+
+      <p className="footer-note">
+        Estado actual: {filtered.filter((l) => l.estado === "nuevo").length} nuevos Â·{" "}
+        {filtered.filter((l) => l.estado === "calificado").length} calificados Â·{" "}
+        {filtered.filter((l) => l.estado === "cerrado").length} cerrados
+      </p>
 
       <Drawer
         title={editing ? "Editar contacto" : "Nuevo contacto"}
-        width={520}
+        size="large"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         extra={
@@ -274,57 +329,64 @@ export function ContactosPage() {
             label="Nombre completo"
             rules={[{ required: true, message: "Indica el nombre del contacto." }]}
           >
-            <Input placeholder="Ej: María Fernanda López" maxLength={120} />
+            <Input placeholder="Ej: Andrea Salazar" maxLength={120} />
           </Form.Item>
 
-          <Space size={12} style={{ display: "flex" }}>
-            <Form.Item name="telefono" label="Teléfono" style={{ flex: 1 }}>
-              <Input placeholder="+593 98 765 4321" maxLength={20} />
+          <div className="form-grid">
+            <Form.Item name="telefono" label="TelÃ©fono">
+              <Input placeholder="+593 99 123 4567" maxLength={20} />
             </Form.Item>
-            <Form.Item name="email" label="Email" style={{ flex: 1 }}>
-              <Input placeholder="correo@ejemplo.com" maxLength={120} />
+            <Form.Item name="email" label="Email">
+              <Input placeholder="andrea@correo.com" maxLength={120} />
             </Form.Item>
-          </Space>
 
-          <Form.Item
-            name="fuente"
-            label="Fuente"
-            rules={[{ required: true, message: "Selecciona la fuente." }]}
-          >
-            <Select
-              placeholder="¿De dónde viene el lead?"
-              options={Object.entries(FUENTE_LABELS).map(([value, label]) => ({ value, label }))}
-            />
-          </Form.Item>
-
-          <Form.Item name="campaign_id" label="Campaña de origen">
-            <Select
-              allowClear
-              showSearch
-              optionFilterProp="label"
-              placeholder="Sin campaña (orgánico/manual)"
-              options={(campanas ?? []).map((c) => ({ value: c.campaign_id, label: c.nombre }))}
-            />
-          </Form.Item>
-
-          <Form.Item name="property_id" label="Propiedad de interés">
-            <Select
-              allowClear
-              showSearch
-              optionFilterProp="label"
-              placeholder="Sin propiedad específica"
-              options={(propiedades ?? []).map((p) => ({ value: p.property_id, label: p.nombre }))}
-            />
-          </Form.Item>
-
-          {editing && (
+            <Form.Item
+              name="fuente"
+              label="Origen"
+              rules={[{ required: true, message: "Selecciona la fuente." }]}
+            >
+              <Select
+                placeholder="Fuente"
+                options={Object.entries(FUENTE_LABELS).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
+              />
+            </Form.Item>
             <Form.Item name="estado" label="Estado del pipeline">
-              <Select placeholder="Estado" options={ESTADOS.map((v) => ({ value: v, label: v }))} />
+              <Select
+                placeholder="Estado"
+                options={Object.entries(ESTADO_LABELS).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
+              />
             </Form.Item>
-          )}
+
+            <Form.Item name="campaign_id" label="CampaÃ±a de origen">
+              <Select
+                allowClear
+                placeholder="Sin campaÃ±a"
+                options={(campanas ?? []).map((c) => ({
+                  value: c.campaign_id,
+                  label: c.nombre,
+                }))}
+              />
+            </Form.Item>
+            <Form.Item name="property_id" label="Propiedad de interÃ©s">
+              <Select
+                allowClear
+                placeholder="Sin propiedad"
+                options={(propiedades ?? []).map((p) => ({
+                  value: p.property_id,
+                  label: p.nombre,
+                }))}
+              />
+            </Form.Item>
+          </div>
 
           <Form.Item name="notas" label="Notas">
-            <Input.TextArea rows={3} maxLength={1000} showCount placeholder="Contexto, preferencias, siguiente paso..." />
+            <Input.TextArea rows={3} maxLength={1000} showCount />
           </Form.Item>
         </Form>
       </Drawer>

@@ -3,12 +3,14 @@
 Interfaz de **IMVOLT — MARKETING INMOBILIARIO AI**: plataforma SaaS para crear, publicar y
 medir contenido inmobiliario generado con IA.
 
-Aplica el **Manual de Marca IMVOLT v1** (Inter, paleta carbón/verde, regla 70/20/10) sobre la
-plantilla frontend (Clean Architecture, patrón Repository, TanStack Query + caché IndexedDB).
+La UI sigue el **prototipo interactivo (IMVOLT · UI Concept 01)** sobre Clean Architecture
+(Repository, TanStack Query + caché IndexedDB) y el **Manual de Marca IMVOLT v1**: tipografía
+Inter, sidebar carbón `#101719`, fondo niebla `#F5F8F6`, verde vivo `#00D94B` en acciones
+primarias y verde de enlace `#008E47` (contraste AA).
 
 ```
-Dashboard · Proyectos · Propiedades · Plantillas · Estudio IA · Campañas · Contactos ·
-Analítica · Configuración
+Inicio · Mis propiedades · Estudio IA · Plantillas · Campañas Meta · Contactos ·
+Analítica · Configuración   (+ Proyectos, secundaria)
 ```
 
 ## Arranque
@@ -28,6 +30,20 @@ VITE_DATA_PROVIDER=rest
 VITE_API_URL=http://localhost:3000/api
 ```
 
+## Pantallas
+
+| Ruta | Pantalla | Contenido |
+|------|----------|-----------|
+| `/inicio` | Inicio | Hero de marca, 4 métricas, acciones rápidas y propiedades recientes |
+| `/propiedades` | Mis propiedades | Rejilla de tarjetas con ilustración (terreno/casa/torre/oficina), filtros y alta en Drawer |
+| `/estudio` | Estudio IA | Modo fácil/pro, plantilla + modelo (§09 catálogo vivo), prompt generado y preview con cotización en créditos |
+| `/plantillas` | Plantillas | Pestañas por categoría y tarjetas listas para usar en el Estudio |
+| `/campanas` | Campañas Meta | Asistente 3 pasos (Datos → Objetivo → Revisión) + resumen + flujo §10 |
+| `/contactos` | Contactos | Pipeline de leads por fuente y estado (§11) |
+| `/analitica` | Analítica | Leads por día, lectura de resultados y distribución por fuente |
+| `/configuracion` | Configuración | Integraciones (Higgsfield/Meta/Lotes al Mando), billetera de créditos y perfil |
+| `/proyectos` | Proyectos | ABM de desarrollos (enlace desde Mis propiedades) |
+
 ## Estructura (Clean Architecture)
 
 ```
@@ -44,13 +60,17 @@ src/
 │   ├── cache/         queryKeys, persistencia IndexedDB y política por dominio
 │   └── http/          Cliente HTTP (timeout, Bearer, ApiError)
 └── presentation/
-    ├── theme/         Tokens de marca (light/dark) y ThemeProvider
-    ├── components/    brand/ (logos), layout/ (Sidebar carbón), common/
+    ├── theme/         brand.ts, temas AntD (light/dark) y art.css (ilustraciones)
+    ├── components/    layout/ (Sidebar carbón + topbar), common/ (DataTable, estados)
     ├── hooks/         useProyectos, usePropiedades, useGeneraciones, ...
     ├── validations/   Esquemas Zod por formulario
-    └── pages/         dashboard, proyectos, propiedades, plantillas,
-                       estudio, campanas, contactos, analitica, configuracion
+    └── pages/         inicio, propiedades, plantillas, estudio, campanas,
+                       contactos, analitica, configuracion, proyectos
 ```
+
+Los estilos del prototipo viven en `src/index.css` (clases `.sidebar`, `.hero`, `.item-card`,
+`.template-card`, `.studio-preview`, `.steps`, `.chart`…); las ilustraciones de las tarjetas de
+propiedad están en `src/presentation/theme/art.css` (SVG del prototipo).
 
 ## Patrones clave
 
@@ -62,6 +82,8 @@ src/
   navegador (política explícita en `cache/cachePolicy.ts`).
 - **Multi-tenant**: la API acota por `organization_id`; en modo REST el header `X-Org-Id` viaja
   desde la configuración de sesión.
+- **§07 fidelidad de contenido**: los renders IA se etiquetan como conceptuales en catálogo y
+  Estudio. **§09**: la cotización sale del registro vivo de modelos (nunca hardcodeada).
 
 ## Comandos
 

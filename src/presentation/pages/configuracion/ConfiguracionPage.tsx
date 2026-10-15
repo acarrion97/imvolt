@@ -1,321 +1,281 @@
 import { useState } from "react";
+import { App } from "antd";
 import {
-  App,
-  Button,
-  Card,
-  Col,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Row,
-  Space,
-  Statistic,
-  Table,
-  Tag,
-  Typography,
-} from "antd";
-import { PlusOutlined, LinkOutlined } from "@ant-design/icons";
-import type { ColumnsType } from "antd/es/table";
-import { PageToolbar } from "@/presentation/components/common/PageToolbar";
-import { ImvoltLogo } from "@/presentation/components/brand/ImvoltLogo";
-import { formatFecha } from "@/presentation/components/common/status";
+  ApiOutlined,
+  CheckCircleOutlined,
+  CloseOutlined,
+  CloudServerOutlined,
+  MessageOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  WalletOutlined,
+} from "@ant-design/icons";
 import {
   useConexiones,
   useCreateConexion,
+  useDeleteConexion,
   useRecargarCreditos,
   useTransacciones,
   useWallet,
 } from "@/presentation/hooks";
-import { brand } from "@/presentation/theme/brand";
-import type { Conexion } from "@/domain/conexion";
-import type { TransaccionCredito } from "@/domain/credito";
+import { formatFecha } from "@/presentation/components/common/status";
 
-const { Text, Paragraph } = Typography;
+const RECARGAS = [10, 50, 100];
 
+/**
+ * Configuración — UI Concept 01: integraciones (Higgsfield / Meta /
+ * Lotes al Mando), billetera de créditos, perfil de trabajo y los hitos
+ * pendientes antes del lanzamiento.
+ */
 export function ConfiguracionPage() {
   const { message } = App.useApp();
-  const [recargaOpen, setRecargaOpen] = useState(false);
-  const [monto, setMonto] = useState<number>(100);
-  const [conexionForm] = Form.useForm<{ cuenta_publicitaria_id: string; nombre_cuenta: string }>();
-
+  const { data: conexiones, isLoading: loadingConexiones } = useConexiones();
   const { data: wallet } = useWallet();
-  const { data: transacciones, isLoading: loadingTx } = useTransacciones();
-  const { data: conexiones, isLoading: loadingConex } = useConexiones();
-  const recargar = useRecargarCreditos();
+  const { data: transacciones } = useTransacciones();
   const createConexion = useCreateConexion();
+  const deleteConexion = useDeleteConexion();
+  const recargar = useRecargarCreditos();
+  const [recargando, setRecargando] = useState<number | null>(null);
 
-  const handleRecargar = async () => {
-    try {
-      await recargar.mutateAsync({ monto });
-      message.success(`Recarga de ${monto} créditos registrada.`);
-      setRecargaOpen(false);
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "No se pudo recargar.");
-    }
-  };
+  const meta = (conexiones ?? []).find((c) => c.estado === "conectada");
 
-  const handleConectar = async () => {
-    const values = await conexionForm.validateFields().catch(() => null);
-    if (!values) return;
+  const conectarMeta = async () => {
     try {
       await createConexion.mutateAsync({
-        cuenta_publicitaria_id: values.cuenta_publicitaria_id,
-        nombre_cuenta: values.nombre_cuenta,
-        estado: "pendiente",
+        cuenta_publicitaria_id: `act_demo_${Math.floor(Math.random() * 900000 + 100000)}`,
+        nombre_cuenta: "Urbaniza Capital Ads",
+        estado: "conectada",
       });
-      message.success("Conexión registrada. Completa la autorización en Meta.");
-      conexionForm.resetFields();
+      message.success("Cuenta publicitaria de Meta conectada (demo).");
     } catch (error) {
-      message.error(error instanceof Error ? error.message : "No se pudo registrar la conexión.");
+      message.error(error instanceof Error ? error.message : "No se pudo conectar Meta.");
     }
   };
 
-  const conexionColumns: ColumnsType<Conexion> = [
-    {
-      title: "Cuenta publicitaria",
-      dataIndex: "nombre_cuenta",
-      key: "nombre_cuenta",
-      render: (nombre: string, row) => (
-        <div>
-          <Text strong>{nombre}</Text>
-          <br />
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {row.cuenta_publicitaria_id}
-          </Text>
-        </div>
-      ),
-    },
-    {
-      title: "Estado",
-      dataIndex: "estado",
-      key: "estado",
-      width: 130,
-      render: (estado: Conexion["estado"]) => {
-        const color =
-          estado === "conectada" ? "success" : estado === "pendiente" ? "gold" : "red";
-        return <Tag color={color}>{estado.toUpperCase()}</Tag>;
-      },
-    },
-    {
-      title: "Creada",
-      dataIndex: "created_at",
-      key: "created_at",
-      width: 130,
-      render: (v: string) => formatFecha(v),
-    },
-  ];
+  const desconectarMeta = async () => {
+    if (!meta) return;
+    try {
+      await deleteConexion.mutateAsync(meta.connection_id);
+      message.success("Conexión de Meta eliminada.");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "No se pudo desconectar.");
+    }
+  };
 
-  const txColumns: ColumnsType<TransaccionCredito> = [
+  const recargarCreditos = async (monto: number) => {
+    setRecargando(monto);
+    try {
+      await recargar.mutateAsync({ monto, idempotencyKey: `demo-${Date.now()}` });
+      message.success(`Recarga simulada: +${monto} créditos.`);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "No se pudo recargar.");
+    } finally {
+      setRecargando(null);
+    }
+  };
+
+  const hitos = [
     {
-      title: "Descripción",
-      dataIndex: "descripcion",
-      key: "descripcion",
-      render: (desc: string | null, row) => (
-        <div>
-          <Text>{desc ?? row.tipo}</Text>
-          <br />
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {formatFecha(row.created_at)}
-          </Text>
-        </div>
-      ),
+      label: "Ejecutar database/schema.sql en Supabase",
+      ok: false,
+      note: "20+ tablas con RLS, índices y seeds",
     },
-    {
-      title: "Tipo",
-      dataIndex: "tipo",
-      key: "tipo",
-      width: 120,
-      render: (tipo: string) => <Tag>{tipo.toUpperCase()}</Tag>,
-    },
-    {
-      title: "Monto",
-      dataIndex: "monto",
-      key: "monto",
-      width: 110,
-      align: "right",
-      render: (monto: number) => (
-        <Text strong style={{ color: monto >= 0 ? brand.light.primary : brand.light.error }}>
-          {monto >= 0 ? "+" : ""}
-          {monto} cr.
-        </Text>
-      ),
-    },
+    { label: "Conectar cuenta publicitaria de Meta", ok: Boolean(meta), note: "OAuth en la API" },
+    { label: "Configurar credenciales de Higgsfield", ok: false, note: "HIGGSFIELD_API_KEY" },
+    { label: "Invitar al equipo de marketing", ok: false, note: "Roles §13" },
   ];
 
   return (
     <div>
-      <PageToolbar
-        title="Configuración"
-        subtitle="Créditos, conexiones de publicidad e información de la cuenta."
-      />
+      <div className="header">
+        <div>
+          <p className="eyebrow">Sistema</p>
+          <h1>Conexiones y configuración</h1>
+          <p className="sub">
+            Integraciones del workspace, billetera de créditos y datos de la organización.
+          </p>
+        </div>
+        <div className="header-actions">
+          <span className="count-pill">Saldo: {wallet?.saldo ?? 0} créditos</span>
+        </div>
+      </div>
 
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={12}>
-          <Card
-            title="Créditos IMVOLT"
-            style={{ borderRadius: 12 }}
-            extra={
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setRecargaOpen(true)}
-              >
-                Recargar
-              </Button>
-            }
-          >
-            <Statistic
-              title={<Text type="secondary">Saldo disponible</Text>}
-              value={wallet?.saldo ?? 0}
-              suffix="créditos"
-              valueStyle={{ fontWeight: 700, color: brand.light.primary, fontSize: 32 }}
-            />
-            <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 12, marginBottom: 0 }}>
-              Los créditos se consumen al generar contenido con IA. Cada modelo cotiza un costo
-              base según §09 del documento maestro.
-            </Paragraph>
+      <div className="grid cols2" style={{ alignItems: "start" }}>
+        {/* ── Integraciones ──────────────────────────────────────────────── */}
+        <div className="card card-pad">
+          <h2 style={{ fontSize: 17, marginBottom: 14 }}>Integraciones</h2>
 
-            <Table<TransaccionCredito>
-              style={{ marginTop: 16 }}
-              columns={txColumns}
-              dataSource={transacciones ?? []}
-              rowKey="transaction_id"
-              loading={loadingTx}
-              size="small"
-              pagination={{ pageSize: 5, hideOnSinglePage: true }}
-            />
-          </Card>
-        </Col>
+          <div className="integration">
+            <span className="connect-logo">
+              <CloudServerOutlined />
+            </span>
+            <span className="info">
+              <b>Higgsfield</b>
+              <span>Motor de generación de imágenes y video (§09).</span>
+            </span>
+            <span className="mini-badge warn">Simulado</span>
+          </div>
 
-        <Col xs={24} lg={12}>
-          <Card
-            title="Conexión con Meta Ads"
-            style={{ borderRadius: 12 }}
-            extra={
-              <Button
-                icon={<LinkOutlined />}
-                onClick={() => {
-                  Modal.confirm({
-                    title: "Conectar con Meta",
-                    content:
-                      "En modo simulado la conexión se registra localmente. En producción, esto redirige al OAuth de Meta para autorizar la cuenta publicitaria.",
-                    okText: "Entendido",
-                    cancelButtonProps: { style: { display: "none" } },
-                  });
-                }}
-              >
-                Conectar
-              </Button>
-            }
-          >
-            <Table<Conexion>
-              columns={conexionColumns}
-              dataSource={conexiones ?? []}
-              rowKey="connection_id"
-              loading={loadingConex}
-              size="small"
-              pagination={false}
-            />
-
-            <Form
-              form={conexionForm}
-              layout="vertical"
-              requiredMark={false}
-              style={{ marginTop: 16 }}
-            >
-              <Text strong style={{ display: "block", marginBottom: 8 }}>
-                Agregar cuenta manualmente
-              </Text>
-              <Space size={12} style={{ display: "flex" }} align="start">
-                <Form.Item
-                  name="cuenta_publicitaria_id"
-                  label="ID de cuenta publicitaria"
-                  rules={[{ required: true, message: "Requerido." }]}
-                  style={{ flex: 1 }}
+          <div className="integration">
+            <span className="connect-logo">
+              <ApiOutlined />
+            </span>
+            <span className="info">
+              <b>Meta Ads</b>
+              <span>
+                {meta ? `Conectada: ${meta.cuenta_publicitaria_id}` : "Cuenta publicitaria de "}
+                Meta.
+              </span>
+            </span>
+            {loadingConexiones ? (
+              <span className="mini-badge grey">...</span>
+            ) : meta ? (
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span className="mini-badge">
+                  <span className="status-point" /> Conectada
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  style={{ padding: "7px 11px", fontSize: 11 }}
+                  onClick={desconectarMeta}
                 >
-                  <Input placeholder="act_123456789" maxLength={40} />
-                </Form.Item>
-                <Form.Item
-                  name="nombre_cuenta"
-                  label="Nombre"
-                  rules={[{ required: true, message: "Requerido." }]}
-                  style={{ flex: 1 }}
+                  <CloseOutlined /> Desconectar
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ padding: "8px 13px", fontSize: 11 }}
+                onClick={conectarMeta}
+                disabled={createConexion.isPending}
+              >
+                <PlusOutlined /> Conectar
+              </button>
+            )}
+          </div>
+
+          <div className="integration">
+            <span className="connect-logo">
+              <MessageOutlined />
+            </span>
+            <span className="info">
+              <b>Lotes al Mando</b>
+              <span>Captación de leads por mensajería (§11).</span>
+            </span>
+            <span className="mini-badge grey">Próximamente</span>
+          </div>
+
+          <div className="section-title" style={{ marginTop: 26 }}>
+            <h2 style={{ fontSize: 16 }}>Hitos antes del lanzamiento</h2>
+          </div>
+          {hitos.map((h) => (
+            <div key={h.label} className="list-row">
+              <span className="who">
+                <span className={`list-dot${h.ok ? "" : " grey"}`} />
+                {h.label}
+              </span>
+              <span className="right">
+                {h.ok ? (
+                  <span className="mini-badge">
+                    <CheckCircleOutlined /> Listo
+                  </span>
+                ) : (
+                  <span className="mini-badge grey">{h.note}</span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Créditos + perfil ──────────────────────────────────────────── */}
+        <div style={{ display: "grid", gap: 20 }}>
+          <div className="card card-pad">
+            <h2 style={{ fontSize: 17, marginBottom: 4 }}>Créditos de generación</h2>
+            <p className="sub" style={{ marginBottom: 16 }}>
+              Billetera de la organización. En la demo la pasarela confirma al instante.
+            </p>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 16 }}>
+              <span className="stat-icon">
+                <WalletOutlined />
+              </span>
+              <div>
+                <div className="stat-value">{wallet?.saldo ?? 0}</div>
+                <span className="delta muted">créditos disponibles</span>
+              </div>
+              <span className="spacer" style={{ flex: 1 }} />
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ padding: "8px 13px", fontSize: 11 }}
+                onClick={() => recargarCreditos(10)}
+                disabled={recargando !== null}
+              >
+                <ReloadOutlined spin={recargando === 10} /> +10
+              </button>
+              {RECARGAS.slice(1).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ padding: "8px 13px", fontSize: 11 }}
+                  onClick={() => recargarCreditos(m)}
+                  disabled={recargando !== null}
                 >
-                  <Input placeholder="Imvolt Ads Principal" maxLength={80} />
-                </Form.Item>
-                <Form.Item label=" " style={{ flexShrink: 0 }}>
-                  <Button onClick={handleConectar} loading={createConexion.isPending}>
-                    Agregar
-                  </Button>
-                </Form.Item>
-              </Space>
-            </Form>
+                  <ReloadOutlined spin={recargando === m} /> +{m}
+                </button>
+              ))}
+            </div>
 
-            <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 8, marginBottom: 0 }}>
-              La publicación real de campañas requiere credenciales de Meta (§12). Sin ellas, el
-              sistema opera en modo simulado y las campañas se quedan como borradores validados.
-            </Paragraph>
-          </Card>
-        </Col>
+            {(transacciones ?? []).slice(0, 5).map((t) => (
+              <div key={t.transaction_id} className="list-row">
+                <span className="who">
+                  <span className={`list-dot${Number(t.monto) < 0 ? " grey" : ""}`} />
+                  {t.descripcion ?? t.tipo}
+                  <span style={{ color: "#9aaba0", fontSize: 11 }}>· {formatFecha(t.created_at)}</span>
+                </span>
+                <span className={`amount ${Number(t.monto) < 0 ? "neg" : "pos"}`}>
+                  {Number(t.monto) > 0 ? "+" : ""}
+                  {t.monto}
+                </span>
+              </div>
+            ))}
+          </div>
 
-        <Col xs={24}>
-          <Card title="Cuenta" style={{ borderRadius: 12 }}>
-            <Row gutter={[16, 16]} align="middle">
-              <Col xs={24} md={8}>
-                <div style={{ padding: 16 }}>
-                  <ImvoltLogo variant="horizontal" height={40} />
-                  <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 12, marginBottom: 0 }}>
-                    Marketing Inmobiliario AI — de la propiedad al anuncio: crear, publicar y medir.
-                  </Paragraph>
-                </div>
-              </Col>
-              <Col xs={24} md={16}>
-                <Space direction="vertical" size={4}>
-                  <Text>
-                    <Text strong>Organización:</Text> Equipo IMVOLT (demo)
-                  </Text>
-                  <Text>
-                    <Text strong>Plan:</Text> Business
-                  </Text>
-                  <Text>
-                    <Text strong>Proveedor de datos:</Text>{" "}
-                    {String(import.meta.env.VITE_DATA_PROVIDER ?? "mock")}
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    Los datos de esta sesión provienen del proveedor configurado en VITE_DATA_PROVIDER.
-                    Cambia a "rest" y define VITE_API_URL para conectar con la API real.
-                  </Text>
-                </Space>
-              </Col>
-            </Row>
-          </Card>
-        </Col>
-      </Row>
-
-      <Modal
-        title="Recargar créditos"
-        open={recargaOpen}
-        onCancel={() => setRecargaOpen(false)}
-        onOk={handleRecargar}
-        okText="Recargar"
-        cancelText="Cancelar"
-        confirmLoading={recargar.isPending}
-      >
-        <Paragraph type="secondary">
-          Registra una recarga de créditos para la organización. En modo simulado la pasarela
-          confirma al instante.
-        </Paragraph>
-        <InputNumber
-          min={1}
-          step={10}
-          value={monto}
-          onChange={(v) => setMonto(v ?? 0)}
-          style={{ width: "100%" }}
-          placeholder="Monto en créditos"
-          suffix="créditos"
-        />
-      </Modal>
+          <div className="card card-pad">
+            <h2 style={{ fontSize: 17, marginBottom: 14 }}>Perfil de trabajo</h2>
+            <div className="form-grid">
+              <div className="field">
+                <span className="lbl">Tipo de empresa</span>
+                <select className="imvolt-select" defaultValue="inmobiliaria" disabled>
+                  <option value="inmobiliaria">Inmobiliaria</option>
+                  <option value="developer">Desarrolladora</option>
+                  <option value="broker">Brokeraje</option>
+                </select>
+              </div>
+              <div className="field">
+                <span className="lbl">Nombre de la empresa</span>
+                <input className="imvolt-input" defaultValue="Urbaniza Capital" disabled />
+              </div>
+              <div className="field">
+                <span className="lbl">Moneda</span>
+                <select className="imvolt-select" defaultValue="USD" disabled>
+                  <option value="USD">USD — Dólar</option>
+                </select>
+              </div>
+              <div className="field">
+                <span className="lbl">Workspace</span>
+                <input className="imvolt-input" defaultValue="IMVOLT Demo" disabled />
+              </div>
+            </div>
+            <p className="footer-note" style={{ marginTop: 4 }}>
+              La edición de la organización llega con el módulo identity en la API.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

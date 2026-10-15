@@ -47,7 +47,7 @@ function getSystemTheme(): "light" | "dark" {
 }
 
 function getStoredTheme(): ThemeMode {
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return "light";
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
     if (stored === "light" || stored === "dark" || stored === "system") {
@@ -56,7 +56,8 @@ function getStoredTheme(): ThemeMode {
   } catch {
     // localStorage not available
   }
-  return "system";
+  // El prototipo IMVOLT (UI Concept 01) es claro: el modo claro es el default.
+  return "light";
 }
 
 interface ThemeProviderProps {

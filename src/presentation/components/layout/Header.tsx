@@ -1,183 +1,67 @@
-import { useMemo } from "react";
-import { Avatar, Dropdown, Space, Tooltip } from "antd";
-import {
-  LogoutOutlined,
-  BulbOutlined,
-  BulbFilled,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-} from "@ant-design/icons";
-import type { MenuProps } from "antd";
-import { useTheme } from "@/presentation/theme";
-import { useOnlineStatus } from "@/presentation/hooks";
-import { IMVOLT_GRADIENT } from "@/presentation/theme/brand";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ThunderboltOutlined, MenuOutlined } from "@ant-design/icons";
+import { useWallet } from "@/presentation/hooks";
+
+/**
+ * Barra superior — UI Concept 01 del prototipo:
+ * migas "IMVOLT / Página", píldoras de demo y créditos, y el CTA
+ * "Crear con AI" que abre el Estudio IA.
+ */
+
+const ROUTE_LABELS: Record<string, string> = {
+  "/inicio": "Inicio",
+  "/propiedades": "Mis propiedades",
+  "/proyectos": "Proyectos",
+  "/plantillas": "Plantillas",
+  "/estudio": "Estudio IA",
+  "/campanas": "Campañas Meta",
+  "/contactos": "Contactos",
+  "/analitica": "Analítica",
+  "/configuracion": "Configuración",
+};
 
 interface HeaderProps {
-  collapsed: boolean;
-  onToggleCollapse: () => void;
-  isMobile?: boolean;
+  onToggleMobile: () => void;
 }
 
-// Sin auth en el MVP mock: placeholder para enchufar el provider de sesión.
-const user = { nombres: "Equipo IMVOLT", email: "equipo@imvolt.com" };
+export function Header({ onToggleMobile }: HeaderProps) {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { data: wallet } = useWallet();
 
-export function Header({ collapsed, onToggleCollapse, isMobile = false }: HeaderProps) {
-  const { setMode, isDark } = useTheme();
-  const isOnline = useOnlineStatus();
-
-  const userMenuItems: MenuProps["items"] = useMemo(
-    () => [
-      {
-        key: "user-info",
-        label: (
-          <div style={{ padding: "8px 4px", minWidth: 200 }}>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{user.nombres}</div>
-            <div style={{ fontSize: 12, color: "#8c8c8c" }}>{user.email}</div>
-          </div>
-        ),
-        disabled: true,
-      },
-      { type: "divider" },
-      {
-        key: "theme",
-        icon: isDark ? <BulbFilled /> : <BulbOutlined />,
-        label: isDark ? "Modo Claro" : "Modo Oscuro",
-        onClick: () => setMode(isDark ? "light" : "dark"),
-      },
-      { type: "divider" },
-      {
-        key: "logout",
-        icon: <LogoutOutlined />,
-        label: "Cerrar sesión",
-        danger: true,
-        onClick: () => {
-          // Conectá acá tu use case de logout (y clearCachePersistence(queryClient)).
-        },
-      },
-    ],
-    [isDark, setMode],
-  );
-
-  const getInitials = (name: string) =>
-    name
-      .split(" ")
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase();
+  const label = ROUTE_LABELS[pathname] ?? "Inicio";
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        width: "100%",
-        padding: isMobile ? "0 12px" : "0 24px",
-        height: 64,
-        minWidth: 0,
-      }}
-    >
-      <div
-        onClick={onToggleCollapse}
-        style={{
-          width: 36,
-          height: 36,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          borderRadius: 8,
-          transition: "all 0.2s",
-          color: "#595959",
-          fontSize: 16,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "#f5f5f5";
-          e.currentTarget.style.color = "#075335";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = "#595959";
-        }}
-      >
-        {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+    <header className="topbar">
+      <div style={{ display: "flex", alignItems: "center", gap: 13, minWidth: 0 }}>
+        <button type="button" className="burger" onClick={onToggleMobile} aria-label="Abrir menú">
+          <MenuOutlined />
+        </button>
+        <div className="crumb">
+          <span className="crumb-brand">IMVOLT</span>
+          <span className="sep">/</span>
+          <b>{label}</b>
+        </div>
       </div>
 
-      <Space size={isMobile ? 8 : 12} align="center">
-        {!isOnline && (
-          <Tooltip title="Sin conexión: los datos pueden estar desactualizados y no se pueden hacer cambios">
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: isMobile ? 0 : 6,
-                padding: isMobile ? 0 : "4px 10px",
-                borderRadius: 6,
-                background: isMobile ? "transparent" : "#FBF3DE",
-                border: isMobile ? "none" : "1px solid #E8C25C",
-                color: "#A87C1A",
-                fontSize: 12,
-                fontWeight: 500,
-              }}
-            >
-              <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: "#E8C25C",
-                  flexShrink: 0,
-                }}
-              />
-              {!isMobile && "Sin conexión"}
-            </div>
-          </Tooltip>
-        )}
-
-        <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={["click"]}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              cursor: "pointer",
-              padding: isMobile ? 2 : "6px 12px",
-              borderRadius: 10,
-              transition: "all 0.2s",
-              border: isMobile ? "none" : "1px solid #f0f0f0",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#fafafa";
-              e.currentTarget.style.borderColor = "#d9d9d9";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "#f0f0f0";
-            }}
-          >
-            <Avatar
-              size={32}
-              style={{
-                background: IMVOLT_GRADIENT,
-                fontWeight: 600,
-                fontSize: 12,
-                flexShrink: 0,
-              }}
-            >
-              {getInitials(user.nombres)}
-            </Avatar>
-            {!isMobile && (
-              <div style={{ lineHeight: 1.2 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: "#262626" }}>
-                  {user.nombres}
-                </div>
-                <div style={{ fontSize: 11, color: "#8c8c8c" }}>{user.email}</div>
-              </div>
-            )}
-          </div>
-        </Dropdown>
-      </Space>
-    </div>
+      <div className="top-actions">
+        <span className="pill demo-pill hide-sm">
+          <span className="dot" />
+          DEMO INTERACTIVA
+        </span>
+        <span className="pill hide-sm">◈ {wallet?.saldo ?? 0} créditos simulados</span>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => navigate("/estudio")}
+        >
+          <ThunderboltOutlined />
+          Crear con AI
+        </button>
+        <Link to="/configuracion" className="pill" title="Configuración" style={{ padding: "7px 11px" }}>
+          ⚙
+        </Link>
+      </div>
+    </header>
   );
 }

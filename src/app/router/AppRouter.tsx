@@ -11,13 +11,13 @@ import { AnaliticaPage } from "@/presentation/pages/analitica/AnaliticaPage";
 import { ConfiguracionPage } from "@/presentation/pages/configuracion/ConfiguracionPage";
 
 /**
- * Rutas IMVOLT según el mapa de navegación del documento maestro:
+ * Rutas IMVOLT — mapa de navegación del prototipo (UI Concept 01):
  *
- *   /dashboard      Dashboard        /plantillas     Plantillas
- *   /proyectos      Proyectos        /estudio        Estudio IA
- *   /propiedades    Propiedades      /campanas       Campañas
- *                  /contactos        Contactos       /analitica      Analítica
- *                  /configuracion    Configuración
+ *   /inicio         Inicio            /plantillas      Plantillas
+ *   /propiedades    Mis propiedades   /estudio         Estudio IA
+ *   /campanas       Campañas Meta     /contactos       Contactos
+ *   /analitica      Analítica         /configuracion   Configuración
+ *   /proyectos      Proyectos (secundaria, enlace desde Mis propiedades)
  *
  * No hay auth en el MVP mock: si lo necesitás, envolvé las rutas privadas
  * con un ProtectedRoute y agregá /login.
@@ -27,17 +27,18 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/proyectos" element={<ProyectosPage />} />
+          <Route path="/inicio" element={<DashboardPage />} />
           <Route path="/propiedades" element={<PropiedadesPage />} />
+          <Route path="/proyectos" element={<ProyectosPage />} />
           <Route path="/plantillas" element={<PlantillasPage />} />
           <Route path="/estudio" element={<EstudioPage />} />
           <Route path="/campanas" element={<CampanasPage />} />
           <Route path="/contactos" element={<ContactosPage />} />
           <Route path="/analitica" element={<AnaliticaPage />} />
           <Route path="/configuracion" element={<ConfiguracionPage />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/inicio" replace />} />
+          <Route path="/dashboard" element={<Navigate to="/inicio" replace />} />
+          <Route path="*" element={<Navigate to="/inicio" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

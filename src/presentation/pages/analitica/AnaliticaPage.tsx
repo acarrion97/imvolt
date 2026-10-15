@@ -1,210 +1,212 @@
 import { useMemo } from "react";
-import { Card, Col, Empty, Row, Statistic, Table, Typography } from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { PageToolbar } from "@/presentation/components/common/PageToolbar";
-import { EstadoLeadTag } from "@/presentation/components/common/status";
-import { useCampanas, useGeneraciones, useLeads, useTransacciones } from "@/presentation/hooks";
-import { brand } from "@/presentation/theme/brand";
-import type { LeadEstado } from "@/domain/lead";
+import {
+  AimOutlined,
+  DollarOutlined,
+  RiseOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
+import { useCampanas, useGeneraciones, useLeads, usePropiedades, useTransacciones } from "@/presentation/hooks";
+import type { LeadFuente } from "@/domain/lead";
+import dayjs from "dayjs";
 
-const { Text } = Typography;
+const FUENTE_LABELS: Record<LeadFuente, string> = {
+  meta_formulario: "Meta formulario",
+  whatsapp: "WhatsApp",
+  landing: "Landing",
+  manual: "Manual",
+  lotes_al_mando: "Lotes al Mando",
+};
 
-interface LeadRow {
-  estado: LeadEstado;
-  total: number;
-  porcentaje: number;
-}
+const PUNTOS = 12;
 
-interface CampanaRow {
-  campaign_id: string;
-  nombre: string;
-  leads: number;
-  presupuesto: number;
-}
-
+/**
+ * Analítica — UI Concept 01: cuatro métricas, gráfico de barras por día
+ * (actividad real de la demo) y panel de lectura de resultados.
+ */
 export function AnaliticaPage() {
   const { data: leads } = useLeads();
   const { data: campanas } = useCampanas();
   const { data: generaciones } = useGeneraciones();
+  const { data: propiedades } = usePropiedades();
   const { data: transacciones } = useTransacciones();
 
-  const totalLeads = leads?.length ?? 0;
+  const inversion = useMemo(
+    () =>
+      (transacciones ?? [])
+        .filter((t) => t.tipo === "consumo")
+        .reduce((acc, t) => acc + Math.abs(Number(t.monto)), 0),
+    [transacciones],
+  );
 
-  const leadsPorEstado = useMemo<LeadRow[]>(() => {
-    const counts = new Map<LeadEstado, number>();
-    for (const l of leads ?? []) counts.set(l.estado, (counts.get(l.estado) ?? 0) + 1);
-    return [...counts.entries()]
-      .map(([estado, total]) => ({
-        estado,
-        total,
-        porcentaje: totalLeads ? Math.round((total / totalLeads) * 100) : 0,
-      }))
-      .sort((a, b) => b.total - a.total);
-  }, [leads, totalLeads]);
+  const contactados = (leads ?? []).filter((l) =>
+    ["contactado", "calificado", "visitado", "cerrado"].includes(l.estado),
+  ).length;
+  const costoPorLead = (leads ?? []).length > 0 ? inversion / (leads ?? []).length : 0;
+  const activas = (campanas ?? []).filter((c) =>
+    ["active", "published_paused", "approved"].includes(c.estado),
+  ).length;
 
-  const leadsPorCampana = useMemo<CampanaRow[]>(() => {
-    const counts = new Map<string, number>();
-    for (const l of leads ?? []) {
-      if (l.campaign_id) counts.set(l.campaign_id, (counts.get(l.campaign_id) ?? 0) + 1);
-    }
-    return (campanas ?? [])
-      .map((c) => ({
-        campaign_id: c.campaign_id,
-        nombre: c.nombre,
-        leads: counts.get(c.campaign_id) ?? 0,
-        presupuesto: c.presupuesto_maximo,
-      }))
-      .sort((a, b) => b.leads - a.leads);
-  }, [leads, campanas]);
+  /** Leads por día (últimos 12 días) a partir de los datos reales de la demo. */
+  const serie = useMemo(() => {
+    const hoy = dayjs().startOf("day");
+    return Array.from({ length: PUNTOS }, (_, i) => {
+      const d = hoy.subtract(PUNTOS - 1 - i, "day");
+      const n = (leads ?? []).filter((l) => dayjs(l.created_at).isSame(d, "day")).length;
+      return { key: d.format("YYYY-MM-DD"), label: d.format("DD/MM"), n };
+    });
+  }, [leads]);
+  const maxSerie = Math.max(1, ...serie.map((p) => p.n));
 
-  const resumenGeneraciones = useMemo(() => {
-    const rows = generaciones ?? [];
-    const completadas = rows.filter((g) => g.status === "completed").length;
-    const fallidas = rows.filter((g) => g.status === "failed").length;
-    const creditos = rows.reduce((sum, g) => sum + (g.status === "completed" ? g.credits_cost : 0), 0);
-    const tasa = rows.length ? Math.round((completadas / rows.length) * 100) : 0;
-    return { total: rows.length, completadas, fallidas, creditos, tasa };
-  }, [generaciones]);
+  const porFuente = useMemo(() => {
+    const counts = new Map<LeadFuente, number>();
+    for (const l of leads ?? []) counts.set(l.fuente, (counts.get(l.fuente) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  }, [leads]);
 
-  const gastoCreditos = useMemo(() => {
-    const rows = transacciones ?? [];
-    return rows
-      .filter((t) => t.monto < 0)
-      .reduce((sum, t) => sum + Math.abs(t.monto), 0);
-  }, [transacciones]);
-
-  const leadColumns: ColumnsType<LeadRow> = [
-    {
-      title: "Estado",
-      dataIndex: "estado",
-      key: "estado",
-      render: (estado: LeadEstado) => <EstadoLeadTag estado={estado} />,
-    },
-    { title: "Leads", dataIndex: "total", key: "total", width: 90 },
-    {
-      title: "Participación",
-      dataIndex: "porcentaje",
-      key: "porcentaje",
-      width: 140,
-      render: (p: number) => `${p}%`,
-    },
-  ];
-
-  const campanaColumns: ColumnsType<CampanaRow> = [
-    { title: "Campaña", dataIndex: "nombre", key: "nombre" },
-    { title: "Leads", dataIndex: "leads", key: "leads", width: 90 },
-    {
-      title: "Presupuesto/día",
-      dataIndex: "presupuesto",
-      key: "presupuesto",
-      width: 150,
-      render: (v: number) => `$${v}`,
-    },
-    {
-      title: "Leads por $",
-      key: "ratio",
-      width: 120,
-      render: (_, row) =>
-        row.presupuesto > 0 ? (row.leads / row.presupuesto).toFixed(2) : "—",
-    },
-  ];
+  const creadosRecientes = (leads ?? []).filter((l) =>
+    dayjs(l.created_at).isAfter(dayjs().subtract(7, "day")),
+  ).length;
 
   return (
     <div>
-      <PageToolbar
-        title="Analítica"
-        subtitle="Conversión de leads, rendimiento de campañas y consumo de créditos."
-      />
+      <div className="header">
+        <div>
+          <p className="eyebrow">Crecimiento</p>
+          <h1>Analítica y desempeño</h1>
+          <p className="sub">
+            Señales del workspace: creativos, campañas, contactos e inversión en créditos.
+          </p>
+        </div>
+      </div>
 
-      <Row gutter={[16, 16]}>
-        <Col xs={12} xl={6}>
-          <Card hoverable style={{ borderRadius: 12 }}>
-            <Statistic
-              title={<Text type="secondary">Total leads</Text>}
-              value={totalLeads}
-              valueStyle={{ fontWeight: 700, color: brand.light.primary }}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} xl={6}>
-          <Card hoverable style={{ borderRadius: 12 }}>
-            <Statistic
-              title={<Text type="secondary">Tasa de generación IA</Text>}
-              value={resumenGeneraciones.tasa}
-              suffix="%"
-              valueStyle={{ fontWeight: 700 }}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} xl={6}>
-          <Card hoverable style={{ borderRadius: 12 }}>
-            <Statistic
-              title={<Text type="secondary">Generaciones completadas</Text>}
-              value={resumenGeneraciones.completadas}
-              suffix={`/ ${resumenGeneraciones.total}`}
-              valueStyle={{ fontWeight: 700 }}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} xl={6}>
-          <Card hoverable style={{ borderRadius: 12 }}>
-            <Statistic
-              title={<Text type="secondary">Créditos consumidos</Text>}
-              value={resumenGeneraciones.creditos}
-              valueStyle={{ fontWeight: 700 }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <div className="grid cols4">
+        <div className="card stat">
+          <span className="stat-icon">
+            <TeamOutlined />
+          </span>
+          <span className="stat-body">
+            <span className="stat-label">Leads capturados</span>
+            <div className="stat-value">{leads?.length ?? 0}</div>
+            <span className="delta">{creadosRecientes} en los últimos 7 días</span>
+          </span>
+        </div>
 
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} lg={12}>
-          <Card title="Leads por estado" size="small" style={{ borderRadius: 12 }}>
-            {leadsPorEstado.length === 0 ? (
-              <Empty description="Sin datos de leads" />
-            ) : (
-              <Table<LeadRow>
-                columns={leadColumns}
-                dataSource={leadsPorEstado}
-                rowKey="estado"
-                size="small"
-                pagination={false}
-              />
-            )}
-          </Card>
-        </Col>
+        <div className="card stat">
+          <span className="stat-icon">
+            <AimOutlined />
+          </span>
+          <span className="stat-body">
+            <span className="stat-label">Contactados</span>
+            <div className="stat-value">{contactados}</div>
+            <span className="delta muted">
+              {leads?.length
+                ? `${Math.round((contactados / (leads?.length ?? 1)) * 100)}% del total`
+                : "Sin datos"}
+            </span>
+          </span>
+        </div>
 
-        <Col xs={24} lg={12}>
-          <Card title="Rendimiento por campaña" size="small" style={{ borderRadius: 12 }}>
-            {leadsPorCampana.length === 0 ? (
-              <Empty description="Sin campañas registradas" />
-            ) : (
-              <Table<CampanaRow>
-                columns={campanaColumns}
-                dataSource={leadsPorCampana}
-                rowKey="campaign_id"
-                size="small"
-                pagination={false}
-              />
-            )}
-          </Card>
-        </Col>
+        <div className="card stat">
+          <span className="stat-icon">
+            <DollarOutlined />
+          </span>
+          <span className="stat-body">
+            <span className="stat-label">Costo por lead</span>
+            <div className="stat-value">
+              {costoPorLead > 0 ? `${Math.round(costoPorLead)} cr.` : "—"}
+            </div>
+            <span className="delta muted">Créditos consumidos / leads</span>
+          </span>
+        </div>
 
-        <Col xs={24}>
-          <Card title="Consumo de créditos" size="small" style={{ borderRadius: 12 }}>
-            <Statistic
-              title={<Text type="secondary">Total consumido en generaciones IA</Text>}
-              value={gastoCreditos}
-              suffix="créditos"
-              valueStyle={{ fontWeight: 700 }}
-            />
-            <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 8 }}>
-              Los créditos se reservan al cotizar y se consumen al completarse la generación. Las
-              generaciones fallidas se devuelven automáticamente (§09).
-            </Text>
-          </Card>
-        </Col>
-      </Row>
+        <div className="card stat">
+          <span className="stat-icon">
+            <RiseOutlined />
+          </span>
+          <span className="stat-body">
+            <span className="stat-label">Inversión</span>
+            <div className="stat-value">{inversion} cr.</div>
+            <span className="delta muted">{activas} campañas en curso</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="grid cols3" style={{ marginTop: 20, alignItems: "start" }}>
+        <div className="card card-pad" style={{ gridColumn: "span 2" }}>
+          <h2 style={{ fontSize: 17, marginBottom: 4 }}>Leads por día</h2>
+          <p className="sub" style={{ marginBottom: 4 }}>
+            Actividad de captación de los últimos {PUNTOS} días.
+          </p>
+
+          <div className="chart">
+            {serie.map((p) => (
+              <div
+                key={p.key}
+                className="bar"
+                style={{ height: `${Math.max(4, (p.n / maxSerie) * 100)}%` }}
+              >
+                <em>
+                  {p.label}: {p.n} leads
+                </em>
+              </div>
+            ))}
+          </div>
+          <div className="chartlabel">
+            {serie.map((p) => (
+              <span key={p.key}>{p.label}</span>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 22 }}>
+            <h2 style={{ fontSize: 16, marginBottom: 6 }}>Lectura de resultados</h2>
+            <div className="metric-pair">
+              <span>Tasa de contacto</span>
+              <strong>
+                {leads?.length ? `${Math.round((contactados / (leads?.length ?? 1)) * 100)}%` : "—"}
+              </strong>
+            </div>
+            <div className="metric-pair">
+              <span>Campañas activas</span>
+              <strong>
+                {activas} de {campanas?.length ?? 0}
+              </strong>
+            </div>
+            <div className="metric-pair">
+              <span>Creativos completados</span>
+              <strong>
+                {(generaciones ?? []).filter((g) => g.status === "completed").length} de{" "}
+                {generaciones?.length ?? 0}
+              </strong>
+            </div>
+            <div className="metric-pair">
+              <span>Propiedades con render IA</span>
+              <strong>
+                {(propiedades ?? []).filter((p) => p.tiene_render_conceptual).length} de{" "}
+                {propiedades?.length ?? 0}
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="card card-pad" style={{ alignSelf: "start" }}>
+          <h2 style={{ fontSize: 16, marginBottom: 10 }}>Leads por fuente</h2>
+          {porFuente.length === 0 && <p className="sub">Sin leads registrados todavía.</p>}
+          {porFuente.map(([fuente, n]) => (
+            <div key={fuente} className="list-row">
+              <span className="who">
+                <span className={`list-dot${fuente === "manual" ? " grey" : ""}`} />
+                {FUENTE_LABELS[fuente] ?? fuente}
+              </span>
+              <span className="amount">{n}</span>
+            </div>
+          ))}
+
+          <div className="notice" style={{ marginTop: 18, marginBottom: 0 }}>
+            Las métricas provienen de la demo: al conectar Meta y el webhook de leads pasarán a ser
+            datos reales.
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
