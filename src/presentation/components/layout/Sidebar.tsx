@@ -10,7 +10,8 @@ import {
   SettingOutlined,
   UsergroupAddOutlined,
 } from "@ant-design/icons";
-import { useWallet } from "@/presentation/hooks";
+import { useAuth, useWallet } from "@/presentation/hooks";
+import { capitalize, initials } from "@/presentation/components/common/userLabel";
 
 /**
  * Barra lateral IMVOLT — UI Concept 01 del prototipo interactivo:
@@ -50,8 +51,18 @@ interface SidebarProps {
 export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   const navigate = useNavigate();
   const { data: wallet } = useWallet();
+  const { perfil, rol } = useAuth();
   const saldo = wallet?.saldo ?? 0;
   const pct = Math.max(4, Math.min(100, Math.round((saldo / CUOTA_MENSUAL) * 100)));
+
+  // Con sesión real: empresa activa + usuario/rol (modo mock: datos de ejemplo).
+  const organizacion = perfil?.usuario.empresa?.razon_social ?? "Urbaniza Capital";
+  const detalle = perfil
+    ? rol
+      ? capitalize(rol)
+      : perfil.usuario.email
+    : "Organización de ejemplo";
+  const avatar = perfil ? initials(organizacion) || "IM" : "IV";
 
   const renderItems = (items: NavItem[]) =>
     items.map((item) => (
@@ -103,10 +114,10 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
           onClick={() => navigate("/configuracion")}
           title="Abrir configuración"
         >
-          <span className="avatar">IV</span>
+          <span className="avatar">{avatar}</span>
           <span className="profile">
-            <b>Urbaniza Capital</b>
-            <small>Organización de ejemplo</small>
+            <b>{organizacion}</b>
+            <small>{detalle}</small>
           </span>
         </button>
       </div>

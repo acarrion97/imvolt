@@ -1,4 +1,12 @@
 import type {
+  AuthRepository,
+  AuthRol,
+  AuthUsuario,
+  LoginInput,
+  Perfil,
+  Session,
+} from "@/domain/auth";
+import type {
   Campana,
   CampanaCreate,
   CampanaRepository,
@@ -27,7 +35,7 @@ import type {
 } from "@/domain/credito";
 
 import { RestCrudRepository } from "@/infrastructure/repositories/rest/RestCrudRepository";
-import { buildQuery, http } from "@/infrastructure/http/httpClient";
+import { ApiError, buildQuery, http } from "@/infrastructure/http/httpClient";
 
 /**
  * Repositorios REST: una línea de recurso por entidad, alineada con el
@@ -155,5 +163,33 @@ export class RestTransaccionRepository
 {
   constructor() {
     super("v1/billing/transactions");
+  }
+}
+
+/**
+ * Autenticación contra el API (`/api/auth`):
+ *
+ *   POST /api/auth/login  → { access_token, refresh_token, user_id }
+ *   GET  /api/auth/me     → { usuario (con empresa), roles[] }
+ *
+ * El cierre de sesión es local (borrar la sesión persistida): el API no
+ * expone logout y los tokens de Supabase caducan por sí solos.
+ */
+export class RestAuthRepository implements AuthRepository {
+  async login(input: LoginInput): Promise<Session> {
+    return http.post<Session>("/auth/login", input);
+  }
+
+  async me(): Promise<Perfil> {
+    const response = await http.get<{ usuario: AuthUsuario | null; roles: AuthRol[] }>("/auth/me");
+
+    if (!response.usuario) {
+      throw new ApiError(
+        "El usuario no tiene una cuenta registrada en la plataforma",
+        404,
+      );
+    }
+
+    return { usuario: response.usuario, roles: response.roles ?? [] };
   }
 }

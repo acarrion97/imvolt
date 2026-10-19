@@ -1,4 +1,5 @@
 import type { FilterParams } from "@/domain/core/repositories/CrudRepository";
+import { clearSession, readSession } from "@/infrastructure/auth/sessionStore";
 
 const API_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
 const TIMEOUT_MS = 15000;
@@ -66,8 +67,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const headers: Record<string, string> = { Accept: "application/json" };
     if (init?.body) headers["Content-Type"] = "application/json";
 
-    const token = import.meta.env.VITE_API_TOKEN;
+    // La sesión del login manda; VITE_API_TOKEN queda como alternativa de
+    // desarrollo para golpear el API sin pasar por /auth/login.
+    const session = readSession();
+    const token = session?.access_token ?? import.meta.env.VITE_API_TOKEN;
     if (token) headers.Authorization = `Bearer ${token}`;
+    // Tenant activo (multiempresa): el API lo resuelve por defecto con la
+    // empresa del usuario y este header permite alternar (README del API).
+    if (session?.empresa_id) headers["X-Empresa-Id"] = String(session.empresa_id);
 
     const response = await fetch(`${API_URL}${path}`, {
       ...init,
@@ -78,6 +85,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const body = parseBody(await response.text());
 
     if (!response.ok) {
+      // Token vencido o revocado: la sesión deja de servir en toda la app.
+      if (response.status === 401 && session) clearSession();
       throw new ApiError(extractMessage(body, response.status), response.status, body);
     }
 

@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/presentation/components/layout/AppLayout";
+import { LoginPage } from "@/presentation/pages/auth/LoginPage";
+import { RequireAuth } from "./RequireAuth";
 import { DashboardPage } from "@/presentation/pages/dashboard/DashboardPage";
 import { ProyectosPage } from "@/presentation/pages/proyectos/ProyectosPage";
 import { PropiedadesPage } from "@/presentation/pages/propiedades/PropiedadesPage";
@@ -13,20 +15,29 @@ import { ConfiguracionPage } from "@/presentation/pages/configuracion/Configurac
 /**
  * Rutas IMVOLT — mapa de navegación del prototipo (UI Concept 01):
  *
+ *   /login          Acceso (solo VITE_DATA_PROVIDER=rest)
  *   /inicio         Inicio            /plantillas      Plantillas
  *   /propiedades    Mis propiedades   /estudio         Estudio IA
  *   /campanas       Campañas Meta     /contactos       Contactos
  *   /analitica      Analítica         /configuracion   Configuración
  *   /proyectos      Proyectos (secundaria, enlace desde Mis propiedades)
  *
- * No hay auth en el MVP mock: si lo necesitás, envolvé las rutas privadas
- * con un ProtectedRoute y agregá /login.
+ * Todas las rutas de la app pasan por `RequireAuth`: con el API real exige
+ * sesión (token en localStorage) y en modo mock deja pasar sin login.
  */
 export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<AppLayout />}>
+        <Route path="/login" element={<LoginPage />} />
+
+        <Route
+          element={
+            <RequireAuth>
+              <AppLayout />
+            </RequireAuth>
+          }
+        >
           <Route path="/inicio" element={<DashboardPage />} />
           <Route path="/propiedades" element={<PropiedadesPage />} />
           <Route path="/proyectos" element={<ProyectosPage />} />

@@ -153,3 +153,4 @@ export function useRecargarCreditos() {
 
 // ── Utilidades ───────────────────────────────────────────────────────────────
 export { useOnlineStatus } from "./useOnlineStatus";
+export { useAuth } from "@/presentation/auth/AuthProvider";

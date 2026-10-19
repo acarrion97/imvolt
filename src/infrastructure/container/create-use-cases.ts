@@ -1,6 +1,7 @@
 import type { Repositories } from "./create-repositories";
 import type { CrudUseCases } from "@/application/core/crud-use-cases";
 
+import type { LoginInput, Perfil, Session } from "@/domain/auth";
 import type { Campana, CampanaCreate } from "@/domain/campana";
 import type { Conexion, ConexionCreate } from "@/domain/conexion";
 import type { Generacion, GeneracionCreate } from "@/domain/generacion";
@@ -32,6 +33,10 @@ export interface UseCases {
   getTransacciones: { execute(): Promise<TransaccionCredito[]> };
   recargarCreditos: RecargarCreditosUseCase;
   validarCampana: ValidarCampanaUseCase;
+
+  // autenticación (solo con VITE_DATA_PROVIDER=rest)
+  login: { execute(input: LoginInput): Promise<Session> };
+  obtenerPerfil: { execute(): Promise<Perfil> };
 }
 
 export function createUseCases(repos: Repositories): UseCases {
@@ -50,5 +55,8 @@ export function createUseCases(repos: Repositories): UseCases {
     getTransacciones: { execute: () => repos.walletRepo.getTransacciones() },
     recargarCreditos: new RecargarCreditosUseCase(repos.walletRepo),
     validarCampana: new ValidarCampanaUseCase(repos.campanaRepo),
+
+    login: { execute: (input) => repos.authRepo.login(input) },
+    obtenerPerfil: { execute: () => repos.authRepo.me() },
   };
 }

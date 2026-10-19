@@ -1,3 +1,4 @@
+import type { AuthRepository, LoginInput, Perfil, Session } from "@/domain/auth";
 import type {
   Campana,
   CampanaCreate,
@@ -347,5 +348,24 @@ export class MockTransaccionRepository
 
   override async create(data: TransaccionCreditoCreate): Promise<TransaccionCredito> {
     return super.createWithId(uuid(), data);
+  }
+}
+
+// ── Autenticación ────────────────────────────────────────────────────────────
+/**
+ * Auth no existe en modo mock: el prototipo arranca sin backend y sin
+ * login (el `AuthProvider` queda en estado "disabled"). Este implementador
+ * solo existe para que el contenedor pueda ensamblarse en ambos modos.
+ */
+const AUTH_MOCK_ERROR =
+  'La autenticación no está disponible con VITE_DATA_PROVIDER="mock". Usa "rest" para entrar con el API.';
+
+export class MockAuthRepository implements AuthRepository {
+  async login(_input: LoginInput): Promise<Session> {
+    throw new Error(AUTH_MOCK_ERROR);
+  }
+
+  async me(): Promise<Perfil> {
+    throw new Error(AUTH_MOCK_ERROR);
   }
 }

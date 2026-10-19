@@ -1,4 +1,5 @@
 import type { CampanaRepository } from "@/domain/campana";
+import type { AuthRepository } from "@/domain/auth";
 import type { ConexionRepository } from "@/domain/conexion";
 import type { GeneracionRepository } from "@/domain/generacion";
 import type { LeadRepository } from "@/domain/lead";
@@ -9,6 +10,7 @@ import type { ProyectoRepository } from "@/domain/proyecto";
 import type { TransaccionRepository, WalletRepository } from "@/domain/credito";
 
 import {
+  MockAuthRepository,
   MockCampanaRepository,
   MockConexionRepository,
   MockGeneracionRepository,
@@ -21,6 +23,7 @@ import {
   MockWalletRepository,
 } from "@/infrastructure/repositories/mock/MockRepositories";
 import {
+  RestAuthRepository,
   RestCampanaRepository,
   RestConexionRepository,
   RestGeneracionRepository,
@@ -49,6 +52,8 @@ export interface Repositories {
   leadRepo: LeadRepository;
   walletRepo: WalletRepository;
   transaccionRepo: TransaccionRepository;
+  /** Sesión de usuario (solo útil con VITE_DATA_PROVIDER=rest). */
+  authRepo: AuthRepository;
 }
 
 function createMockRepositories(): Repositories {
@@ -63,6 +68,7 @@ function createMockRepositories(): Repositories {
     leadRepo: new MockLeadRepository(),
     walletRepo: new MockWalletRepository(),
     transaccionRepo: new MockTransaccionRepository(),
+    authRepo: new MockAuthRepository(),
   };
 }
 
@@ -84,6 +90,7 @@ function createRestRepositories(): Repositories {
     leadRepo: new RestLeadRepository(),
     walletRepo: new RestWalletRepository(),
     transaccionRepo: new RestTransaccionRepository(),
+    authRepo: new RestAuthRepository(),
   };
 }
 

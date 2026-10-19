@@ -30,6 +30,26 @@ VITE_DATA_PROVIDER=rest
 VITE_API_URL=http://localhost:3000/api
 ```
 
+## Autenticación
+
+Con `VITE_DATA_PROVIDER=rest` la app exige sesión:
+
+- `/login` llama a `POST /api/auth/login` y persiste la sesión en `localStorage`
+  (clave `imvolt-session`); `presentation/auth/AuthProvider.tsx` la restaura con
+  `GET /api/auth/me` al recargar y expone `useAuth()` → `status`, `perfil`,
+  `rol`, `login()`, `logout()`.
+- Todas las rutas pasan por `RequireAuth`: sin sesión → `/login` recordando la
+  ruta original en `state.from`. El cierre de sesión (menú del usuario en la
+  topbar) borra la sesión y la caché persistida en IndexedDB.
+- `infrastructure/http/httpClient.ts` envía `Authorization: Bearer <token>` y
+  `X-Empresa-Id` (empresa activa resuelta por `/auth/me`); un **401** en
+  cualquier petición cierra la sesión en toda la app.
+- En modo `mock` **no hay login**: el `AuthProvider` queda en `disabled` y la
+  app arranca directo al Inicio, como siempre.
+
+El registro todavía no tiene pantalla: se hace con `POST /api/auth/register`
+desde `/documentacion` del API.
+
 ## Pantallas
 
 | Ruta | Pantalla | Contenido |
@@ -50,7 +70,7 @@ VITE_API_URL=http://localhost:3000/api
 src/
 ├── domain/            Entidades IMVOLT (snake_case, IDs UUID = esquema SQL)
 │   ├── proyecto/  propiedad/  plantilla/  modelo/  generacion/
-│   ├── campana/   lead/       credito/    conexion/
+│   ├── campana/   lead/       credito/    conexion/   auth/
 │   └── core/repositories/CrudRepository.ts   Contrato CRUD genérico
 ├── application/       Casos de uso (CRUD genérico + negocio: recarga, validar campaña)
 ├── infrastructure/
@@ -58,14 +78,16 @@ src/
 │   ├── repositories/  mock (InMemory, con semillas) y rest (Fetch)
 │   ├── seeds/         Datos semilla realistas por defecto
 │   ├── cache/         queryKeys, persistencia IndexedDB y política por dominio
+│   ├── auth/          sessionStore: sesión en localStorage + suscriptores
 │   └── http/          Cliente HTTP (timeout, Bearer, ApiError)
 └── presentation/
     ├── theme/         brand.ts, temas AntD (light/dark) y art.css (ilustraciones)
     ├── components/    layout/ (Sidebar carbón + topbar), common/ (DataTable, estados)
+    ├── auth/          AuthProvider + useAuth (estado de sesión)
     ├── hooks/         useProyectos, usePropiedades, useGeneraciones, ...
     ├── validations/   Esquemas Zod por formulario
     └── pages/         inicio, propiedades, plantillas, estudio, campanas,
-                       contactos, analitica, configuracion, proyectos
+                       contactos, analitica, configuracion, proyectos, auth/login
 ```
 
 Los estilos del prototipo viven en `src/index.css` (clases `.sidebar`, `.hero`, `.item-card`,
@@ -80,8 +102,8 @@ propiedad están en `src/presentation/theme/art.css` (SVG del prototipo).
   consultas por foránea de un golpe.
 - **Caché persistida**: solo `plantillas`, `modelos` y `proyectos` sobreviven al cierre del
   navegador (política explícita en `cache/cachePolicy.ts`).
-- **Multi-tenant**: la API acota por `organization_id`; en modo REST el header `X-Org-Id` viaja
-  desde la configuración de sesión.
+- **Multi-tenant**: la API acota por `empresa_id`; en modo REST el header `X-Empresa-Id`
+  viaja desde la sesión (empresa activa resuelta con `GET /api/auth/me`).
 - **§07 fidelidad de contenido**: los renders IA se etiquetan como conceptuales en catálogo y
   Estudio. **§09**: la cotización sale del registro vivo de modelos (nunca hardcodeada).
 
