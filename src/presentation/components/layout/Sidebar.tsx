@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   ApartmentOutlined,
   BarChartOutlined,
+  BgColorsOutlined,
   HomeOutlined,
   LayoutOutlined,
   NotificationOutlined,
@@ -31,6 +32,7 @@ const ESPACIO: NavItem[] = [
   { key: "/propiedades", label: "Mis propiedades", icon: <ApartmentOutlined /> },
   { key: "/estudio", label: "Estudio IA", icon: <RobotOutlined /> },
   { key: "/plantillas", label: "Plantillas", icon: <LayoutOutlined /> },
+  { key: "/brand-kit", label: "Brand Kit", icon: <BgColorsOutlined /> },
   { key: "/campanas", label: "Campañas Meta", icon: <NotificationOutlined /> },
   { key: "/contactos", label: "Contactos", icon: <UsergroupAddOutlined /> },
   { key: "/analitica", label: "Analítica", icon: <BarChartOutlined /> },

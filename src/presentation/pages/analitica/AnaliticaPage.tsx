@@ -179,9 +179,9 @@ export function AnaliticaPage() {
               </strong>
             </div>
             <div className="metric-pair">
-              <span>Propiedades con render IA</span>
+              <span>Propiedades con medios autorizados</span>
               <strong>
-                {(propiedades ?? []).filter((p) => p.tiene_render_conceptual).length} de{" "}
+                {(propiedades ?? []).filter((p) => (p.medios_autorizados ?? []).length > 0).length} de{" "}
                 {propiedades?.length ?? 0}
               </strong>
             </div>

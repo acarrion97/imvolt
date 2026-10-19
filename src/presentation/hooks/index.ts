@@ -24,15 +24,11 @@ export const {
   useDelete: useDeletePropiedad,
 } = propiedadesHooks;
 
-/** Propiedades filtradas por proyecto (la foránea es el scope más usado). */
-export function usePropiedadesByProyecto(projectId: string | undefined) {
-  const { propiedades } = getContainer();
-  return useQuery({
-    queryKey: queryKeys.propiedadesByProyecto(projectId ?? ""),
-    queryFn: () => propiedades.list.execute({ project_id: projectId }),
-    enabled: Boolean(projectId),
-  });
-}
+// ── Tipos de propiedad (catálogo de categorías) ──────────────────────────────
+export const { useList: useTiposPropiedad } = createCrudHooks(
+  getContainer().tiposPropiedad,
+  "tiposPropiedad",
+);
 
 // ── Plantillas ───────────────────────────────────────────────────────────────
 const plantillasHooks = createCrudHooks(getContainer().plantillas, "plantillas");
@@ -118,6 +114,117 @@ export function useLeadsByCampana(campaignId: string | undefined) {
     queryKey: queryKeys.leadsByCampana(campaignId ?? ""),
     queryFn: () => leads.list.execute({ campaign_id: campaignId }),
     enabled: Boolean(campaignId),
+  });
+}
+
+// ── Brand Kit ────────────────────────────────────────────────────────────────
+const brandAssetsHooks = createCrudHooks(getContainer().brandAssets, "brandAssets");
+export const {
+  useList: useBrandAssets,
+  useById: useBrandAsset,
+  useCreate: useCreateBrandAsset,
+  useUpdate: useUpdateBrandAsset,
+  useDelete: useDeleteBrandAsset,
+} = brandAssetsHooks;
+
+const brandColorsHooks = createCrudHooks(getContainer().brandColors, "brandColors");
+export const {
+  useList: useBrandColors,
+  useById: useBrandColor,
+  useCreate: useCreateBrandColor,
+  useUpdate: useUpdateBrandColor,
+  useDelete: useDeleteBrandColor,
+} = brandColorsHooks;
+
+/** Historial de versiones de un archivo del Brand Kit. */
+export function useBrandAssetVersiones(assetId: string | undefined) {
+  const { brandAssetStorage } = getContainer();
+  return useQuery({
+    queryKey: queryKeys.brandAssetVersiones(assetId ?? ""),
+    queryFn: () => brandAssetStorage.listarVersiones(assetId as string),
+    enabled: Boolean(assetId),
+  });
+}
+
+/**
+ * URL firmada de la versión activa, para previsualizar la tarjeta.
+ * `staleTime` por debajo de los 5 minutos de caducidad para que la URL
+ * vuelva a pedirse antes de expirar.
+ */
+export function useBrandAssetPreview(assetId: string | undefined, activo: boolean) {
+  const { brandAssetStorage } = getContainer();
+  return useQuery({
+    queryKey: queryKeys.brandAssetPreview(assetId ?? ""),
+    queryFn: () => brandAssetStorage.descargar(assetId as string),
+    enabled: Boolean(assetId) && activo,
+    staleTime: 4 * 60 * 1000,
+    retry: false,
+  });
+}
+
+/** Sube una nueva versión del archivo (pasa a ser la activa). */
+export function useSubirBrandAssetVersion() {
+  const queryClient = useQueryClient();
+  const { brandAssetStorage } = getContainer();
+  return useMutation({
+    mutationFn: ({
+      assetId,
+      file,
+      nota,
+    }: {
+      assetId: string;
+      file: File;
+      nota?: string | null;
+    }) => brandAssetStorage.subirVersion(assetId, file, nota),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: domainKey("brandAssets") });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.brandAssetVersiones(variables.assetId),
+      });
+    },
+  });
+}
+
+/** Devuelve la URL firmada de descarga (caduca en 5 minutos). */
+export function useDescargarBrandAsset() {
+  const { brandAssetStorage } = getContainer();
+  return useMutation({
+    mutationFn: ({ assetId, versionId }: { assetId: string; versionId?: string }) =>
+      versionId
+        ? brandAssetStorage.descargarVersion(assetId, versionId)
+        : brandAssetStorage.descargar(assetId),
+  });
+}
+
+/** Vuelve a activar una versión antigua. */
+export function useRestaurarBrandAssetVersion() {
+  const queryClient = useQueryClient();
+  const { brandAssetStorage } = getContainer();
+  return useMutation({
+    mutationFn: ({ assetId, versionId }: { assetId: string; versionId: string }) =>
+      brandAssetStorage.restaurarVersion(assetId, versionId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: domainKey("brandAssets") });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.brandAssetVersiones(variables.assetId),
+      });
+    },
+  });
+}
+
+/** Elimina una versión y su blob del bucket. */
+export function useEliminarBrandAssetVersion() {
+  const queryClient = useQueryClient();
+  const { brandAssetStorage } = getContainer();
+  return useMutation({
+    mutationFn: ({ assetId, versionId }: { assetId: string; versionId: string }) =>
+      brandAssetStorage.eliminarVersion(assetId, versionId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: domainKey("brandAssets") });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.brandAssetVersiones(variables.assetId),
+      });
+    },
   });
 }
 

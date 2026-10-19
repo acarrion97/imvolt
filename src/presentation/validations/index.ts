@@ -8,3 +8,5 @@ export { campanaSchema } from "./campanaSchema";
 export type { CampanaFormData } from "./campanaSchema";
 export { leadSchema } from "./leadSchema";
 export type { LeadFormData } from "./leadSchema";
+export { brandAssetSchema, brandColorSchema } from "./brandKitSchema";
+export type { BrandAssetFormData, BrandColorFormData } from "./brandKitSchema";

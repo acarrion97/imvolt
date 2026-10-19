@@ -23,8 +23,25 @@ import type {
 } from "@/domain/generacion";
 import type { Lead, LeadCreate, LeadRepository } from "@/domain/lead";
 import type { Modelo, ModeloCreate, ModeloRepository } from "@/domain/modelo";
+import type {
+  BrandAsset,
+  BrandAssetCreate,
+  BrandAssetDescarga,
+  BrandAssetRepository,
+  BrandAssetVersion,
+  BrandColor,
+  BrandColorCreate,
+  BrandColorRepository,
+} from "@/domain/brand-kit";
 import type { Plantilla, PlantillaCreate, PlantillaRepository } from "@/domain/plantilla";
-import type { Propiedad, PropiedadCreate, PropiedadRepository } from "@/domain/propiedad";
+import type {
+  Propiedad,
+  PropiedadCreate,
+  PropiedadRepository,
+  TipoPropiedad,
+  TipoPropiedadCreate,
+  TipoPropiedadRepository,
+} from "@/domain/propiedad";
 import type { Proyecto, ProyectoCreate, ProyectoRepository } from "@/domain/proyecto";
 import type {
   TransaccionCredito,
@@ -61,6 +78,17 @@ export class RestProyectoRepository
   }
 }
 
+// ── Tipos de propiedad (catálogo de categorías) ──────────────────────────────
+export class RestTipoPropiedadRepository
+  extends RestCrudRepository<TipoPropiedad, string, TipoPropiedadCreate>
+  implements TipoPropiedadRepository
+{
+  constructor() {
+    super("v1/tipos-propiedad");
+  }
+}
+
+// ── Propiedades ──────────────────────────────────────────────────────────────
 export class RestPropiedadRepository
   extends RestCrudRepository<Propiedad, string, PropiedadCreate>
   implements PropiedadRepository
@@ -68,9 +96,73 @@ export class RestPropiedadRepository
   constructor() {
     super("v1/propiedades");
   }
+}
 
-  async getByProyectoId(projectId: string): Promise<Propiedad[]> {
-    return this.getAll({ project_id: projectId });
+// ── Brand Kit: archivos de marca (CRUD + storage) ───────────────────────────
+/**
+ * Archivos del Brand Kit: el CRUD de metadatos usa el repositorio genérico y
+ * las operaciones de storage (subir versión, descargar, restaurar, borrar)
+ * van a las rutas propias del API (`extraRoutes`):
+ *
+ *   POST   /v1/brand-assets/{id}/versiones                    (multipart)
+ *   GET    /v1/brand-assets/{id}/versiones
+ *   GET    /v1/brand-assets/{id}/descarga                     (URL firmada)
+ *   GET    /v1/brand-assets/{id}/versiones/{vid}/descarga      (URL firmada)
+ *   POST   /v1/brand-assets/{id}/versiones/{vid}/restaurar
+ *   DELETE /v1/brand-assets/{id}/versiones/{vid}
+ */
+export class RestBrandAssetRepository
+  extends RestCrudRepository<BrandAsset, string, BrandAssetCreate>
+  implements BrandAssetRepository
+{
+  constructor() {
+    super("v1/brand-assets");
+  }
+
+  async listarVersiones(assetId: string): Promise<BrandAssetVersion[]> {
+    return http.get<BrandAssetVersion[]>(`/v1/brand-assets/${assetId}/versiones`);
+  }
+
+  async subirVersion(
+    assetId: string,
+    file: File,
+    nota?: string | null,
+  ): Promise<BrandAssetVersion> {
+    const form = new FormData();
+    form.append("archivo", file, file.name);
+    if (nota) form.append("nota", nota);
+    return http.postForm<BrandAssetVersion>(`/v1/brand-assets/${assetId}/versiones`, form);
+  }
+
+  async descargar(assetId: string): Promise<BrandAssetDescarga> {
+    return http.get<BrandAssetDescarga>(`/v1/brand-assets/${assetId}/descarga`);
+  }
+
+  async descargarVersion(assetId: string, versionId: string): Promise<BrandAssetDescarga> {
+    return http.get<BrandAssetDescarga>(
+      `/v1/brand-assets/${assetId}/versiones/${versionId}/descarga`,
+    );
+  }
+
+  async restaurarVersion(assetId: string, versionId: string): Promise<BrandAsset> {
+    return http.post<BrandAsset>(
+      `/v1/brand-assets/${assetId}/versiones/${versionId}/restaurar`,
+      {},
+    );
+  }
+
+  async eliminarVersion(assetId: string, versionId: string): Promise<void> {
+    await http.del(`/v1/brand-assets/${assetId}/versiones/${versionId}`);
+  }
+}
+
+// ── Brand Kit: colores de la paleta ─────────────────────────────────────────
+export class RestBrandColorRepository
+  extends RestCrudRepository<BrandColor, string, BrandColorCreate>
+  implements BrandColorRepository
+{
+  constructor() {
+    super("v1/brand-colors");
   }
 }
 

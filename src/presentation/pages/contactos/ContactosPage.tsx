@@ -74,8 +74,8 @@ export function ContactosPage() {
   const saving = createLead.isPending || updateLead.isPending;
 
   const interesMap = useMemo(() => {
-    const map = new Map((propiedades ?? []).map((p) => [p.property_id, p.nombre]));
-    return (id: string | null) => (id ? (map.get(id) ?? "â€”") : "â€”");
+    const map = new Map((propiedades ?? []).map((p) => [String(p.propiedad_id), p.nombre]));
+    return (id: string | null) => (id ? (map.get(String(id)) ?? "—") : "—");
   }, [propiedades]);
 
   const filtered = useMemo(() => {
@@ -378,7 +378,7 @@ export function ContactosPage() {
                 allowClear
                 placeholder="Sin propiedad"
                 options={(propiedades ?? []).map((p) => ({
-                  value: p.property_id,
+                  value: p.propiedad_id,
                   label: p.nombre,
                 }))}
               />

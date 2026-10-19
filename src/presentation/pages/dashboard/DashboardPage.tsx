@@ -18,6 +18,7 @@ import {
   useProyectos,
 } from "@/presentation/hooks";
 import { CATEGORIA_LABEL, artVariant } from "@/presentation/components/common/propiedadArt";
+import { categoriaDe } from "@/domain/propiedad";
 import { formatPrecio } from "@/presentation/components/common/status";
 
 /**
@@ -34,7 +35,7 @@ export function DashboardPage() {
   const { data: leads } = useLeads();
 
   const recientes = [...(propiedades ?? [])]
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .sort((a, b) => b.creado_en.localeCompare(a.creado_en))
     .slice(0, 3);
 
   const activas = (campanas ?? []).filter((c) =>
@@ -176,30 +177,31 @@ export function DashboardPage() {
       </div>
 
       <div className="grid cols3">
-        {recientes.map((p) => (
-          <div key={p.property_id} className="card item-card">
-            <div className={`art ${artVariant(p.categoria)}`}>
-              <span className="tag">{CATEGORIA_LABEL[p.categoria]}</span>
+        {recientes.map((p) => {
+          const categoria = categoriaDe(p);
+          return (
+            <div key={p.propiedad_id} className="card item-card">
+              <div className={`art ${artVariant(categoria)}`}>
+                <span className="tag">{CATEGORIA_LABEL[categoria]}</span>
+              </div>
+              <div className="item-meta">
+                <h3>{p.nombre}</h3>
+                <span className="where">{p.ubicacion}</span>
+              </div>
+              <div className="item-bottom">
+                <span className="price">{formatPrecio(p.precio)}</span>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{ padding: "8px 13px", fontSize: 11 }}
+                  onClick={() => navigate("/estudio", { state: { propertyId: p.propiedad_id } })}
+                >
+                  Crear <ArrowRightOutlined />
+                </button>
+              </div>
             </div>
-            <div className="item-meta">
-              <h3>{p.nombre}</h3>
-              <span className="where">
-                {p.direccion ?? "Sin dirección"} · {p.ciudad ?? "—"}
-              </span>
-            </div>
-            <div className="item-bottom">
-              <span className="price">{formatPrecio(p.precio, p.moneda)}</span>
-              <button
-                type="button"
-                className="btn btn-outline"
-                style={{ padding: "8px 13px", fontSize: 11 }}
-                onClick={() => navigate("/estudio", { state: { propertyId: p.property_id } })}
-              >
-                Crear <ArrowRightOutlined />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
         {recientes.length === 0 && (
           <div className="card card-pad" style={{ gridColumn: "1 / -1", textAlign: "center" }}>
             <p className="sub">Aún no hay propiedades registradas.</p>

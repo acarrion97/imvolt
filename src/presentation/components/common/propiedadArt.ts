@@ -1,4 +1,8 @@
-import type { PropiedadCategoria, PropiedadEstado } from "@/domain/propiedad";
+import type {
+  MedioAutorizado,
+  PropiedadCategoria,
+  PropiedadDisponibilidad,
+} from "@/domain/propiedad";
 
 /** Etiqueta de categoría para el tag de la tarjeta. */
 export const CATEGORIA_LABEL: Record<PropiedadCategoria, string> = {
@@ -8,6 +12,18 @@ export const CATEGORIA_LABEL: Record<PropiedadCategoria, string> = {
   oficina: "Oficina",
   local: "Local",
   proyecto: "Proyecto",
+};
+
+/** Etiqueta de cada canal de publicación autorizado. */
+export const MEDIOS_LABEL: Record<MedioAutorizado, string> = {
+  meta_ads: "Meta Ads",
+  facebook: "Facebook",
+  instagram: "Instagram",
+  whatsapp: "WhatsApp Business",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+  portal_web: "Portal web",
+  email: "Correo electrónico",
 };
 
 /**
@@ -28,13 +44,13 @@ export function artVariant(categoria: PropiedadCategoria): "land" | "house" | "t
   }
 }
 
-const ESTADO_BADGE: Record<PropiedadEstado, { label: string; cls: string }> = {
+const ESTADO_BADGE: Record<PropiedadDisponibilidad, { label: string; cls: string }> = {
   disponible: { label: "Disponible", cls: "mini-badge" },
   reservada: { label: "Reservada", cls: "mini-badge warn" },
   vendida: { label: "Vendida", cls: "mini-badge grey" },
   no_disponible: { label: "No disponible", cls: "mini-badge red" },
 };
 
-export function badgeDeEstado(estado: PropiedadEstado): { label: string; cls: string } {
+export function badgeDeEstado(estado: PropiedadDisponibilidad): { label: string; cls: string } {
   return ESTADO_BADGE[estado] ?? { label: estado, cls: "mini-badge grey" };
 }

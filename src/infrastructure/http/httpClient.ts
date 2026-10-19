@@ -65,7 +65,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   try {
     const headers: Record<string, string> = { Accept: "application/json" };
-    if (init?.body) headers["Content-Type"] = "application/json";
+    // FormData lleva su propio boundary: nunca se le fija Content-Type.
+    const isForm = init?.body instanceof FormData;
+    if (init?.body && !isForm) headers["Content-Type"] = "application/json";
 
     // La sesión del login manda; VITE_API_TOKEN queda como alternativa de
     // desarrollo para golpear el API sin pasar por /auth/login.
@@ -109,4 +111,7 @@ export const http = {
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  /** POST multipart (subida de archivos). El browser pone el boundary solo. */
+  postForm: <T>(path: string, form: FormData) =>
+    request<T>(path, { method: "POST", body: form }),
 };

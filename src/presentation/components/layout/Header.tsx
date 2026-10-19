@@ -18,6 +18,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/propiedades": "Mis propiedades",
   "/proyectos": "Proyectos",
   "/plantillas": "Plantillas",
+  "/brand-kit": "Brand Kit",
   "/estudio": "Estudio IA",
   "/campanas": "Campañas Meta",
   "/contactos": "Contactos",

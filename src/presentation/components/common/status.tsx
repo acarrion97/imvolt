@@ -2,7 +2,7 @@ import { Tag } from "antd";
 import type { CampanaEstado } from "@/domain/campana";
 import type { GeneracionStatus } from "@/domain/generacion";
 import type { LeadEstado } from "@/domain/lead";
-import type { PropiedadEstado } from "@/domain/propiedad";
+import type { PropiedadDisponibilidad } from "@/domain/propiedad";
 import type { ProyectoEstado } from "@/domain/proyecto";
 
 /**
@@ -56,14 +56,14 @@ export function EstadoLeadTag({ estado }: { estado: LeadEstado }) {
   return <Tag color={LEAD_COLORS[estado]}>{estado.toUpperCase()}</Tag>;
 }
 
-const PROP_COLORS: Record<PropiedadEstado, string> = {
+const PROP_COLORS: Record<PropiedadDisponibilidad, string> = {
   disponible: "success",
   reservada: "gold",
   vendida: "default",
   no_disponible: "red",
 };
 
-export function EstadoPropiedadTag({ estado }: { estado: PropiedadEstado }) {
+export function EstadoPropiedadTag({ estado }: { estado: PropiedadDisponibilidad }) {
   return <Tag color={PROP_COLORS[estado]}>{estado.replace(/_/g, " ").toUpperCase()}</Tag>;
 }
 

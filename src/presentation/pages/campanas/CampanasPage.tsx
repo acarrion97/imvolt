@@ -74,8 +74,8 @@ export function CampanasPage() {
   const saving = createCampana.isPending || updateCampana.isPending;
 
   const propiedadNombre = useMemo(() => {
-    const map = new Map((propiedades ?? []).map((p) => [p.property_id, p.nombre]));
-    return (id: string | null) => (id ? (map.get(id) ?? "—") : "Sin propiedad");
+    const map = new Map((propiedades ?? []).map((p) => [String(p.propiedad_id), p.nombre]));
+    return (id: string | null) => (id ? (map.get(String(id)) ?? "—") : "Sin propiedad");
   }, [propiedades]);
 
   const nombre = Form.useWatch("nombre", form);
@@ -375,7 +375,7 @@ export function CampanasPage() {
                     optionFilterProp="label"
                     placeholder="Selecciona una propiedad"
                     options={(propiedades ?? []).map((p) => ({
-                      value: p.property_id,
+                      value: p.propiedad_id,
                       label: p.nombre,
                     }))}
                   />

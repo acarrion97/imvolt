@@ -13,8 +13,9 @@ export const queryKeys = {
 
   propiedades: () => ["propiedades"] as const,
   propiedad: (id: string) => ["propiedades", id] as const,
-  propiedadesByProyecto: (projectId: string) =>
-    ["propiedades", "proyecto", projectId] as const,
+
+  tiposPropiedad: () => ["tipos_propiedad"] as const,
+  tipoPropiedad: (id: string) => ["tipos_propiedad", id] as const,
 
   plantillas: () => ["plantillas"] as const,
   plantilla: (id: string) => ["plantillas", id] as const,
@@ -32,8 +33,7 @@ export const queryKeys = {
 
   campanas: () => ["campanas"] as const,
   campana: (id: string) => ["campanas", id] as const,
-  campanasByPropiedad: (propertyId: string) =>
-    ["campanas", "propiedad", propertyId] as const,
+  campanasByPropiedad: (propertyId: string) => ["campanas", "propiedad", propertyId] as const,
 
   leads: () => ["leads"] as const,
   lead: (id: string) => ["leads", id] as const,
@@ -41,6 +41,15 @@ export const queryKeys = {
 
   wallet: () => ["wallet"] as const,
   transacciones: () => ["transacciones"] as const,
+
+  brandAssets: () => ["brand_assets"] as const,
+  brandAsset: (id: string) => ["brand_assets", id] as const,
+  brandAssetVersiones: (assetId: string) => ["brand_assets", assetId, "versiones"] as const,
+  /** URL firmada de la versión activa (caduca a los 5 minutos). */
+  brandAssetPreview: (id: string) => ["brand_assets", id, "preview"] as const,
+
+  brandColors: () => ["brand_colors"] as const,
+  brandColor: (id: string) => ["brand_colors", id] as const,
 } as const;
 
 /** Dominios que admiten prefijo (p.ej. invalidar todos los hijos de un dominio). */

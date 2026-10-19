@@ -6,6 +6,7 @@ import { DashboardPage } from "@/presentation/pages/dashboard/DashboardPage";
 import { ProyectosPage } from "@/presentation/pages/proyectos/ProyectosPage";
 import { PropiedadesPage } from "@/presentation/pages/propiedades/PropiedadesPage";
 import { PlantillasPage } from "@/presentation/pages/plantillas/PlantillasPage";
+import { BrandKitPage } from "@/presentation/pages/brand-kit/BrandKitPage";
 import { EstudioPage } from "@/presentation/pages/estudio/EstudioPage";
 import { CampanasPage } from "@/presentation/pages/campanas/CampanasPage";
 import { ContactosPage } from "@/presentation/pages/contactos/ContactosPage";
@@ -17,10 +18,10 @@ import { ConfiguracionPage } from "@/presentation/pages/configuracion/Configurac
  *
  *   /login          Acceso (solo VITE_DATA_PROVIDER=rest)
  *   /inicio         Inicio            /plantillas      Plantillas
- *   /propiedades    Mis propiedades   /estudio         Estudio IA
- *   /campanas       Campañas Meta     /contactos       Contactos
- *   /analitica      Analítica         /configuracion   Configuración
- *   /proyectos      Proyectos (secundaria, enlace desde Mis propiedades)
+ *   /brand-kit      Brand Kit         /estudio         Estudio IA
+ *   /propiedades    Mis propiedades   /campanas        Campañas Meta
+ *   /contactos      Contactos         /analitica       Analítica
+ *   /configuracion  Configuración     /proyectos       Proyectos (secundaria)
  *
  * Todas las rutas de la app pasan por `RequireAuth`: con el API real exige
  * sesión (token en localStorage) y en modo mock deja pasar sin login.
@@ -42,6 +43,7 @@ export function AppRouter() {
           <Route path="/propiedades" element={<PropiedadesPage />} />
           <Route path="/proyectos" element={<ProyectosPage />} />
           <Route path="/plantillas" element={<PlantillasPage />} />
+          <Route path="/brand-kit" element={<BrandKitPage />} />
           <Route path="/estudio" element={<EstudioPage />} />
           <Route path="/campanas" element={<CampanasPage />} />
           <Route path="/contactos" element={<ContactosPage />} />

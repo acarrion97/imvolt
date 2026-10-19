@@ -1,29 +1,18 @@
 ﻿import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  App,
-  Button,
-  Drawer,
-  Form,
-  Input,
-  InputNumber,
-  Popconfirm,
-  Select,
-  Spin,
-  Switch,
-} from "antd";
+import { useNavigate } from "react-router-dom";
+import { App, Button, Drawer, Form, Input, InputNumber, Popconfirm, Select, Spin } from "antd";
 import {
   ArrowRightOutlined,
   DeleteOutlined,
   EditOutlined,
-  FolderOpenOutlined,
   PlusOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import {
   badgeDeEstado,
   CATEGORIA_LABEL,
+  MEDIOS_LABEL,
   artVariant,
 } from "@/presentation/components/common/propiedadArt";
 import { formatPrecio } from "@/presentation/components/common/status";
@@ -31,76 +20,88 @@ import {
   useCreatePropiedad,
   useDeletePropiedad,
   usePropiedades,
-  useProyectos,
+  useTiposPropiedad,
   useUpdatePropiedad,
 } from "@/presentation/hooks";
 import { propiedadSchema } from "@/presentation/validations";
-import type { Propiedad, PropiedadCategoria } from "@/domain/propiedad";
+import {
+  categoriaDe,
+  MEDIOS_AUTORIZADOS,
+  type MedioAutorizado,
+  type Propiedad,
+  type PropiedadCategoria,
+  type PropiedadDisponibilidad,
+} from "@/domain/propiedad";
 
 interface FormValues {
   nombre: string;
-  categoria: PropiedadCategoria;
-  project_id?: string | null;
-  titulo_publicacion?: string | null;
-  descripcion?: string | null;
-  precio?: number | null;
-  superficie_m2?: number | null;
-  habitaciones?: number | null;
-  banos?: number | null;
-  estacionamientos?: number | null;
-  direccion?: string | null;
-  ciudad?: string | null;
-  pais?: string;
-  estado?: Propiedad["estado"];
-  tiene_render_conceptual?: boolean;
+  tipo_propiedad_id: string;
+  ubicacion: string;
+  precio: number;
+  disponibilidad: PropiedadDisponibilidad;
+  medios_autorizados: MedioAutorizado[];
+  descripcion: string;
 }
 
 /**
- * Mis propiedades â€” UI Concept 01: rejilla de tarjetas con ilustraciÃ³n,
- * filtros por tipo/proyecto/estado y alta en Drawer.
+ * Mis propiedades — CRUD completo contra `/api/v1/propiedades`:
+ * nombre, categoría (`tipos-propiedad`), ubicación, precio, disponibilidad
+ * y medios (canales) de publicación autorizados.
+ *
+ * Rejilla de tarjetas con ilustración, filtros por categoría / disponibilidad
+ * / medio autorizado y alta-edición en Drawer.
  */
 export function PropiedadesPage() {
   const { message, modal } = App.useApp();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState<PropiedadCategoria | undefined>();
-  const [filtroProyecto, setFiltroProyecto] = useState<string | undefined>();
-  const [filtroEstado, setFiltroEstado] = useState<Propiedad["estado"] | undefined>();
+  const [filtroDisponibilidad, setFiltroDisponibilidad] = useState<
+    PropiedadDisponibilidad | undefined
+  >();
+  const [filtroMedio, setFiltroMedio] = useState<MedioAutorizado | undefined>();
   const [editing, setEditing] = useState<Propiedad | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [form] = Form.useForm<FormValues>();
 
   const { data: propiedades, isLoading } = usePropiedades();
-  const { data: proyectos } = useProyectos();
+  const { data: tipos } = useTiposPropiedad();
   const createPropiedad = useCreatePropiedad();
   const updatePropiedad = useUpdatePropiedad();
   const deletePropiedad = useDeletePropiedad();
   const saving = createPropiedad.isPending || updatePropiedad.isPending;
 
-  const proyectoNombre = useMemo(() => {
-    const map = new Map((proyectos ?? []).map((p) => [p.project_id, p.nombre]));
-    return (id: string | null) => (id ? (map.get(id) ?? "â€”") : "Sin proyecto");
-  }, [proyectos]);
+  /** Categorías visibles: derivadas del catálogo que devuelve la API. */
+  const categoriaOptions = useMemo(() => {
+    const map = new Map<PropiedadCategoria, string>();
+    for (const tipo of tipos ?? []) {
+      const cat = categoriaDe({ tipo_propiedad: tipo });
+      if (!map.has(cat)) map.set(cat, CATEGORIA_LABEL[cat]);
+    }
+    return [...map].map(([value, label]) => ({ value, label }));
+  }, [tipos]);
+
+  const medioOptions = useMemo(
+    () => MEDIOS_AUTORIZADOS.map((value) => ({ value, label: MEDIOS_LABEL[value] })),
+    [],
+  );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (propiedades ?? []).filter((p) => {
-      if (filtroCategoria && p.categoria !== filtroCategoria) return false;
-      if (filtroProyecto && p.project_id !== filtroProyecto) return false;
-      if (filtroEstado && p.estado !== filtroEstado) return false;
+      const medios = p.medios_autorizados ?? [];
+      if (filtroCategoria && categoriaDe(p) !== filtroCategoria) return false;
+      if (filtroDisponibilidad && p.disponibilidad !== filtroDisponibilidad) return false;
+      if (filtroMedio && !medios.includes(filtroMedio)) return false;
       if (!q) return true;
-      return (
-        p.nombre.toLowerCase().includes(q) ||
-        (p.titulo_publicacion ?? "").toLowerCase().includes(q) ||
-        (p.ciudad ?? "").toLowerCase().includes(q)
-      );
+      return p.nombre.toLowerCase().includes(q) || p.ubicacion.toLowerCase().includes(q);
     });
-  }, [propiedades, search, filtroCategoria, filtroProyecto, filtroEstado]);
+  }, [propiedades, search, filtroCategoria, filtroDisponibilidad, filtroMedio]);
 
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
-    form.setFieldsValue({ pais: "Ecuador", tiene_render_conceptual: false });
+    form.setFieldsValue({ disponibilidad: "disponible", medios_autorizados: [] });
     setDrawerOpen(true);
   };
 
@@ -108,20 +109,12 @@ export function PropiedadesPage() {
     setEditing(row);
     form.setFieldsValue({
       nombre: row.nombre,
-      categoria: row.categoria,
-      project_id: row.project_id,
-      titulo_publicacion: row.titulo_publicacion,
+      tipo_propiedad_id: String(row.tipo_propiedad_id),
+      ubicacion: row.ubicacion,
+      precio: Number(row.precio),
+      disponibilidad: row.disponibilidad,
+      medios_autorizados: row.medios_autorizados ?? [],
       descripcion: row.descripcion,
-      precio: row.precio,
-      superficie_m2: row.superficie_m2,
-      habitaciones: row.habitaciones,
-      banos: row.banos,
-      estacionamientos: row.estacionamientos,
-      direccion: row.direccion,
-      ciudad: row.ciudad,
-      pais: row.pais,
-      estado: row.estado,
-      tiene_render_conceptual: row.tiene_render_conceptual,
     });
     setDrawerOpen(true);
   };
@@ -136,30 +129,12 @@ export function PropiedadesPage() {
       return;
     }
 
-    const payload = {
-      ...parsed.data,
-      project_id: parsed.data.project_id ?? null,
-      titulo_publicacion: parsed.data.titulo_publicacion ?? null,
-      descripcion: parsed.data.descripcion ?? null,
-      precio: parsed.data.precio ?? null,
-      superficie_m2: parsed.data.superficie_m2 ?? null,
-      habitaciones: parsed.data.habitaciones ?? null,
-      banos: parsed.data.banos ?? null,
-      estacionamientos: parsed.data.estacionamientos ?? null,
-      direccion: parsed.data.direccion ?? null,
-      ciudad: parsed.data.ciudad ?? null,
-      pais: parsed.data.pais ?? "Ecuador",
-      moneda: "USD",
-      estado: parsed.data.estado ?? ("disponible" as const),
-      tiene_render_conceptual: parsed.data.tiene_render_conceptual ?? false,
-    };
-
     try {
       if (editing) {
-        await updatePropiedad.mutateAsync({ id: editing.property_id, data: payload });
+        await updatePropiedad.mutateAsync({ id: editing.propiedad_id, data: parsed.data });
         message.success("Propiedad actualizada.");
       } else {
-        await createPropiedad.mutateAsync(payload);
+        await createPropiedad.mutateAsync(parsed.data);
         message.success("Propiedad creada.");
       }
       setDrawerOpen(false);
@@ -170,14 +145,14 @@ export function PropiedadesPage() {
 
   const handleDelete = (row: Propiedad) => {
     modal.confirm({
-      title: "Â¿Eliminar esta propiedad?",
-      content: `${row.nombre} se quitarÃ¡ del catÃ¡logo. Las campaÃ±as y leads asociados conservarÃ¡n su referencia.`,
+      title: "¿Eliminar esta propiedad?",
+      content: `${row.nombre} se quitará del catálogo. Las campañas y leads asociados conservarán su referencia.`,
       okText: "Eliminar",
       okButtonProps: { danger: true },
       cancelText: "Cancelar",
       onOk: async () => {
         try {
-          await deletePropiedad.mutateAsync(row.property_id);
+          await deletePropiedad.mutateAsync(row.propiedad_id);
           message.success("Propiedad eliminada.");
         } catch (error) {
           message.error(error instanceof Error ? error.message : "No se pudo eliminar.");
@@ -203,16 +178,13 @@ export function PropiedadesPage() {
     <div>
       <div className="header">
         <div>
-          <p className="eyebrow">CatÃ¡logo inmobiliario</p>
+          <p className="eyebrow">Catálogo inmobiliario</p>
           <h1>Mis propiedades</h1>
           <p className="sub">
-            Unidades del workspace listas para crear creativos y preparar campaÃ±as.
+            Unidades del workspace listas para crear creativos y preparar campañas.
           </p>
         </div>
         <div className="header-actions">
-          <Link to="/proyectos" className="btn btn-outline">
-            <FolderOpenOutlined /> Gestionar proyectos
-          </Link>
           <button type="button" className="btn btn-primary" onClick={openCreate}>
             <PlusOutlined /> Nueva propiedad
           </button>
@@ -225,38 +197,35 @@ export function PropiedadesPage() {
             className="search"
             allowClear
             prefix={<SearchOutlined style={{ color: "#9db3a8" }} />}
-            placeholder="Buscar por nombre, tÃ­tulo o ciudad..."
+            placeholder="Buscar por nombre o ubicación..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <Select
             allowClear
-            placeholder="Tipo"
+            placeholder="Categoría"
             style={{ width: 170 }}
             value={filtroCategoria}
             onChange={setFiltroCategoria}
-            options={Object.entries(CATEGORIA_LABEL).map(([value, label]) => ({ value, label }))}
+            options={categoriaOptions}
           />
           <Select
             allowClear
-            showSearch
-            placeholder="Proyecto"
+            placeholder="Disponibilidad"
+            style={{ width: 170 }}
+            value={filtroDisponibilidad}
+            onChange={setFiltroDisponibilidad}
+            options={(["disponible", "reservada", "vendida", "no_disponible"] as const).map(
+              (v) => ({ value: v, label: v.replace(/_/g, " ") }),
+            )}
+          />
+          <Select
+            allowClear
+            placeholder="Medio autorizado"
             style={{ width: 190 }}
-            optionFilterProp="label"
-            value={filtroProyecto}
-            onChange={setFiltroProyecto}
-            options={(proyectos ?? []).map((p) => ({ value: p.project_id, label: p.nombre }))}
-          />
-          <Select
-            allowClear
-            placeholder="Estado"
-            style={{ width: 160 }}
-            value={filtroEstado}
-            onChange={setFiltroEstado}
-            options={(["disponible", "reservada", "vendida", "no_disponible"] as const).map((v) => ({
-              value: v,
-              label: v.replace(/_/g, " "),
-            }))}
+            value={filtroMedio}
+            onChange={setFiltroMedio}
+            options={medioOptions}
           />
           <span className="spacer" />
           <span className="count-pill">{filtered.length} propiedades</span>
@@ -266,11 +235,14 @@ export function PropiedadesPage() {
       <Spin spinning={isLoading}>
         <div className="grid cols3">
           {filtered.map((p) => {
-            const badge = badgeDeEstado(p.estado);
+            const badge = badgeDeEstado(p.disponibilidad);
+            const categoria = categoriaDe(p);
+            const medios = p.medios_autorizados ?? [];
+
             return (
-              <div key={p.property_id} className="card item-card">
-                <div className={`art ${artVariant(p.categoria)}`}>
-                  <span className="tag">{CATEGORIA_LABEL[p.categoria]}</span>
+              <div key={p.propiedad_id} className="card item-card">
+                <div className={`art ${artVariant(categoria)}`}>
+                  <span className="tag">{CATEGORIA_LABEL[categoria]}</span>
                   <div
                     style={{
                       position: "absolute",
@@ -281,11 +253,16 @@ export function PropiedadesPage() {
                       gap: 6,
                     }}
                   >
-                    <button type="button" style={iconBtn} onClick={() => openEdit(p)} title="Editar">
+                    <button
+                      type="button"
+                      style={iconBtn}
+                      onClick={() => openEdit(p)}
+                      title="Editar"
+                    >
                       <EditOutlined style={{ fontSize: 13 }} />
                     </button>
                     <Popconfirm
-                      title="Â¿Eliminar esta propiedad?"
+                      title="¿Eliminar esta propiedad?"
                       okText="Eliminar"
                       cancelText="Cancelar"
                       onConfirm={() => handleDelete(p)}
@@ -299,24 +276,30 @@ export function PropiedadesPage() {
 
                 <div className="item-meta">
                   <h3>{p.nombre}</h3>
-                  <span className="where">
-                    {p.ciudad ?? "Sin ciudad"} Â· {proyectoNombre(p.project_id)}
-                  </span>
+                  <span className="where">{p.ubicacion}</span>
                   <div style={{ display: "flex", gap: 6, marginTop: 9, flexWrap: "wrap" }}>
                     <span className={badge.cls}>{badge.label}</span>
-                    {p.tiene_render_conceptual && (
-                      <span className="mini-badge warn">Render IA</span>
+                    {medios.length === 0 && (
+                      <span className="mini-badge grey">Sin canales autorizados</span>
+                    )}
+                    {medios.slice(0, 2).map((medio) => (
+                      <span key={medio} className="mini-badge grey">
+                        {MEDIOS_LABEL[medio]}
+                      </span>
+                    ))}
+                    {medios.length > 2 && (
+                      <span className="mini-badge grey">+{medios.length - 2}</span>
                     )}
                   </div>
                 </div>
 
                 <div className="item-bottom">
-                  <span className="price">{formatPrecio(p.precio, p.moneda)}</span>
+                  <span className="price">{formatPrecio(p.precio)}</span>
                   <button
                     type="button"
                     className="btn btn-outline"
                     style={{ padding: "8px 13px", fontSize: 11 }}
-                    onClick={() => navigate("/estudio", { state: { propertyId: p.property_id } })}
+                    onClick={() => navigate("/estudio", { state: { propertyId: p.propiedad_id } })}
                   >
                     Crear <ArrowRightOutlined />
                   </button>
@@ -330,7 +313,7 @@ export function PropiedadesPage() {
               <p className="sub">
                 {propiedades?.length
                   ? "Ninguna propiedad coincide con los filtros."
-                  : "AÃºn no has registrado propiedades."}
+                  : "Aún no has registrado propiedades."}
               </p>
               <div style={{ marginTop: 14 }}>
                 <button type="button" className="btn btn-primary" onClick={openCreate}>
@@ -356,84 +339,77 @@ export function PropiedadesPage() {
         <Form form={form} layout="vertical" requiredMark={false}>
           <Form.Item
             name="nombre"
-            label="Nombre interno"
+            label="Nombre"
             rules={[{ required: true, message: "Indica el nombre de la propiedad." }]}
           >
-            <Input placeholder="Ej: Lote 12-A Vista Hermosa" maxLength={120} />
+            <Input placeholder="Ej: Lote 12-A Vista Hermosa" maxLength={50} showCount />
           </Form.Item>
 
           <div className="form-grid">
             <Form.Item
-              name="categoria"
-              label="CategorÃ­a"
-              rules={[{ required: true, message: "Selecciona la categorÃ­a." }]}
+              name="tipo_propiedad_id"
+              label="Categoría"
+              rules={[{ required: true, message: "Selecciona la categoría." }]}
             >
               <Select
-                placeholder="CategorÃ­a"
-                options={Object.entries(CATEGORIA_LABEL).map(([value, label]) => ({
-                  value,
-                  label,
+                placeholder="Categoría"
+                showSearch
+                optionFilterProp="label"
+                options={(tipos ?? []).map((t) => ({
+                  value: String(t.tipo_propiedad_id),
+                  label: t.nombre,
                 }))}
               />
             </Form.Item>
-            <Form.Item name="project_id" label="Proyecto">
+            <Form.Item
+              name="disponibilidad"
+              label="Disponibilidad"
+              rules={[{ required: true, message: "Selecciona la disponibilidad." }]}
+            >
               <Select
-                allowClear
-                placeholder="Sin proyecto"
-                options={(proyectos ?? []).map((p) => ({ value: p.project_id, label: p.nombre }))}
+                options={(["disponible", "reservada", "vendida", "no_disponible"] as const).map(
+                  (v) => ({ value: v, label: v.replace(/_/g, " ") }),
+                )}
               />
             </Form.Item>
 
-            <Form.Item name="titulo_publicacion" label="TÃ­tulo de publicaciÃ³n" className="full">
-              <Input placeholder="TÃ­tulo que verÃ¡ el cliente" maxLength={150} />
+            <Form.Item
+              name="ubicacion"
+              label="Ubicación"
+              className="full"
+              rules={[{ required: true, message: "Indica la ubicación." }]}
+            >
+              <Input placeholder="Dirección o referencia del inmueble" maxLength={500} showCount />
             </Form.Item>
 
-            <Form.Item name="precio" label="Precio (USD)">
-              <InputNumber min={0} style={{ width: "100%" }} placeholder="USD" />
+            <Form.Item
+              name="precio"
+              label="Precio (USD)"
+              rules={[{ required: true, message: "Indica el precio." }]}
+            >
+              <InputNumber min={0.01} precision={2} style={{ width: "100%" }} placeholder="USD" />
             </Form.Item>
-            <Form.Item name="superficie_m2" label="Superficie (mÂ²)">
-              <InputNumber min={0} style={{ width: "100%" }} />
-            </Form.Item>
-
-            <Form.Item name="habitaciones" label="Habitaciones">
-              <InputNumber min={0} style={{ width: "100%" }} />
-            </Form.Item>
-            <Form.Item name="banos" label="BaÃ±os">
-              <InputNumber min={0} style={{ width: "100%" }} />
-            </Form.Item>
-
-            <Form.Item name="direccion" label="DirecciÃ³n">
-              <Input maxLength={200} />
-            </Form.Item>
-            <Form.Item name="ciudad" label="Ciudad">
-              <Input maxLength={100} />
-            </Form.Item>
-
-            <Form.Item name="pais" label="PaÃ­s" initialValue="Ecuador">
-              <Input maxLength={60} />
-            </Form.Item>
-            {editing && (
-              <Form.Item name="estado" label="Estado">
-                <Select
-                  options={(["disponible", "reservada", "vendida", "no_disponible"] as const).map(
-                    (v) => ({ value: v, label: v.replace(/_/g, " ") }),
-                  )}
-                />
-              </Form.Item>
-            )}
           </div>
 
-          <Form.Item name="descripcion" label="DescripciÃ³n">
-            <Input.TextArea rows={3} maxLength={1000} showCount />
+          <Form.Item
+            name="medios_autorizados"
+            label="Medios autorizados"
+            tooltip="Canales donde la empresa está autorizada a publicar esta propiedad (§ publicidad)."
+          >
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="Selecciona los canales autorizados"
+              options={medioOptions}
+            />
           </Form.Item>
 
           <Form.Item
-            name="tiene_render_conceptual"
-            label="Contiene render conceptual (IA)"
-            valuePropName="checked"
-            tooltip="Â§07 fidelidad de contenido: los renders generados con IA deben etiquetarse siempre."
+            name="descripcion"
+            label="Descripción"
+            rules={[{ required: true, message: "La descripción es obligatoria." }]}
           >
-            <Switch />
+            <Input.TextArea rows={4} maxLength={2000} showCount />
           </Form.Item>
         </Form>
       </Drawer>

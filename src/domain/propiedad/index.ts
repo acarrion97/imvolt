@@ -1,46 +1,98 @@
-import type { CrudRepository, FilterParams } from "@/domain/core/repositories/CrudRepository";
+import type { CrudRepository } from "@/domain/core/repositories/CrudRepository";
 
+/** Categorías del catálogo `public.tipos_propiedades` (semilla de la API). */
 export type PropiedadCategoria =
-  | "lote"
-  | "casa"
-  | "departamento"
-  | "oficina"
-  | "local"
-  | "proyecto";
+  "lote" | "casa" | "departamento" | "oficina" | "local" | "proyecto";
 
-export type PropiedadEstado = "disponible" | "reservada" | "vendida" | "no_disponible";
+/** Estado comercial (`public.propiedades.disponibilidad`). */
+export type PropiedadDisponibilidad = "disponible" | "reservada" | "vendida" | "no_disponible";
+
+/**
+ * Canales de publicación donde la empresa AUTORIZA difundir la propiedad.
+ * Catálogo fijo, idéntico al validado por la API (`MEDIOS_AUTORIZADOS`).
+ */
+export const MEDIOS_AUTORIZADOS = [
+  "meta_ads",
+  "facebook",
+  "instagram",
+  "whatsapp",
+  "tiktok",
+  "youtube",
+  "portal_web",
+  "email",
+] as const;
+
+export type MedioAutorizado = (typeof MEDIOS_AUTORIZADOS)[number];
+
+/** Estado lógico del registro (`public.propiedades.estado`). */
+export type PropiedadEstado = "activo" | "inactivo";
+
+/** Catálogo `public.tipos_propiedades`: la "categoría" de una propiedad. */
+export interface TipoPropiedad {
+  tipo_propiedad_id: string;
+  nombre: string;
+  estado: PropiedadEstado;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export type TipoPropiedadCreate = {
+  nombre: string;
+};
+
+/** Empresa incrustada (FK → `public.empresas`). */
+export interface PropiedadEmpresa {
+  empresa_id: number;
+  razon_social: string;
+}
 
 /** Entidad `public.propiedades`. */
 export interface Propiedad {
-  property_id: string;
-  organization_id: string;
-  project_id: string | null;
+  propiedad_id: string;
   nombre: string;
-  categoria: PropiedadCategoria;
-  titulo_publicacion: string | null;
-  descripcion: string | null;
-  precio: number | null;
-  moneda: string;
-  superficie_m2: number | null;
-  habitaciones: number | null;
-  banos: number | null;
-  estacionamientos: number | null;
-  direccion: string | null;
-  ciudad: string | null;
-  pais: string;
+  ubicacion: string;
+  precio: number;
+  disponibilidad: PropiedadDisponibilidad;
+  descripcion: string;
+  /** Canales de publicación autorizados para esta propiedad. */
+  medios_autorizados: MedioAutorizado[];
+  empresa_id: number;
+  tipo_propiedad_id: string;
   estado: PropiedadEstado;
-  /** Fidelidad de contenido (§07): los renders conceptuales deben etiquetarse. */
-  tiene_render_conceptual: boolean;
-  created_at: string;
+  /** Relación incrustada (FK → empresas). */
+  empresa: PropiedadEmpresa | null;
+  /** Relación incrustada (FK → tipos_propiedades). */
+  tipo_propiedad: TipoPropiedad | null;
+  creado_en: string;
+  actualizado_en: string;
 }
 
-export type PropiedadCreate = Omit<
-  Propiedad,
-  "property_id" | "organization_id" | "created_at"
-> & {
-  project_id?: string | null;
+/**
+ * Payload de creación: tal como lo acepta `POST /api/v1/propiedades`.
+ * `empresa_id` NO viaja: lo inyecta la API desde la sesión (`assignEmpresaOnCreate`).
+ */
+export type PropiedadCreate = {
+  nombre: string;
+  ubicacion: string;
+  precio: number;
+  disponibilidad: PropiedadDisponibilidad;
+  descripcion: string;
+  medios_autorizados: MedioAutorizado[];
+  tipo_propiedad_id: string;
 };
 
-export interface PropiedadRepository extends CrudRepository<Propiedad, string, PropiedadCreate> {
-  getByProyectoId(projectId: string, filters?: FilterParams): Promise<Propiedad[]>;
+const CATEGORIAS: string[] = ["lote", "casa", "departamento", "oficina", "local", "proyecto"];
+
+/**
+ * Categoría de una propiedad a partir del tipo incrustado.
+ * La API guarda el tipo como FK; la UI necesita la categoría normalizada
+ * para las etiquetas y la variante de ilustración de la tarjeta.
+ */
+export function categoriaDe(propiedad: Pick<Propiedad, "tipo_propiedad">): PropiedadCategoria {
+  const nombre = (propiedad.tipo_propiedad?.nombre ?? "").trim().toLowerCase();
+  return (CATEGORIAS.includes(nombre) ? nombre : "lote") as PropiedadCategoria;
 }
+
+export type PropiedadRepository = CrudRepository<Propiedad, string, PropiedadCreate>;
+
+export type TipoPropiedadRepository = CrudRepository<TipoPropiedad, string, TipoPropiedadCreate>;

@@ -79,7 +79,7 @@ export function EstudioPage() {
     [plantillas, templateId],
   );
   const propiedad = useMemo(
-    () => (propiedades ?? []).find((p) => p.property_id === propertyId),
+    () => (propiedades ?? []).find((p) => p.propiedad_id === propertyId),
     [propiedades, propertyId],
   );
   const modelo = useMemo(
@@ -100,8 +100,8 @@ export function EstudioPage() {
       .filter(Boolean)
       .join(". ");
     const contexto = propiedad
-      ? ` Propiedad: ${propiedad.nombre}${propiedad.ciudad ? `, ${propiedad.ciudad}` : ""}${
-          propiedad.precio ? `, ${formatPrecio(propiedad.precio, propiedad.moneda)}` : ""
+      ? ` Propiedad: ${propiedad.nombre}${propiedad.ubicacion ? `, ${propiedad.ubicacion}` : ""}${
+          propiedad.precio ? `, ${formatPrecio(propiedad.precio)}` : ""
         }.`
       : "";
     return `${base}${extras ? ` ${extras}.` : ""}${contexto}`.trim();
@@ -259,8 +259,8 @@ export function EstudioPage() {
                 value={propertyId}
                 onChange={setPropertyId}
                 options={(propiedades ?? []).map((p) => ({
-                  value: p.property_id,
-                  label: `${p.nombre} (${p.ciudad ?? "sin ciudad"})`,
+                  value: p.propiedad_id,
+                  label: `${p.nombre} (${p.ubicacion})`,
                 }))}
               />
             </div>

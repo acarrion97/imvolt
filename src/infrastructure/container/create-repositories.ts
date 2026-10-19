@@ -3,14 +3,17 @@ import type { AuthRepository } from "@/domain/auth";
 import type { ConexionRepository } from "@/domain/conexion";
 import type { GeneracionRepository } from "@/domain/generacion";
 import type { LeadRepository } from "@/domain/lead";
+import type { BrandAssetRepository, BrandColorRepository } from "@/domain/brand-kit";
 import type { ModeloRepository } from "@/domain/modelo";
 import type { PlantillaRepository } from "@/domain/plantilla";
-import type { PropiedadRepository } from "@/domain/propiedad";
+import type { PropiedadRepository, TipoPropiedadRepository } from "@/domain/propiedad";
 import type { ProyectoRepository } from "@/domain/proyecto";
 import type { TransaccionRepository, WalletRepository } from "@/domain/credito";
 
 import {
   MockAuthRepository,
+  MockBrandAssetRepository,
+  MockBrandColorRepository,
   MockCampanaRepository,
   MockConexionRepository,
   MockGeneracionRepository,
@@ -19,11 +22,14 @@ import {
   MockPlantillaRepository,
   MockPropiedadRepository,
   MockProyectoRepository,
+  MockTipoPropiedadRepository,
   MockTransaccionRepository,
   MockWalletRepository,
 } from "@/infrastructure/repositories/mock/MockRepositories";
 import {
   RestAuthRepository,
+  RestBrandAssetRepository,
+  RestBrandColorRepository,
   RestCampanaRepository,
   RestConexionRepository,
   RestGeneracionRepository,
@@ -32,6 +38,7 @@ import {
   RestPlantillaRepository,
   RestPropiedadRepository,
   RestProyectoRepository,
+  RestTipoPropiedadRepository,
   RestTransaccionRepository,
   RestWalletRepository,
 } from "@/infrastructure/repositories/rest/RestRepositories";
@@ -44,12 +51,15 @@ import {
 export interface Repositories {
   proyectoRepo: ProyectoRepository;
   propiedadRepo: PropiedadRepository;
+  tipoPropiedadRepo: TipoPropiedadRepository;
   plantillaRepo: PlantillaRepository;
   modeloRepo: ModeloRepository;
   generacionRepo: GeneracionRepository;
   conexionRepo: ConexionRepository;
   campanaRepo: CampanaRepository;
   leadRepo: LeadRepository;
+  brandAssetRepo: BrandAssetRepository;
+  brandColorRepo: BrandColorRepository;
   walletRepo: WalletRepository;
   transaccionRepo: TransaccionRepository;
   /** Sesión de usuario (solo útil con VITE_DATA_PROVIDER=rest). */
@@ -60,12 +70,15 @@ function createMockRepositories(): Repositories {
   return {
     proyectoRepo: new MockProyectoRepository(),
     propiedadRepo: new MockPropiedadRepository(),
+    tipoPropiedadRepo: new MockTipoPropiedadRepository(),
     plantillaRepo: new MockPlantillaRepository(),
     modeloRepo: new MockModeloRepository(),
     generacionRepo: new MockGeneracionRepository(),
     conexionRepo: new MockConexionRepository(),
     campanaRepo: new MockCampanaRepository(),
     leadRepo: new MockLeadRepository(),
+    brandAssetRepo: new MockBrandAssetRepository(),
+    brandColorRepo: new MockBrandColorRepository(),
     walletRepo: new MockWalletRepository(),
     transaccionRepo: new MockTransaccionRepository(),
     authRepo: new MockAuthRepository(),
@@ -82,12 +95,15 @@ function createRestRepositories(): Repositories {
   return {
     proyectoRepo: new RestProyectoRepository(),
     propiedadRepo: new RestPropiedadRepository(),
+    tipoPropiedadRepo: new RestTipoPropiedadRepository(),
     plantillaRepo: new RestPlantillaRepository(),
     modeloRepo: new RestModeloRepository(),
     generacionRepo: new RestGeneracionRepository(),
     conexionRepo: new RestConexionRepository(),
     campanaRepo: new RestCampanaRepository(),
     leadRepo: new RestLeadRepository(),
+    brandAssetRepo: new RestBrandAssetRepository(),
+    brandColorRepo: new RestBrandColorRepository(),
     walletRepo: new RestWalletRepository(),
     transaccionRepo: new RestTransaccionRepository(),
     authRepo: new RestAuthRepository(),
