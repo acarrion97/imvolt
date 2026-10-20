@@ -44,6 +44,22 @@ import type {
 } from "@/domain/propiedad";
 import type { Proyecto, ProyectoCreate, ProyectoRepository } from "@/domain/proyecto";
 import type {
+  AsignacionRol,
+  AuditoriaLog,
+  AuditoriaRepository,
+  Empresa,
+  EmpresaRepository,
+  EmpresaUpdate,
+  InvitacionMiembro,
+  InvitacionResultado,
+  Miembro,
+  MiembroCreate,
+  MiembroRepository,
+  Rol,
+  RolRepository,
+} from "@/domain/identity";
+import type { FilterParams } from "@/domain/core/repositories/CrudRepository";
+import type {
   TransaccionCredito,
   TransaccionCreditoCreate,
   TransaccionRepository,
@@ -259,6 +275,82 @@ export class RestTransaccionRepository
 }
 
 /**
+ * Miembros del equipo (`/api/v1/usuarios`) + las dos operaciones de equipo:
+ *
+ *   POST   /v1/usuarios/invitaciones     alta con credencial temporal
+ *   GET    /v1/roles-usuarios            localiza la asignación a actualizar
+ *   PATCH  /v1/roles-usuarios/{id}       cambia el rol vigente
+ *   POST   /v1/roles-usuarios            crea la asignación si no había
+ *
+ * `GET /v1/usuarios` ya devuelve `roles[]` computado (roles activos), así que
+ * la pantalla no necesita cruzar con `roles-usuarios` para pintar la tabla.
+ */
+export class RestMiembroRepository
+  extends RestCrudRepository<Miembro, string, MiembroCreate>
+  implements MiembroRepository
+{
+  constructor() {
+    super("v1/usuarios");
+  }
+
+  async invitar(input: InvitacionMiembro): Promise<InvitacionResultado> {
+    return http.post<InvitacionResultado>("/v1/usuarios/invitaciones", input);
+  }
+
+  async cambiarRol(usuarioId: string, rolId: string): Promise<void> {
+    const asignaciones = await http.get<AsignacionRol[]>(
+      `/v1/roles-usuarios${buildQuery({ usuario_id: usuarioId, estado: "activo" })}`,
+    );
+    const vigente = asignaciones[0];
+
+    if (!vigente) {
+      await http.post("/v1/roles-usuarios", { usuario_id: usuarioId, rol_id: rolId });
+      return;
+    }
+    if (String(vigente.rol_id) === String(rolId)) return;
+
+    await http.patch(`/v1/roles-usuarios/${vigente.usuario_rol_id}`, { rol_id: rolId });
+  }
+}
+
+/** Catálogo de roles §13 (`GET /v1/roles`, catálogo compartido). */
+export class RestRolRepository implements RolRepository {
+  async listar(): Promise<Rol[]> {
+    return http.get<Rol[]>("/v1/roles");
+  }
+}
+
+/**
+ * Bitácora de auditoría (`GET /v1/auditoria`): SOLO LECTURA (create/update/
+ * remove están deshabilitados en el API) y reservada a propietario/admin.
+ */
+export class RestAuditoriaRepository implements AuditoriaRepository {
+  async listar(filters?: FilterParams): Promise<AuditoriaLog[]> {
+    return http.get<AuditoriaLog[]>(`/v1/auditoria${buildQuery(filters)}`);
+  }
+}
+
+/**
+ * Perfil de la organización (`/api/v1/empresas`), acotado por el API a la
+ * empresa de la sesión: el listado trae una sola fila, así que "la actual"
+ * es la primera. `actualizar` reutiliza ese id para el PATCH.
+ */
+export class RestEmpresaRepository implements EmpresaRepository {
+  async obtenerActual(): Promise<Empresa | null> {
+    const empresas = await http.get<Empresa[]>("/v1/empresas");
+    return empresas[0] ?? null;
+  }
+
+  async actualizar(data: EmpresaUpdate): Promise<Empresa> {
+    const actual = await this.obtenerActual();
+    if (!actual) {
+      throw new ApiError("No se encontró la organización de la sesión", 404);
+    }
+    return http.patch<Empresa>(`/v1/empresas/${actual.empresa_id}`, data);
+  }
+}
+
+/**
  * Autenticación contra el API (`/api/auth`):
  *
  *   POST /api/auth/login  → { access_token, refresh_token, user_id }
@@ -273,7 +365,11 @@ export class RestAuthRepository implements AuthRepository {
   }
 
   async me(): Promise<Perfil> {
-    const response = await http.get<{ usuario: AuthUsuario | null; roles: AuthRol[] }>("/auth/me");
+    const response = await http.get<{
+      usuario: AuthUsuario | null;
+      roles: AuthRol[];
+      permisos?: string[];
+    }>("/auth/me");
 
     if (!response.usuario) {
       throw new ApiError(
@@ -282,6 +378,10 @@ export class RestAuthRepository implements AuthRepository {
       );
     }
 
-    return { usuario: response.usuario, roles: response.roles ?? [] };
+    return {
+      usuario: response.usuario,
+      roles: response.roles ?? [],
+      permisos: response.permisos ?? [],
+    };
   }
 }

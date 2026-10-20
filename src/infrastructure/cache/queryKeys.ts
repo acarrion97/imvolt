@@ -50,6 +50,13 @@ export const queryKeys = {
 
   brandColors: () => ["brand_colors"] as const,
   brandColor: (id: string) => ["brand_colors", id] as const,
+
+  // Identity: equipo, roles (catálogo §13), bitácora y organización.
+  miembros: () => ["miembros"] as const,
+  miembro: (id: string) => ["miembros", id] as const,
+  roles: () => ["roles"] as const,
+  auditoria: () => ["auditoria"] as const,
+  empresa: () => ["empresa"] as const,
 } as const;
 
 /** Dominios que admiten prefijo (p.ej. invalidar todos los hijos de un dominio). */

@@ -8,6 +8,7 @@ import type { Propiedad, PropiedadEmpresa, TipoPropiedad } from "@/domain/propie
 import type { BrandAsset, BrandAssetVersion, BrandColor } from "@/domain/brand-kit";
 import type { Proyecto } from "@/domain/proyecto";
 import type { TransaccionCredito, Wallet } from "@/domain/credito";
+import type { AuditoriaLog, Empresa, Miembro, Rol } from "@/domain/identity";
 
 /**
  * Semillas IMVOLT: datos realistas para desarrollar la UI sin backend
@@ -746,5 +747,145 @@ export const seedBrandColors: BrandColor[] = [
     empresa: seedEmpresa,
     creado_en: "2026-02-10T10:14:00Z",
     actualizado_en: "2026-02-10T10:14:00Z",
+  },
+];
+
+// ── Identity: equipo, roles (§13), organización y bitácora ──────────────────
+
+/** Catálogo `roles` (§13), idéntico al sembrado por `database/schema.sql`. */
+export const seedRoles: Rol[] = [
+  { rol_id: "1", nombre: "propietario", estado: "activo", creado_en: "2026-01-05T09:00:00Z", actualizado_en: "2026-01-05T09:00:00Z" },
+  { rol_id: "2", nombre: "administrador", estado: "activo", creado_en: "2026-01-05T09:00:00Z", actualizado_en: "2026-01-05T09:00:00Z" },
+  { rol_id: "3", nombre: "marketing", estado: "activo", creado_en: "2026-01-05T09:00:00Z", actualizado_en: "2026-01-05T09:00:00Z" },
+  { rol_id: "4", nombre: "agente", estado: "activo", creado_en: "2026-01-05T09:00:00Z", actualizado_en: "2026-01-05T09:00:00Z" },
+  { rol_id: "5", nombre: "lector", estado: "activo", creado_en: "2026-01-05T09:00:00Z", actualizado_en: "2026-01-05T09:00:00Z" },
+];
+
+/** Organización del modo demo (espejo de `seedEmpresa` + campos de `empresas`). */
+export const seedEmpresaIdentity: Empresa[] = [
+  {
+    empresa_id: 1,
+    razon_social: "IMVOLT Desarrollos S.A.",
+    ruc: "1791234567801",
+    estado: "activo",
+    creado_en: "2026-01-05T09:00:00Z",
+    actualizado_en: "2026-01-05T09:00:00Z",
+  },
+];
+
+const MIEMBRO_ORG = {
+  empresa_id: 1,
+  empresa: { empresa_id: 1, razon_social: "IMVOLT Desarrollos S.A." },
+} as const;
+
+/** Miembros de la empresa en modo demo. */
+export const seedMiembros: Miembro[] = [
+  {
+    usuario_id: "1",
+    nombre: "Andrea Carrion",
+    email: "andrea@imvolt.ec",
+    telefono: "+593987654321",
+    contrasenia_temporal_hasta: null,
+    estado: "activo",
+    roles: ["propietario"],
+    creado_en: "2026-01-05T09:00:00Z",
+    actualizado_en: "2026-01-05T09:00:00Z",
+    ...MIEMBRO_ORG,
+  },
+  {
+    usuario_id: "2",
+    nombre: "Diego Salazar",
+    email: "diego@imvolt.ec",
+    telefono: "+593991112233",
+    contrasenia_temporal_hasta: null,
+    estado: "activo",
+    roles: ["administrador"],
+    creado_en: "2026-01-12T10:30:00Z",
+    actualizado_en: "2026-01-12T10:30:00Z",
+    ...MIEMBRO_ORG,
+  },
+  {
+    usuario_id: "3",
+    nombre: "Valeria Ortiz",
+    email: "valeria@imvolt.ec",
+    telefono: "+593994445566",
+    contrasenia_temporal_hasta: null,
+    estado: "activo",
+    roles: ["marketing"],
+    creado_en: "2026-02-03T15:45:00Z",
+    actualizado_en: "2026-02-03T15:45:00Z",
+    ...MIEMBRO_ORG,
+  },
+  {
+    usuario_id: "4",
+    nombre: "Mateo Vera",
+    email: "mateo@imvolt.ec",
+    telefono: null,
+    contrasenia_temporal_hasta: "2026-02-20T00:00:00Z",
+    estado: "activo",
+    roles: ["agente"],
+    creado_en: "2026-02-14T08:20:00Z",
+    actualizado_en: "2026-02-14T08:20:00Z",
+    ...MIEMBRO_ORG,
+  },
+  {
+    usuario_id: "5",
+    nombre: "Lucia Ponce",
+    email: "lucia@imvolt.ec",
+    telefono: "+593997778899",
+    contrasenia_temporal_hasta: null,
+    estado: "inactivo",
+    roles: ["lector"],
+    creado_en: "2026-01-20T11:10:00Z",
+    actualizado_en: "2026-03-01T09:00:00Z",
+    ...MIEMBRO_ORG,
+  },
+];
+
+/** Bitácora de auditoría del modo demo. */
+export const seedAuditoria: AuditoriaLog[] = [
+  {
+    audit_log_id: "1",
+    accion: "INVITE",
+    tabla: "usuarios",
+    registro_id: "4",
+    usuario_id: 2,
+    empresa_id: 1,
+    detalles: { email: "mateo@imvolt.ec", rol: "agente" },
+    usuario: { usuario_id: 2, nombre: "Diego Salazar", email: "diego@imvolt.ec" },
+    creado_en: "2026-02-14T08:20:00Z",
+  },
+  {
+    audit_log_id: "2",
+    accion: "CREATE",
+    tabla: "propiedades",
+    registro_id: "1",
+    usuario_id: 1,
+    empresa_id: 1,
+    detalles: { titulo: "Torre Cedros" },
+    usuario: { usuario_id: 1, nombre: "Andrea Carrion", email: "andrea@imvolt.ec" },
+    creado_en: "2026-02-18T14:05:00Z",
+  },
+  {
+    audit_log_id: "3",
+    accion: "UPDATE",
+    tabla: "usuarios",
+    registro_id: "5",
+    usuario_id: 2,
+    empresa_id: 1,
+    detalles: { estado: "inactivo" },
+    usuario: { usuario_id: 2, nombre: "Diego Salazar", email: "diego@imvolt.ec" },
+    creado_en: "2026-03-01T09:00:00Z",
+  },
+  {
+    audit_log_id: "4",
+    accion: "LOGIN",
+    tabla: "usuarios",
+    registro_id: "1",
+    usuario_id: 1,
+    empresa_id: 1,
+    detalles: null,
+    usuario: { usuario_id: 1, nombre: "Andrea Carrion", email: "andrea@imvolt.ec" },
+    creado_en: "2026-03-02T12:00:00Z",
   },
 ];

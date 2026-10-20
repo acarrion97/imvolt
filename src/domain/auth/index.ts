@@ -44,6 +44,12 @@ export interface AuthRol {
 export interface Perfil {
   usuario: AuthUsuario;
   roles: AuthRol[];
+  /**
+   * Permisos efectivos (unión de `roles_permisos` de los roles activos,
+   * catálogo §13). El rol `propietario` los hereda todos, así que sirve para
+   * puertear la UI sin replicar reglas de negocio.
+   */
+  permisos: string[];
 }
 
 export interface LoginInput {
