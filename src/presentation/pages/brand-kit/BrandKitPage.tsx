@@ -55,7 +55,9 @@ import { brandAssetSchema, brandColorSchema } from "@/presentation/validations";
 import {
   ACEPTADOS_POR_CATEGORIA,
   CATEGORIAS_ASSET,
+  LIMITE_BYTES_ARCHIVO,
   USOS_COLOR,
+  extensionesDe,
   validarArchivoCliente,
   type BrandAsset,
   type BrandAssetDescarga,
@@ -619,6 +621,13 @@ export function BrandKitPage() {
       maxCount={1}
       fileList={fileList}
       beforeUpload={(file) => {
+        // Tamaño (10 MB) y tipo según categoría: se rechaza ANTES de subir.
+        const error = validarArchivoCliente(file, categoriaActual ?? "otro");
+        if (error) {
+          message.error(error);
+          setArchivo(null);
+          return Upload.LIST_IGNORE;
+        }
         setArchivo(file);
         return false;
       }}
@@ -904,9 +913,15 @@ export function BrandKitPage() {
           <Form.Item
             label="Archivo"
             extra={
-              assetEditing
-                ? "Al adjuntar un archivo se creará una NUEVA VERSIÓN y quedará activa."
-                : "Opcional: si lo adjuntas, se creará la versión 1 del archivo. Tamaño máximo 10 MB."
+              <>
+                {assetEditing
+                  ? "Al adjuntar un archivo se creará una NUEVA VERSIÓN y quedará activa."
+                  : "Opcional: si lo adjuntas, se creará la versión 1 del archivo."}
+                <br />
+                {`Máximo ${formatTamano(LIMITE_BYTES_ARCHIVO)} · Tipos aceptados: ${extensionesDe(
+                  categoriaActual ?? "otro",
+                ).join(", ")}`}
+              </>
             }
           >
             {uploadArchivo}
@@ -931,6 +946,13 @@ export function BrandKitPage() {
                   maxCount={1}
                   fileList={fileListVersion}
                   beforeUpload={(file) => {
+                    // Mismas reglas que el API: vacío, 10 MB y tipo por categoría.
+                    const error = validarArchivoCliente(file, historialAsset.categoria);
+                    if (error) {
+                      message.error(error);
+                      setArchivoVersion(null);
+                      return Upload.LIST_IGNORE;
+                    }
                     setArchivoVersion(file);
                     return false;
                   }}
@@ -944,6 +966,11 @@ export function BrandKitPage() {
                     {archivoVersion ? "Cambiar" : "Seleccionar archivo"}
                   </Button>
                 </Upload>
+                <p className="sub" style={{ marginTop: 8, fontSize: 12 }}>
+                  {`Máximo ${formatTamano(LIMITE_BYTES_ARCHIVO)} · Tipos aceptados: ${extensionesDe(
+                    historialAsset.categoria,
+                  ).join(", ")}`}
+                </p>
               </div>
 
               <div className="field">

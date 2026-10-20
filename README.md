@@ -9,7 +9,7 @@ Inter, sidebar carbón `#101719`, fondo niebla `#F5F8F6`, verde vivo `#00D94B` e
 primarias y verde de enlace `#008E47` (contraste AA).
 
 ```
-Inicio · Mis propiedades · Estudio IA · Plantillas · Campañas Meta · Contactos ·
+Inicio · Mis propiedades · Estudio IA · Plantillas · Brand Kit · Campañas Meta · Contactos ·
 Analítica · Configuración   (+ Proyectos, secundaria)
 ```
 
@@ -62,6 +62,7 @@ desde `/documentacion` del API.
 | `/contactos` | Contactos | Pipeline de leads por fuente y estado (§11) |
 | `/analitica` | Analítica | Leads por día, lectura de resultados y distribución por fuente |
 | `/configuracion` | Configuración | Integraciones (Higgsfield/Meta/Lotes al Mando), billetera de créditos y perfil |
+| `/brand-kit` | Brand Kit | Subida de archivos de marca (logos, iconos, fuentes…) y paleta de colores; máximo 10 MB por archivo y tipos según categoría, con descarga por URL firmada desde el bucket privado `brand-kit` |
 | `/proyectos` | Proyectos | ABM de desarrollos (enlace desde Mis propiedades) |
 
 ## Estructura (Clean Architecture)
@@ -70,7 +71,7 @@ desde `/documentacion` del API.
 src/
 ├── domain/            Entidades IMVOLT (snake_case, IDs UUID = esquema SQL)
 │   ├── proyecto/  propiedad/  plantilla/  modelo/  generacion/
-│   ├── campana/   lead/       credito/    conexion/   auth/
+│   ├── campana/   lead/       credito/    conexion/   auth/      brand-kit/
 │   └── core/repositories/CrudRepository.ts   Contrato CRUD genérico
 ├── application/       Casos de uso (CRUD genérico + negocio: recarga, validar campaña)
 ├── infrastructure/
@@ -86,7 +87,7 @@ src/
     ├── auth/          AuthProvider + useAuth (estado de sesión)
     ├── hooks/         useProyectos, usePropiedades, useGeneraciones, ...
     ├── validations/   Esquemas Zod por formulario
-    └── pages/         inicio, propiedades, plantillas, estudio, campanas,
+    └── pages/         inicio, propiedades, plantillas, estudio, brand-kit, campanas,
                        contactos, analitica, configuracion, proyectos, auth/login
 ```
 
@@ -106,6 +107,10 @@ propiedad están en `src/presentation/theme/art.css` (SVG del prototipo).
   viaja desde la sesión (empresa activa resuelta con `GET /api/auth/me`).
 - **§07 fidelidad de contenido**: los renders IA se etiquetan como conceptuales en catálogo y
   Estudio. **§09**: la cotización sale del registro vivo de modelos (nunca hardcodeada).
+- **Subida de archivos**: los `<Upload>` validan tamaño y tipo antes de enviar (espejo del API:
+  10 MB máximo y catálogo de MIME por categoría en `domain/brand-kit`), con `Upload.LIST_IGNORE`
+  para descartar el archivo inválido sin disparar la petición; las descargas resuelven URL
+  firmada de 5 minutos vía `GET /brand-assets/:id/descarga`.
 
 ## Comandos
 

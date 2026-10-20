@@ -63,20 +63,74 @@ export const MIME_POR_CATEGORIA: Record<CategoriaAsset, readonly string[]> = {
 };
 
 /**
- * Validación CLIENTE del archivo antes de subirlo (tamaño + MIME).
- * Devuelve `null` si es válido o el mensaje de error en caso contrario.
- * El API vuelve a validar: aquí solo evitamos un viaje inútil.
+ * MIME genéricos: el navegador no reporta el tipo real (típico en `.woff2`,
+ * `.otf` y algunos arrastres), así que en ese caso se deduce de la extensión.
  */
-export function validarArchivoCliente(
-  file: File,
-  categoria: CategoriaAsset,
-): string | null {
+const MIME_GENERICO = new Set(["", "application/octet-stream", "binary/octet-stream"]);
+
+/** MIME inferido de la extensión (espejo de `brandkit.storage.ts`). */
+const MIME_POR_EXTENSION: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  pdf: "application/pdf",
+  woff: "font/woff",
+  woff2: "font/woff2",
+  ttf: "font/ttf",
+  otf: "font/otf",
+};
+
+/** Extensiones aceptadas por categoría, sin punto (`[".png", ".svg"]`). */
+export function extensionesDe(categoria: CategoriaAsset): string[] {
+  return (ACEPTADOS_POR_CATEGORIA[categoria] ?? ACEPTADOS_POR_CATEGORIA.otro)
+    .split(",")
+    .map((ext) => ext.trim())
+    .filter(Boolean);
+}
+
+/** Extensión en minúscula sin punto (`Logo.SVG` → `svg`). */
+export function extensionDeNombre(nombre: string): string {
+  const punto = nombre.lastIndexOf(".");
+  return punto > -1 ? nombre.slice(punto + 1).toLowerCase() : "";
+}
+
+/**
+ * MIME efectivo del archivo: el declarado por el navegador o, si viene vacío o
+ * genérico, el que corresponde a su extensión.
+ */
+export function resolverMimeCliente(file: File): string {
+  if (!MIME_GENERICO.has(file.type)) return file.type;
+  return MIME_POR_EXTENSION[extensionDeNombre(file.name)] ?? file.type;
+}
+
+/**
+ * Validación CLIENTE del archivo antes de subirlo (vacío + tamaño + MIME).
+ * Devuelve `null` si es válido o el mensaje de error en caso contrario.
+ *
+ * Es espejo EXACTO de `validarArchivo` en `api/src/services/brandkit.storage.ts`:
+ * aquí solo evitamos un viaje inútil, la seguridad la aplica el API (413/415).
+ */
+export function validarArchivoCliente(file: File, categoria: CategoriaAsset): string | null {
+  if (file.size <= 0) {
+    return "El archivo está vacío.";
+  }
   if (file.size > LIMITE_BYTES_ARCHIVO) {
     return `El archivo supera el máximo de ${LIMITE_BYTES_ARCHIVO / 1024 / 1024} MB.`;
   }
+
   const permitidos = MIME_POR_CATEGORIA[categoria] ?? MIME_POR_CATEGORIA.otro;
-  if (!permitidos.includes(file.type)) {
-    return `Tipo de archivo no permitido para "${categoria}". Aceptados: ${permitidos.join(", ")}.`;
+  const mensajeTipo = `Tipo de archivo no permitido para "${categoria}". Aceptados: ${permitidos.join(", ")}.`;
+
+  // El tipo declarado, si es conocido, debe corresponder a la categoría
+  // (evita subir renombrando un .exe a .png).
+  if (!MIME_GENERICO.has(file.type) && !permitidos.includes(file.type)) {
+    return mensajeTipo;
+  }
+  // El tipo efectivo (declarado o deducido de la extensión) también.
+  if (!permitidos.includes(resolverMimeCliente(file))) {
+    return mensajeTipo;
   }
   return null;
 }

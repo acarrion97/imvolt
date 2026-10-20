@@ -3,6 +3,11 @@ import { clearSession, readSession } from "@/infrastructure/auth/sessionStore";
 
 const API_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
 const TIMEOUT_MS = 15000;
+/**
+ * Timeout de las SUBIDAS de archivo (multipart): un blob de 10 MB en una
+ * conexión normal supera con holgura el timeout genérico de 15 s.
+ */
+const TIMEOUT_SUBIDA_MS = 60000;
 
 /** Error normalizado del backend: siempre tiene status (0 = error de red). */
 export class ApiError extends Error {
@@ -52,7 +57,11 @@ function extractMessage(body: unknown, status: number): string {
  * Toda la infraestructura REST pasa por aquí: centraliza URL base,
  * timeout, JSON, token Bearer y la normalización de errores a `ApiError`.
  */
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  timeoutMs: number = TIMEOUT_MS,
+): Promise<T> {
   if (!API_URL) {
     throw new ApiError(
       "VITE_API_URL no está definido. Configúralo en .env para usar el proveedor REST.",
@@ -61,7 +70,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const headers: Record<string, string> = { Accept: "application/json" };
@@ -113,5 +122,5 @@ export const http = {
   del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
   /** POST multipart (subida de archivos). El browser pone el boundary solo. */
   postForm: <T>(path: string, form: FormData) =>
-    request<T>(path, { method: "POST", body: form }),
+    request<T>(path, { method: "POST", body: form }, TIMEOUT_SUBIDA_MS),
 };
