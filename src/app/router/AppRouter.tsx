@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/presentation/components/layout/AppLayout";
 import { LoginPage } from "@/presentation/pages/auth/LoginPage";
 import { RequireAuth } from "./RequireAuth";
+import { RequirePermiso } from "./RequirePermiso";
 import { DashboardPage } from "@/presentation/pages/dashboard/DashboardPage";
 import { ProyectosPage } from "@/presentation/pages/proyectos/ProyectosPage";
 import { PropiedadesPage } from "@/presentation/pages/propiedades/PropiedadesPage";
@@ -52,7 +53,14 @@ export function AppRouter() {
           <Route path="/contactos" element={<ContactosPage />} />
           <Route path="/analitica" element={<AnaliticaPage />} />
           <Route path="/medios" element={<MediosPage />} />
-          <Route path="/equipo" element={<EquipoPage />} />
+          <Route
+            path="/equipo"
+            element={
+              <RequirePermiso capacidad="puedeGestionarUsuarios">
+                <EquipoPage />
+              </RequirePermiso>
+            }
+          />
           <Route path="/configuracion" element={<ConfiguracionPage />} />
           <Route path="/" element={<Navigate to="/inicio" replace />} />
           <Route path="/dashboard" element={<Navigate to="/inicio" replace />} />

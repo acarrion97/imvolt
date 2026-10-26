@@ -50,6 +50,25 @@ Con `VITE_DATA_PROVIDER=rest` la app exige sesión:
 El registro todavía no tiene pantalla: se hace con `POST /api/auth/register`
 desde `/documentacion` del API.
 
+## Seguridad: HTTPS/TLS, secretos y mínimos privilegios
+
+- **HTTPS/TLS:** `VITE_API_URL` se valida al arrancar (`infrastructure/http/apiUrl.ts`):
+  en producción solo `https://`; en desarrollo `http://` únicamente hacia `localhost`;
+  nunca credenciales embebidas. `vercel.json` añade HSTS, CSP (`upgrade-insecure-requests`,
+  `frame-ancestors 'none'`, `object-src 'none'`), `nosniff`, `Referrer-Policy` y
+  `Permissions-Policy`. Si despliegas en otro host, replica esas cabeceras allí.
+- **Secretos:** toda variable `VITE_*` se incrusta en el bundle público, así que aquí no
+  van secretos. `VITE_API_TOKEN` solo se honra con `vite dev` (se ignora en producción) y
+  las claves reales (service-role de Supabase, Higgsfield, Meta) viven solo en el backend.
+  Los archivos `.env*` están en `.gitignore`; solo se versiona `.env.example`.
+- **Mínimos privilegios:** la UI se puntea con `usePermisos()` (rol + `permisos[]` de
+  `/auth/me`): `/equipo` exige `gestionar_usuarios`, la bitácora y la edición de la
+  organización exigen propietario/administrador, y el menú oculta lo que no aplica. Es
+  solo UX; el API (RBAC + tenant) sigue siendo la autoridad.
+- **Pendiente recomendado:** el token de sesión vive en `localStorage` (expuesto ante XSS);
+  lo ideal es que el API lo entregue en cookie `HttpOnly; Secure; SameSite` y el CSP actual
+  (sin scripts inline) reduce, pero no elimina, ese riesgo.
+
 ## Equipo, auditoría y organización (identity)
 
 `/equipo` (Administración → Equipo): miembros de la empresa con **invitación**
