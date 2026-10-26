@@ -26,12 +26,18 @@ import type {
   BrandColorCreate,
   BrandColorRepository,
 } from "@/domain/brand-kit";
-import type { Plantilla, PlantillaCreate, PlantillaRepository, TipoPlantillaCreate, TipoPlantillaRepository } from "@/domain/plantilla";
+import type {
+  Plantilla,
+  PlantillaCreate,
+  PlantillaRepository,
+  TipoPlantilla,
+  TipoPlantillaCreate,
+  TipoPlantillaRepository,
+} from "@/domain/plantilla";
 import type {
   Propiedad,
   PropiedadCreate,
   PropiedadRepository,
-  TipoPlantilla,
   TipoPropiedad,
   TipoPropiedadCreate,
   TipoPropiedadRepository,
@@ -163,10 +169,10 @@ export class MockTipoPlantillaRepository
 {
   constructor() {
     super(
-      (row) => row.tipo_plantilla_id,
+      (row) => String(row.tipo_plantilla_id),
       (data, id) => ({
         ...data,
-        tipo_plantilla_id: id,
+        tipo_plantilla_id: Number(id),
         estado: "activo",
         creado_en: nowIso(),
         actualizado_en: nowIso(),
@@ -443,22 +449,20 @@ export class MockPlantillaRepository
 {
   constructor() {
     super(
-      (row) => row.template_id,
+      (row) => String(row.plantilla_id),
       (data, id) => ({
         ...data,
-        template_id: id,
-        organization_id: null,
-        variables: data.variables ?? [],
-        activo: data.activo ?? true,
-        creditos_base: data.creditos_base ?? 1,
-        created_at: nowIso(),
+        plantilla_id: Number(id),
+        estado: "activo",
+        creado_en: nowIso(),
+        actualizado_en: nowIso(),
       }),
       seedPlantillas,
     );
   }
 
   override async create(data: PlantillaCreate): Promise<Plantilla> {
-    return super.createWithId(uuid(), data);
+    return super.create(data);
   }
 }
 

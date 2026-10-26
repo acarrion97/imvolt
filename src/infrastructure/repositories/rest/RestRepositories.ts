@@ -33,12 +33,18 @@ import type {
   BrandColorCreate,
   BrandColorRepository,
 } from "@/domain/brand-kit";
-import type { Plantilla, PlantillaCreate, PlantillaRepository, TipoPlantillaCreate, TipoPlantillaRepository } from "@/domain/plantilla";
+import type {
+  Plantilla,
+  PlantillaCreate,
+  PlantillaRepository,
+  TipoPlantilla,
+  TipoPlantillaCreate,
+  TipoPlantillaRepository,
+} from "@/domain/plantilla";
 import type {
   Propiedad,
   PropiedadCreate,
   PropiedadRepository,
-  TipoPlantilla,
   TipoPropiedad,
   TipoPropiedadCreate,
   TipoPropiedadRepository,
