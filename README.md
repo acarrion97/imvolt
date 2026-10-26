@@ -50,6 +50,27 @@ Con `VITE_DATA_PROVIDER=rest` la app exige sesión:
 El registro todavía no tiene pantalla: se hace con `POST /api/auth/register`
 desde `/documentacion` del API.
 
+## Equipo, auditoría y organización (identity)
+
+`/equipo` (Administración → Equipo): miembros de la empresa con **invitación**
+(`POST /v1/usuarios/invitaciones`, devuelve una contraseña temporal de 7 días que se
+muestra una sola vez), **cambio de rol** (§13), activar/desactivar acceso y la
+**bitácora de auditoría** (`GET /v1/auditoria`, solo propietario/administrador, con
+filtro por acción/tabla y detalle expandible). Las acciones se puertean con
+`usePermisos()` a partir de `permisos[]` de `/auth/me`; el API sigue siendo la autoridad.
+En Configuración, el perfil de trabajo edita razón social y RUC (`PATCH /v1/empresas/{id}`).
+
+## Catálogo (proyectos, propiedades, medios, Brand Kit)
+
+- **Proyectos** y **Propiedades** usan el contrato del API (`proyecto_id`, `empresa_id`,
+  `creado_en`, `estado: activo|inactivo`); una propiedad puede asignarse a un proyecto
+  (`proyecto_id`, `null` = individual) y la tarjeta muestra su proyecto.
+- **Medios** (`/medios`, `/api/v1/media-assets`): metadatos (categoría imagen/video/
+  documento/otro, vínculo opcional a proyecto y propiedad) + versiones en bucket privado
+  (100 MB, validación de MIME cliente espejo del API), miniatura y descarga por URL
+  firmada de 5 min, historial con restaurar/eliminar versión.
+- **Brand Kit** (`/brand-kit`): archivos con versiones y paleta de colores.
+
 ## Pantallas
 
 | Ruta | Pantalla | Contenido |

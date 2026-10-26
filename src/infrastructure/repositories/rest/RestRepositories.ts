@@ -45,6 +45,13 @@ import type {
 } from "@/domain/propiedad";
 import type { Proyecto, ProyectoCreate, ProyectoRepository } from "@/domain/proyecto";
 import type {
+  MediaAsset,
+  MediaAssetCreate,
+  MediaAssetDescarga,
+  MediaAssetRepository,
+  MediaAssetVersion,
+} from "@/domain/media-asset";
+import type {
   AsignacionRol,
   AuditoriaLog,
   AuditoriaRepository,
@@ -170,6 +177,60 @@ export class RestBrandAssetRepository
 
   async eliminarVersion(assetId: string, versionId: string): Promise<void> {
     await http.del(`/v1/brand-assets/${assetId}/versiones/${versionId}`);
+  }
+}
+
+// ── Catalog: media assets (bucket privado `media-assets`, hasta 100 MB) ──────
+/**
+ * Misma forma que el Brand Kit, contra `/api/v1/media-assets`:
+ *   GET/POST  /{id}/versiones                  historial / subida multipart
+ *   GET       /{id}/descarga                   URL firmada de la versión activa
+ *   GET       /{id}/versiones/{vid}/descarga   URL firmada de una versión
+ *   POST      /{id}/versiones/{vid}/restaurar  vuelve a activarla
+ *   DELETE    /{id}/versiones/{vid}            borra fila + blob
+ */
+export class RestMediaAssetRepository
+  extends RestCrudRepository<MediaAsset, string, MediaAssetCreate>
+  implements MediaAssetRepository
+{
+  constructor() {
+    super("v1/media-assets");
+  }
+
+  async listarVersiones(assetId: string): Promise<MediaAssetVersion[]> {
+    return http.get<MediaAssetVersion[]>(`/v1/media-assets/${assetId}/versiones`);
+  }
+
+  async subirVersion(
+    assetId: string,
+    file: File,
+    nota?: string | null,
+  ): Promise<MediaAssetVersion> {
+    const form = new FormData();
+    form.append("archivo", file, file.name);
+    if (nota) form.append("nota", nota);
+    return http.postForm<MediaAssetVersion>(`/v1/media-assets/${assetId}/versiones`, form);
+  }
+
+  async descargar(assetId: string): Promise<MediaAssetDescarga> {
+    return http.get<MediaAssetDescarga>(`/v1/media-assets/${assetId}/descarga`);
+  }
+
+  async descargarVersion(assetId: string, versionId: string): Promise<MediaAssetDescarga> {
+    return http.get<MediaAssetDescarga>(
+      `/v1/media-assets/${assetId}/versiones/${versionId}/descarga`,
+    );
+  }
+
+  async restaurarVersion(assetId: string, versionId: string): Promise<MediaAsset> {
+    return http.post<MediaAsset>(
+      `/v1/media-assets/${assetId}/versiones/${versionId}/restaurar`,
+      {},
+    );
+  }
+
+  async eliminarVersion(assetId: string, versionId: string): Promise<void> {
+    await http.del(`/v1/media-assets/${assetId}/versiones/${versionId}`);
   }
 }
 
