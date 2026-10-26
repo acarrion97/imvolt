@@ -11,13 +11,18 @@ import {
   WalletOutlined,
 } from "@ant-design/icons";
 import {
+  useActualizarEmpresa,
   useConexiones,
   useCreateConexion,
   useDeleteConexion,
+  useEmpresa,
+  useMiembros,
+  usePermisos,
   useRecargarCreditos,
   useTransacciones,
   useWallet,
 } from "@/presentation/hooks";
+import { empresaSchema } from "@/presentation/validations";
 import { formatFecha } from "@/presentation/components/common/status";
 
 const RECARGAS = [10, 50, 100];
@@ -36,6 +41,37 @@ export function ConfiguracionPage() {
   const deleteConexion = useDeleteConexion();
   const recargar = useRecargarCreditos();
   const [recargando, setRecargando] = useState<number | null>(null);
+
+  const { data: empresa } = useEmpresa();
+  const { data: miembros } = useMiembros();
+  const actualizarEmpresa = useActualizarEmpresa();
+  const { puedeEditarEmpresa } = usePermisos();
+  // Borradores del formulario: `null` = sin editar (se muestra el valor guardado).
+  const [razonDraft, setRazonDraft] = useState<string | null>(null);
+  const [rucDraft, setRucDraft] = useState<string | null>(null);
+  const razonSocial = razonDraft ?? empresa?.razon_social ?? "";
+  const ruc = rucDraft ?? empresa?.ruc ?? "";
+  const setRazonSocial = setRazonDraft;
+  const setRuc = setRucDraft;
+
+  const guardarEmpresa = async () => {
+    const parsed = empresaSchema.safeParse({ razon_social: razonSocial, ruc });
+    if (!parsed.success) {
+      message.error(parsed.error.issues[0]?.message ?? "Revisa los datos de la organización.");
+      return;
+    }
+    try {
+      await actualizarEmpresa.mutateAsync(parsed.data);
+      setRazonDraft(null);
+      setRucDraft(null);
+      message.success("Organización actualizada.");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "No se pudo guardar.");
+    }
+  };
+
+  const empresaSinCambios =
+    !empresa || (razonSocial.trim() === empresa.razon_social && ruc.trim() === (empresa.ruc ?? ""));
 
   const meta = (conexiones ?? []).find((c) => c.estado === "conectada");
 
@@ -82,7 +118,11 @@ export function ConfiguracionPage() {
     },
     { label: "Conectar cuenta publicitaria de Meta", ok: Boolean(meta), note: "OAuth en la API" },
     { label: "Configurar credenciales de Higgsfield", ok: false, note: "HIGGSFIELD_API_KEY" },
-    { label: "Invitar al equipo de marketing", ok: false, note: "Roles §13" },
+    {
+      label: "Invitar al equipo de marketing",
+      ok: (miembros ?? []).length > 1,
+      note: "Roles §13",
+    },
   ];
 
   return (
@@ -248,16 +288,25 @@ export function ConfiguracionPage() {
             <h2 style={{ fontSize: 17, marginBottom: 14 }}>Perfil de trabajo</h2>
             <div className="form-grid">
               <div className="field">
-                <span className="lbl">Tipo de empresa</span>
-                <select className="imvolt-select" defaultValue="inmobiliaria" disabled>
-                  <option value="inmobiliaria">Inmobiliaria</option>
-                  <option value="developer">Desarrolladora</option>
-                  <option value="broker">Brokeraje</option>
-                </select>
+                <span className="lbl">Razón social</span>
+                <input
+                  className="imvolt-input"
+                  value={razonSocial}
+                  maxLength={120}
+                  onChange={(e) => setRazonSocial(e.target.value)}
+                  disabled={!puedeEditarEmpresa}
+                />
               </div>
               <div className="field">
-                <span className="lbl">Nombre de la empresa</span>
-                <input className="imvolt-input" defaultValue="Urbaniza Capital" disabled />
+                <span className="lbl">RUC (13 dígitos)</span>
+                <input
+                  className="imvolt-input"
+                  value={ruc}
+                  maxLength={13}
+                  inputMode="numeric"
+                  onChange={(e) => setRuc(e.target.value.replace(/\D/g, ""))}
+                  disabled={!puedeEditarEmpresa}
+                />
               </div>
               <div className="field">
                 <span className="lbl">Moneda</span>
@@ -265,14 +314,22 @@ export function ConfiguracionPage() {
                   <option value="USD">USD — Dólar</option>
                 </select>
               </div>
-              <div className="field">
-                <span className="lbl">Workspace</span>
-                <input className="imvolt-input" defaultValue="IMVOLT Demo" disabled />
-              </div>
             </div>
-            <p className="footer-note" style={{ marginTop: 4 }}>
-              La edición de la organización llega con el módulo identity en la API.
-            </p>
+            {puedeEditarEmpresa ? (
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ padding: "8px 13px", fontSize: 11, marginTop: 10 }}
+                onClick={guardarEmpresa}
+                disabled={empresaSinCambios || actualizarEmpresa.isPending}
+              >
+                Guardar cambios
+              </button>
+            ) : (
+              <p className="footer-note" style={{ marginTop: 4 }}>
+                Solo propietarios y administradores pueden editar la organización.
+              </p>
+            )}
           </div>
         </div>
       </div>

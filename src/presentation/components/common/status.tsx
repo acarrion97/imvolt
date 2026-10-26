@@ -69,8 +69,7 @@ export function EstadoPropiedadTag({ estado }: { estado: PropiedadDisponibilidad
 
 const PROY_COLORS: Record<ProyectoEstado, string> = {
   activo: "success",
-  pausado: "gold",
-  terminado: "default",
+  inactivo: "default",
 };
 
 export function EstadoProyectoTag({ estado }: { estado: ProyectoEstado }) {

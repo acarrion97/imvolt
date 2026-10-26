@@ -33,6 +33,7 @@ export const propiedadSchema = z.object({
     .trim()
     .min(1, "La descripción es obligatoria.")
     .max(2000, "Máximo 2000 caracteres."),
+  proyecto_id: z.string().optional().nullable(),
   medios_autorizados: z
     .array(z.enum(MEDIOS_AUTORIZADOS))
     .max(MEDIOS_AUTORIZADOS.length, "Máximo 8 canales.")

@@ -8,26 +8,48 @@ export type ProyectoTipo =
   | "proyecto_planos"
   | "individual";
 
-export type ProyectoEstado = "activo" | "pausado" | "terminado";
+/** Estado lógico (`BaseModel.estado` del API). */
+export type ProyectoEstado = "activo" | "inactivo";
 
-/** Entidad `public.proyectos` — camelCase inexistente: snake_case igual que la API. */
+/** Empresa incrustada (FK → `public.empresas`). */
+export interface ProyectoEmpresa {
+  empresa_id: number;
+  razon_social: string;
+}
+
+/**
+ * Referencia ligera de un proyecto, incrustada en propiedades y medios
+ * (`ProyectoReferencia` del API): basta para identificarlo y navegar.
+ */
+export interface ProyectoReferencia {
+  proyecto_id: string | number;
+  nombre: string;
+  tipo: ProyectoTipo;
+}
+
+/** Entidad `public.proyectos`, tal como la devuelve `GET /api/v1/proyectos`. */
 export interface Proyecto {
-  project_id: string;
-  organization_id: string;
+  proyecto_id: string;
+  empresa_id: number;
   nombre: string;
   tipo: ProyectoTipo;
   descripcion: string | null;
   ubicacion: string | null;
   total_lotes: number | null;
   estado: ProyectoEstado;
-  created_at: string;
+  /** Relación incrustada (FK → empresas). */
+  empresa: ProyectoEmpresa | null;
+  creado_en: string;
+  actualizado_en: string;
 }
 
-export type ProyectoCreate = Omit<
-  Proyecto,
-  "project_id" | "organization_id" | "created_at" | "estado"
-> & {
-  estado?: ProyectoEstado;
+/** `empresa_id` NO viaja: lo inyecta la API desde la sesión. */
+export type ProyectoCreate = {
+  nombre: string;
+  tipo: ProyectoTipo;
+  descripcion?: string | null;
+  ubicacion?: string | null;
+  total_lotes?: number | null;
 };
 
 export interface ProyectoRepository extends CrudRepository<Proyecto, string, ProyectoCreate> {}

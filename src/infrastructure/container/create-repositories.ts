@@ -8,36 +8,53 @@ import type { ModeloRepository } from "@/domain/modelo";
 import type { PlantillaRepository } from "@/domain/plantilla";
 import type { PropiedadRepository, TipoPropiedadRepository } from "@/domain/propiedad";
 import type { ProyectoRepository } from "@/domain/proyecto";
+import type { MediaAssetRepository } from "@/domain/media-asset";
+import type {
+  AuditoriaRepository,
+  EmpresaRepository,
+  MiembroRepository,
+  RolRepository,
+} from "@/domain/identity";
 import type { TransaccionRepository, WalletRepository } from "@/domain/credito";
 
 import {
+  MockAuditoriaRepository,
   MockAuthRepository,
   MockBrandAssetRepository,
   MockBrandColorRepository,
   MockCampanaRepository,
   MockConexionRepository,
+  MockEmpresaRepository,
   MockGeneracionRepository,
   MockLeadRepository,
+  MockMediaAssetRepository,
+  MockMiembroRepository,
   MockModeloRepository,
   MockPlantillaRepository,
   MockPropiedadRepository,
   MockProyectoRepository,
+  MockRolRepository,
   MockTipoPropiedadRepository,
   MockTransaccionRepository,
   MockWalletRepository,
 } from "@/infrastructure/repositories/mock/MockRepositories";
 import {
+  RestAuditoriaRepository,
   RestAuthRepository,
   RestBrandAssetRepository,
   RestBrandColorRepository,
   RestCampanaRepository,
   RestConexionRepository,
+  RestEmpresaRepository,
   RestGeneracionRepository,
   RestLeadRepository,
+  RestMediaAssetRepository,
+  RestMiembroRepository,
   RestModeloRepository,
   RestPlantillaRepository,
   RestPropiedadRepository,
   RestProyectoRepository,
+  RestRolRepository,
   RestTipoPropiedadRepository,
   RestTransaccionRepository,
   RestWalletRepository,
@@ -60,8 +77,13 @@ export interface Repositories {
   leadRepo: LeadRepository;
   brandAssetRepo: BrandAssetRepository;
   brandColorRepo: BrandColorRepository;
+  mediaAssetRepo: MediaAssetRepository;
   walletRepo: WalletRepository;
   transaccionRepo: TransaccionRepository;
+  miembroRepo: MiembroRepository;
+  rolRepo: RolRepository;
+  auditoriaRepo: AuditoriaRepository;
+  empresaRepo: EmpresaRepository;
   /** Sesión de usuario (solo útil con VITE_DATA_PROVIDER=rest). */
   authRepo: AuthRepository;
 }
@@ -79,8 +101,13 @@ function createMockRepositories(): Repositories {
     leadRepo: new MockLeadRepository(),
     brandAssetRepo: new MockBrandAssetRepository(),
     brandColorRepo: new MockBrandColorRepository(),
+    mediaAssetRepo: new MockMediaAssetRepository(),
     walletRepo: new MockWalletRepository(),
     transaccionRepo: new MockTransaccionRepository(),
+    miembroRepo: new MockMiembroRepository(),
+    rolRepo: new MockRolRepository(),
+    auditoriaRepo: new MockAuditoriaRepository(),
+    empresaRepo: new MockEmpresaRepository(),
     authRepo: new MockAuthRepository(),
   };
 }
@@ -104,8 +131,13 @@ function createRestRepositories(): Repositories {
     leadRepo: new RestLeadRepository(),
     brandAssetRepo: new RestBrandAssetRepository(),
     brandColorRepo: new RestBrandColorRepository(),
+    mediaAssetRepo: new RestMediaAssetRepository(),
     walletRepo: new RestWalletRepository(),
     transaccionRepo: new RestTransaccionRepository(),
+    miembroRepo: new RestMiembroRepository(),
+    rolRepo: new RestRolRepository(),
+    auditoriaRepo: new RestAuditoriaRepository(),
+    empresaRepo: new RestEmpresaRepository(),
     authRepo: new RestAuthRepository(),
   };
 }

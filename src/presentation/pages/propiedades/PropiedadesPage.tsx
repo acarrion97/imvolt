@@ -20,6 +20,7 @@ import {
   useCreatePropiedad,
   useDeletePropiedad,
   usePropiedades,
+  useProyectos,
   useTiposPropiedad,
   useUpdatePropiedad,
 } from "@/presentation/hooks";
@@ -36,6 +37,7 @@ import {
 interface FormValues {
   nombre: string;
   tipo_propiedad_id: string;
+  proyecto_id?: string | null;
   ubicacion: string;
   precio: number;
   disponibilidad: PropiedadDisponibilidad;
@@ -66,6 +68,7 @@ export function PropiedadesPage() {
 
   const { data: propiedades, isLoading } = usePropiedades();
   const { data: tipos } = useTiposPropiedad();
+  const { data: proyectos } = useProyectos();
   const createPropiedad = useCreatePropiedad();
   const updatePropiedad = useUpdatePropiedad();
   const deletePropiedad = useDeletePropiedad();
@@ -110,6 +113,7 @@ export function PropiedadesPage() {
     form.setFieldsValue({
       nombre: row.nombre,
       tipo_propiedad_id: String(row.tipo_propiedad_id),
+      proyecto_id: row.proyecto_id ? String(row.proyecto_id) : null,
       ubicacion: row.ubicacion,
       precio: Number(row.precio),
       disponibilidad: row.disponibilidad,
@@ -131,10 +135,13 @@ export function PropiedadesPage() {
 
     try {
       if (editing) {
-        await updatePropiedad.mutateAsync({ id: editing.propiedad_id, data: parsed.data });
+        await updatePropiedad.mutateAsync({
+          id: editing.propiedad_id,
+          data: { ...parsed.data, proyecto_id: parsed.data.proyecto_id ?? null },
+        });
         message.success("Propiedad actualizada.");
       } else {
-        await createPropiedad.mutateAsync(parsed.data);
+        await createPropiedad.mutateAsync({ ...parsed.data, proyecto_id: parsed.data.proyecto_id ?? null });
         message.success("Propiedad creada.");
       }
       setDrawerOpen(false);
@@ -276,7 +283,10 @@ export function PropiedadesPage() {
 
                 <div className="item-meta">
                   <h3>{p.nombre}</h3>
-                  <span className="where">{p.ubicacion}</span>
+                  <span className="where">
+                    {p.ubicacion}
+                    {p.proyecto ? ` · ${p.proyecto.nombre}` : ""}
+                  </span>
                   <div style={{ display: "flex", gap: 6, marginTop: 9, flexWrap: "wrap" }}>
                     <span className={badge.cls}>{badge.label}</span>
                     {medios.length === 0 && (
@@ -358,6 +368,18 @@ export function PropiedadesPage() {
                 options={(tipos ?? []).map((t) => ({
                   value: String(t.tipo_propiedad_id),
                   label: t.nombre,
+                }))}
+              />
+            </Form.Item>
+            <Form.Item name="proyecto_id" label="Proyecto">
+              <Select
+                allowClear
+                placeholder="Individual (sin proyecto)"
+                showSearch
+                optionFilterProp="label"
+                options={(proyectos ?? []).map((p) => ({
+                  value: String(p.proyecto_id),
+                  label: p.nombre,
                 }))}
               />
             </Form.Item>

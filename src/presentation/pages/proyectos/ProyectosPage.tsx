@@ -24,7 +24,6 @@ interface FormValues {
   descripcion?: string | null;
   ubicacion?: string | null;
   total_lotes?: number | null;
-  estado?: "activo" | "pausado" | "terminado";
 }
 
 export function ProyectosPage() {
@@ -66,7 +65,6 @@ export function ProyectosPage() {
       descripcion: proyecto.descripcion,
       ubicacion: proyecto.ubicacion,
       total_lotes: proyecto.total_lotes,
-      estado: proyecto.estado,
     });
     setDrawerOpen(true);
   };
@@ -83,7 +81,15 @@ export function ProyectosPage() {
 
     try {
       if (editing) {
-        await updateProyecto.mutateAsync({ id: editing.project_id, data: parsed.data });
+        await updateProyecto.mutateAsync({
+          id: editing.proyecto_id,
+          data: {
+            ...parsed.data,
+            descripcion: parsed.data.descripcion ?? null,
+            ubicacion: parsed.data.ubicacion ?? null,
+            total_lotes: parsed.data.total_lotes ?? null,
+          },
+        });
         message.success("Proyecto actualizado.");
       } else {
         await createProyecto.mutateAsync({
@@ -147,8 +153,8 @@ export function ProyectosPage() {
     },
     {
       title: "Creado",
-      dataIndex: "created_at",
-      key: "created_at",
+      dataIndex: "creado_en",
+      key: "creado_en",
       width: 130,
       render: (v: string) => formatFecha(v),
     },
@@ -164,7 +170,7 @@ export function ProyectosPage() {
             description="Las propiedades asociadas quedarÃ¡n sin proyecto."
             okText="Eliminar"
             cancelText="Cancelar"
-            onConfirm={() => handleDelete(row.project_id)}
+            onConfirm={() => handleDelete(row.proyecto_id)}
           >
             <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -208,7 +214,7 @@ export function ProyectosPage() {
           card={false}
           columns={columns}
           dataSource={filtered}
-          rowKey="project_id"
+          rowKey="proyecto_id"
           loading={isLoading}
           pagination={false}
         />
@@ -246,7 +252,7 @@ export function ProyectosPage() {
           </Form.Item>
 
           <Form.Item name="ubicacion" label="UbicaciÃ³n">
-            <Input placeholder="Ciudad, provincia" maxLength={200} />
+            <Input placeholder="Ciudad, provincia" maxLength={500} />
           </Form.Item>
 
           <Form.Item name="total_lotes" label="Total de lotes">
@@ -254,20 +260,9 @@ export function ProyectosPage() {
           </Form.Item>
 
           <Form.Item name="descripcion" label="DescripciÃ³n">
-            <Input.TextArea rows={3} maxLength={500} showCount placeholder="DescripciÃ³n del desarrollo" />
+            <Input.TextArea rows={3} maxLength={1000} showCount placeholder="DescripciÃ³n del desarrollo" />
           </Form.Item>
 
-          {editing && (
-            <Form.Item name="estado" label="Estado">
-              <Select
-                options={[
-                  { value: "activo", label: "Activo" },
-                  { value: "pausado", label: "Pausado" },
-                  { value: "terminado", label: "Terminado" },
-                ]}
-              />
-            </Form.Item>
-          )}
         </Form>
       </Drawer>
     </div>

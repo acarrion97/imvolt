@@ -11,6 +11,8 @@ import { EstudioPage } from "@/presentation/pages/estudio/EstudioPage";
 import { CampanasPage } from "@/presentation/pages/campanas/CampanasPage";
 import { ContactosPage } from "@/presentation/pages/contactos/ContactosPage";
 import { AnaliticaPage } from "@/presentation/pages/analitica/AnaliticaPage";
+import { MediosPage } from "@/presentation/pages/medios/MediosPage";
+import { EquipoPage } from "@/presentation/pages/equipo/EquipoPage";
 import { ConfiguracionPage } from "@/presentation/pages/configuracion/ConfiguracionPage";
 
 /**
@@ -22,6 +24,7 @@ import { ConfiguracionPage } from "@/presentation/pages/configuracion/Configurac
  *   /propiedades    Mis propiedades   /campanas        Campañas Meta
  *   /contactos      Contactos         /analitica       Analítica
  *   /configuracion  Configuración     /proyectos       Proyectos (secundaria)
+ *   /equipo         Equipo y auditoría   /medios  Medios (catálogo)
  *
  * Todas las rutas de la app pasan por `RequireAuth`: con el API real exige
  * sesión (token en localStorage) y en modo mock deja pasar sin login.
@@ -48,6 +51,8 @@ export function AppRouter() {
           <Route path="/campanas" element={<CampanasPage />} />
           <Route path="/contactos" element={<ContactosPage />} />
           <Route path="/analitica" element={<AnaliticaPage />} />
+          <Route path="/medios" element={<MediosPage />} />
+          <Route path="/equipo" element={<EquipoPage />} />
           <Route path="/configuracion" element={<ConfiguracionPage />} />
           <Route path="/" element={<Navigate to="/inicio" replace />} />
           <Route path="/dashboard" element={<Navigate to="/inicio" replace />} />
