@@ -22,6 +22,7 @@ import {
   useCreatePlantilla,
   useDeletePlantilla,
   usePlantillas,
+  useTiposPlantilla,
   useUpdatePlantilla,
 } from "@/presentation/hooks";
 import { plantillaSchema } from "@/presentation/validations";
@@ -61,6 +62,7 @@ const FORMATO_LABELS: Record<PlantillaFormato, string> = {
 interface FormValues {
   nombre: string;
   categoria: PlantillaCategoria;
+  tipo_plantilla_id: string;
   objetivo: PlantillaObjetivo;
   media_type: "image" | "video";
   formato: PlantillaFormato;
@@ -79,6 +81,8 @@ export function PlantillasPage() {
   const { message } = App.useApp();
   const navigate = useNavigate();
   const [categoria, setCategoria] = useState<PlantillaCategoria | "todas">("todas");
+  const { data: tipos_plantillas } = useTiposPlantilla();
+
   const [editing, setEditing] = useState<Plantilla | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [form] = Form.useForm<FormValues>();
@@ -88,6 +92,12 @@ export function PlantillasPage() {
   const updatePlantilla = useUpdatePlantilla();
   const deletePlantilla = useDeletePlantilla();
   const saving = createPlantilla.isPending || updatePlantilla.isPending;
+  const tiposPlantillaOptions = (tipos_plantillas ?? [])
+    .filter((tipo) => /^\d+$/.test(tipo.tipo_plantilla_id ?? ""))
+    .map((tipo) => ({
+      value: String(tipo.tipo_plantilla_id),
+      label: tipo.nombre,
+    }));
 
   const filtered = useMemo(
     () =>
@@ -106,17 +116,19 @@ export function PlantillasPage() {
 
   const openEdit = (row: Plantilla) => {
     setEditing(row);
+    form.resetFields();
     form.setFieldsValue({
       nombre: row.nombre,
       categoria: row.categoria,
+      tipo_plantilla_id: String(row.tipo_plantilla_id ?? ""),
       objetivo: row.objetivo,
       media_type: row.media_type,
       formato: row.formato,
       prompt_base: row.prompt_base,
-      estructura_narrativa: row.estructura_narrativa,
-      movimiento_camara: row.movimiento_camara,
-      estilo_visual: row.estilo_visual,
-      requiere_referencia_original: row.requiere_referencia_original,
+      estructura_narrativa: row.estructura_narrativa ?? "",
+      movimiento_camara: row.movimiento_camara ?? "",
+      estilo_visual: row.estilo_visual ?? "",
+      requiere_referencia_original: row.requiere_referencia_original ?? false,
     });
     setDrawerOpen(true);
   };
@@ -125,7 +137,10 @@ export function PlantillasPage() {
     const values = await form.validateFields().catch(() => null);
     if (!values) return;
 
-    const parsed = plantillaSchema.safeParse(values);
+    const parsed = plantillaSchema.safeParse({
+      ...values,
+      tipo_plantilla_id: String(values.tipo_plantilla_id ?? ""),
+    });
     if (!parsed.success) {
       message.error(parsed.error.issues[0]?.message ?? "Revisa los datos del formulario.");
       return;
@@ -141,7 +156,11 @@ export function PlantillasPage() {
 
     try {
       if (editing) {
-        await updatePlantilla.mutateAsync({ id: editing.template_id, data: parsed.data });
+        if (!editing.template_id) {
+          message.error("No se pudo identificar la plantilla que quieres actualizar.");
+          return;
+        }
+        await updatePlantilla.mutateAsync({ id: editing.template_id, data: payload });
         message.success("Plantilla actualizada.");
       } else {
         await createPlantilla.mutateAsync(payload);
@@ -227,6 +246,11 @@ export function PlantillasPage() {
               </div>
 
               <div className="meta">
+                <span className="mini-badge grey">
+                  {tipos_plantillas?.find(
+                    (tipo) => String(tipo.tipo_plantilla_id) === String(p.tipo_plantilla_id),
+                  )?.nombre ?? "Tipo sin definir"}
+                </span>
                 <span className="mini-badge">{OBJETIVO_LABELS[p.objetivo] ?? p.objetivo}</span>
                 <span className="mini-badge grey">
                   {p.media_type === "video" ? "Video" : "Imagen"} Â·{" "}
@@ -307,6 +331,18 @@ export function PlantillasPage() {
                   value,
                   label,
                 }))}
+              />
+            </Form.Item>
+            <Form.Item
+              name="tipo_plantilla_id"
+              label="Tipo"
+              rules={[{ required: true, message: "Selecciona el tipo." }]}
+            >
+              <Select
+                placeholder="Tipo"
+                showSearch
+                optionFilterProp="label"
+                options={tiposPlantillaOptions}
               />
             </Form.Item>
             <Form.Item name="objetivo" label="Objetivo" rules={[{ required: true }]}>

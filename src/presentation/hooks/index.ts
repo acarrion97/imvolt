@@ -40,6 +40,15 @@ export const {
   useDelete: useDeletePlantilla,
 } = plantillasHooks;
 
+
+// ── Tipos de propiedad (catálogo de plantillas) ──────────────────────────────
+export const { useList: useTiposPlantilla } = createCrudHooks(
+  getContainer().tiposPlantilla,
+  "tiposPlantilla" as Parameters<typeof createCrudHooks>[1],
+);
+
+
+
 // ── Modelos (catálogo vivo §09) ──────────────────────────────────────────────
 export function useModelos() {
   const { modelos } = getContainer();

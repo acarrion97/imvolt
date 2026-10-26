@@ -15,7 +15,7 @@ import type {
   BrandColorCreate,
 } from "@/domain/brand-kit";
 import type { Modelo, ModeloCreate } from "@/domain/modelo";
-import type { Plantilla, PlantillaCreate } from "@/domain/plantilla";
+import type { Plantilla, PlantillaCreate, TipoPlantilla, TipoPlantillaCreate } from "@/domain/plantilla";
 import type {
   Propiedad,
   PropiedadCreate,
@@ -34,6 +34,8 @@ export interface UseCases {
   proyectos: CrudUseCases<Proyecto, string, ProyectoCreate>;
   propiedades: CrudUseCases<Propiedad, string, PropiedadCreate>;
   tiposPropiedad: CrudUseCases<TipoPropiedad, string, TipoPropiedadCreate>;
+  tiposPlantilla: CrudUseCases<TipoPlantilla, string, TipoPlantillaCreate>;
+
   plantillas: CrudUseCases<Plantilla, string, PlantillaCreate>;
   modelos: CrudUseCases<Modelo, string, ModeloCreate>;
   generaciones: CrudUseCases<Generacion, string, GeneracionCreate>;
@@ -71,6 +73,7 @@ export function createUseCases(repos: Repositories): UseCases {
     proyectos: buildCrudUseCases(repos.proyectoRepo),
     propiedades: buildCrudUseCases(repos.propiedadRepo),
     tiposPropiedad: buildCrudUseCases(repos.tipoPropiedadRepo),
+    tiposPlantilla: buildCrudUseCases(repos.tipoPlantillaRepo),
     plantillas: buildCrudUseCases(repos.plantillaRepo),
     modelos: buildCrudUseCases(repos.modeloRepo),
     generaciones: buildCrudUseCases(repos.generacionRepo),

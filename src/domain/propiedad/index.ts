@@ -35,6 +35,13 @@ export interface TipoPropiedad {
   creado_en: string;
   actualizado_en: string;
 }
+export interface TipoPlantilla {
+  tipo_plantilla_id: string;
+  nombre: string;
+  estado: PropiedadEstado;
+  creado_en: string;
+  actualizado_en: string;
+}
 
 export type TipoPropiedadCreate = {
   nombre: string;

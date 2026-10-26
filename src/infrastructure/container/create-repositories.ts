@@ -5,7 +5,7 @@ import type { GeneracionRepository } from "@/domain/generacion";
 import type { LeadRepository } from "@/domain/lead";
 import type { BrandAssetRepository, BrandColorRepository } from "@/domain/brand-kit";
 import type { ModeloRepository } from "@/domain/modelo";
-import type { PlantillaRepository } from "@/domain/plantilla";
+import type { PlantillaRepository, TipoPlantillaRepository } from "@/domain/plantilla";
 import type { PropiedadRepository, TipoPropiedadRepository } from "@/domain/propiedad";
 import type { ProyectoRepository } from "@/domain/proyecto";
 import type { TransaccionRepository, WalletRepository } from "@/domain/credito";
@@ -22,6 +22,7 @@ import {
   MockPlantillaRepository,
   MockPropiedadRepository,
   MockProyectoRepository,
+  MockTipoPlantillaRepository,
   MockTipoPropiedadRepository,
   MockTransaccionRepository,
   MockWalletRepository,
@@ -38,6 +39,7 @@ import {
   RestPlantillaRepository,
   RestPropiedadRepository,
   RestProyectoRepository,
+  RestTipoPlantillaRepository,
   RestTipoPropiedadRepository,
   RestTransaccionRepository,
   RestWalletRepository,
@@ -52,6 +54,7 @@ export interface Repositories {
   proyectoRepo: ProyectoRepository;
   propiedadRepo: PropiedadRepository;
   tipoPropiedadRepo: TipoPropiedadRepository;
+  tipoPlantillaRepo: TipoPlantillaRepository;
   plantillaRepo: PlantillaRepository;
   modeloRepo: ModeloRepository;
   generacionRepo: GeneracionRepository;
@@ -71,6 +74,7 @@ function createMockRepositories(): Repositories {
     proyectoRepo: new MockProyectoRepository(),
     propiedadRepo: new MockPropiedadRepository(),
     tipoPropiedadRepo: new MockTipoPropiedadRepository(),
+    tipoPlantillaRepo: new MockTipoPlantillaRepository(),
     plantillaRepo: new MockPlantillaRepository(),
     modeloRepo: new MockModeloRepository(),
     generacionRepo: new MockGeneracionRepository(),
@@ -96,7 +100,9 @@ function createRestRepositories(): Repositories {
     proyectoRepo: new RestProyectoRepository(),
     propiedadRepo: new RestPropiedadRepository(),
     tipoPropiedadRepo: new RestTipoPropiedadRepository(),
+    tipoPlantillaRepo: new RestTipoPlantillaRepository(),
     plantillaRepo: new RestPlantillaRepository(),
+    
     modeloRepo: new RestModeloRepository(),
     generacionRepo: new RestGeneracionRepository(),
     conexionRepo: new RestConexionRepository(),

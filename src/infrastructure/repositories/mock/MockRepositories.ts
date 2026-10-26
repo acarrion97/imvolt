@@ -26,11 +26,12 @@ import type {
   BrandColorCreate,
   BrandColorRepository,
 } from "@/domain/brand-kit";
-import type { Plantilla, PlantillaCreate, PlantillaRepository } from "@/domain/plantilla";
+import type { Plantilla, PlantillaCreate, PlantillaRepository, TipoPlantillaCreate, TipoPlantillaRepository } from "@/domain/plantilla";
 import type {
   Propiedad,
   PropiedadCreate,
   PropiedadRepository,
+  TipoPlantilla,
   TipoPropiedad,
   TipoPropiedadCreate,
   TipoPropiedadRepository,
@@ -59,6 +60,7 @@ import {
   seedPlantillas,
   seedPropiedades,
   seedProyectos,
+  seedTiposPlantilla,
   seedTiposPropiedad,
   seedTransacciones,
   seedWallet,
@@ -118,6 +120,24 @@ export class MockTipoPropiedadRepository
         actualizado_en: nowIso(),
       }),
       seedTiposPropiedad,
+    );
+  }
+}
+export class MockTipoPlantillaRepository
+  extends InMemoryCrudRepository<TipoPlantilla, string, TipoPlantillaCreate>
+  implements TipoPlantillaRepository
+{
+  constructor() {
+    super(
+      (row) => row.tipo_plantilla_id,
+      (data, id) => ({
+        ...data,
+        tipo_plantilla_id: id,
+        estado: "activo",
+        creado_en: nowIso(),
+        actualizado_en: nowIso(),
+      }),
+      seedTiposPlantilla,
     );
   }
 }

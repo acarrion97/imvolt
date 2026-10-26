@@ -14,6 +14,9 @@ export const plantillaSchema = z.object({
     ],
     { message: "Selecciona una categoría." },
   ),
+  tipo_plantilla_id: z
+    .string()
+    .regex(/^\d+$/, "Selecciona un tipo de plantilla válido."),
   objetivo: z.enum(["visitas", "mensajes", "formularios", "branding"], {
     message: "Selecciona un objetivo.",
   }),

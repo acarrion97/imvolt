@@ -4,7 +4,7 @@ import type { Generacion } from "@/domain/generacion";
 import type { Lead } from "@/domain/lead";
 import type { Modelo } from "@/domain/modelo";
 import type { Plantilla } from "@/domain/plantilla";
-import type { Propiedad, PropiedadEmpresa, TipoPropiedad } from "@/domain/propiedad";
+import type { Propiedad, PropiedadEmpresa, TipoPlantilla, TipoPropiedad } from "@/domain/propiedad";
 import type { BrandAsset, BrandAssetVersion, BrandColor } from "@/domain/brand-kit";
 import type { Proyecto } from "@/domain/proyecto";
 import type { TransaccionCredito, Wallet } from "@/domain/credito";
@@ -60,6 +60,36 @@ export const seedEmpresa: PropiedadEmpresa = {
   razon_social: "IMVOLT Desarrollos S.A.",
 };
 
+export const seedTiposPlantilla: TipoPlantilla[] = [
+  {
+    tipo_plantilla_id: "1",
+    nombre: "Lotización",
+    creado_en: "2026-01-12T14:10:00Z",
+    actualizado_en: "2026-01-12T14:10:00Z",
+    estado: "activo",
+  },
+  {
+    tipo_plantilla_id: "2",
+    nombre: "Departamento",
+    creado_en: "2026-01-12T14:10:00Z",
+    actualizado_en: "2026-01-12T14:10:00Z",
+    estado: "activo",
+  },
+  {
+    tipo_plantilla_id: "3",
+    nombre: "Casa",
+    creado_en: "2026-01-12T14:10:00Z",
+    actualizado_en: "2026-01-12T14:10:00Z",
+    estado: "activo",
+  },
+  {
+    tipo_plantilla_id: "4",
+    nombre: "Marca inmobiliaria",
+    creado_en: "2026-01-12T14:10:00Z",
+    actualizado_en: "2026-01-12T14:10:00Z",
+    estado: "activo",
+  },
+];
 /** Catálogo `public.tipos_propiedades` (sembrado por la API). */
 export const seedTiposPropiedad: TipoPropiedad[] = [
   {
@@ -179,6 +209,7 @@ export const seedPlantillas: Plantilla[] = [
     organization_id: null,
     nombre: "Reels Lote con Vista",
     categoria: "lotizaciones",
+    tipo_plantilla_id: "1",
     objetivo: "visitas",
     media_type: "video",
     formato: "reels_9_16",
@@ -198,6 +229,7 @@ export const seedPlantillas: Plantilla[] = [
     organization_id: null,
     nombre: "Departamento Estreno 4:5",
     categoria: "departamentos",
+    tipo_plantilla_id: "2",
     objetivo: "formularios",
     media_type: "image",
     formato: "imagen_4_5",
@@ -217,6 +249,7 @@ export const seedPlantillas: Plantilla[] = [
     organization_id: ORGANIZATION_ID,
     nombre: "Casa Familiar Feed 1:1",
     categoria: "casas",
+    tipo_plantilla_id: "3",
     objetivo: "mensajes",
     media_type: "image",
     formato: "feed_1_1",
@@ -235,6 +268,7 @@ export const seedPlantillas: Plantilla[] = [
     organization_id: null,
     nombre: "Marca Inmobiliaria Banner",
     categoria: "marca_inmobiliaria",
+    tipo_plantilla_id: "4",
     objetivo: "branding",
     media_type: "image",
     formato: "banner_16_9",

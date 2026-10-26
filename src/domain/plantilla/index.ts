@@ -18,6 +18,7 @@ export interface Plantilla {
   organization_id: string | null;
   nombre: string;
   categoria: PlantillaCategoria;
+  tipo_plantilla_id: string;
   objetivo: PlantillaObjetivo;
   media_type: "image" | "video";
   formato: PlantillaFormato;
@@ -31,6 +32,16 @@ export interface Plantilla {
   activo: boolean;
   created_at: string;
 }
+export interface TipoPlantilla {
+  tipo_plantilla_id: string;
+  nombre: string;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export type TipoPlantillaCreate = {
+  nombre: string;
+};
 
 export type PlantillaCreate = Omit<
   Plantilla,
@@ -42,3 +53,4 @@ export type PlantillaCreate = Omit<
 };
 
 export interface PlantillaRepository extends CrudRepository<Plantilla, string, PlantillaCreate> {}
+export interface TipoPlantillaRepository extends CrudRepository<TipoPlantilla, string, TipoPlantillaCreate> {}

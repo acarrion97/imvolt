@@ -33,11 +33,12 @@ import type {
   BrandColorCreate,
   BrandColorRepository,
 } from "@/domain/brand-kit";
-import type { Plantilla, PlantillaCreate, PlantillaRepository } from "@/domain/plantilla";
+import type { Plantilla, PlantillaCreate, PlantillaRepository, TipoPlantillaCreate, TipoPlantillaRepository } from "@/domain/plantilla";
 import type {
   Propiedad,
   PropiedadCreate,
   PropiedadRepository,
+  TipoPlantilla,
   TipoPropiedad,
   TipoPropiedadCreate,
   TipoPropiedadRepository,
@@ -190,6 +191,16 @@ export class RestPlantillaRepository
     super("v1/plantillas");
   }
 }
+// ── Tipos de plantilla (catálogo de categorías) ──────────────────────────────
+export class RestTipoPlantillaRepository
+  extends RestCrudRepository<TipoPlantilla, string, TipoPlantillaCreate>
+  implements TipoPlantillaRepository
+{
+  constructor() {
+    super("v1/tipos-plantilla");
+  }
+}
+
 
 export class RestModeloRepository
   extends RestCrudRepository<Modelo, string, ModeloCreate>
