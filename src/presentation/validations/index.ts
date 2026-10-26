@@ -10,3 +10,7 @@ export { leadSchema } from "./leadSchema";
 export type { LeadFormData } from "./leadSchema";
 export { brandAssetSchema, brandColorSchema } from "./brandKitSchema";
 export type { BrandAssetFormData, BrandColorFormData } from "./brandKitSchema";
+export { invitacionSchema, empresaSchema } from "./identitySchema";
+export type { InvitacionFormData, EmpresaFormData } from "./identitySchema";
+export { mediaAssetSchema } from "./mediaAssetSchema";
+export type { MediaAssetFormData } from "./mediaAssetSchema";

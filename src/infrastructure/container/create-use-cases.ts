@@ -23,6 +23,23 @@ import type {
   TipoPropiedadCreate,
 } from "@/domain/propiedad";
 import type { Proyecto, ProyectoCreate } from "@/domain/proyecto";
+import type {
+  MediaAsset,
+  MediaAssetCreate,
+  MediaAssetDescarga,
+  MediaAssetVersion,
+} from "@/domain/media-asset";
+import type {
+  AuditoriaLog,
+  Empresa,
+  EmpresaUpdate,
+  InvitacionMiembro,
+  InvitacionResultado,
+  Miembro,
+  MiembroCreate,
+  Rol,
+} from "@/domain/identity";
+import type { FilterParams } from "@/domain/core/repositories/CrudRepository";
 import type { TransaccionCredito, TransaccionCreditoCreate, Wallet } from "@/domain/credito";
 
 import { buildCrudUseCases } from "@/application/core/crud-use-cases";
@@ -53,6 +70,30 @@ export interface UseCases {
     descargarVersion(assetId: string, versionId: string): Promise<BrandAssetDescarga>;
     restaurarVersion(assetId: string, versionId: string): Promise<BrandAsset>;
     eliminarVersion(assetId: string, versionId: string): Promise<void>;
+  };
+
+  // Catalog: medios (CRUD de metadatos + storage con versiones).
+  mediaAssets: CrudUseCases<MediaAsset, string, MediaAssetCreate>;
+  mediaAssetStorage: {
+    listarVersiones(assetId: string): Promise<MediaAssetVersion[]>;
+    subirVersion(assetId: string, file: File, nota?: string | null): Promise<MediaAssetVersion>;
+    descargar(assetId: string): Promise<MediaAssetDescarga>;
+    descargarVersion(assetId: string, versionId: string): Promise<MediaAssetDescarga>;
+    restaurarVersion(assetId: string, versionId: string): Promise<MediaAsset>;
+    eliminarVersion(assetId: string, versionId: string): Promise<void>;
+  };
+
+  // Identity: equipo (CRUD + invitación + cambio de rol), catálogo de roles,
+  // bitácora (solo lectura) y perfil de la organización.
+  miembros: CrudUseCases<Miembro, string, MiembroCreate> & {
+    invitar(input: InvitacionMiembro): Promise<InvitacionResultado>;
+    cambiarRol(usuarioId: string, rolId: string): Promise<void>;
+  };
+  roles: { list: { execute(): Promise<Rol[]> } };
+  auditoria: { list: { execute(filters?: FilterParams): Promise<AuditoriaLog[]> } };
+  empresa: {
+    obtener: { execute(): Promise<Empresa | null> };
+    actualizar: { execute(data: EmpresaUpdate): Promise<Empresa> };
   };
 
   // casos de uso de negocio (no CRUD)
@@ -91,6 +132,31 @@ export function createUseCases(repos: Repositories): UseCases {
         repos.brandAssetRepo.restaurarVersion(assetId, versionId),
       eliminarVersion: (assetId, versionId) =>
         repos.brandAssetRepo.eliminarVersion(assetId, versionId),
+    },
+
+    mediaAssets: buildCrudUseCases(repos.mediaAssetRepo),
+    mediaAssetStorage: {
+      listarVersiones: (assetId) => repos.mediaAssetRepo.listarVersiones(assetId),
+      subirVersion: (assetId, file, nota) => repos.mediaAssetRepo.subirVersion(assetId, file, nota),
+      descargar: (assetId) => repos.mediaAssetRepo.descargar(assetId),
+      descargarVersion: (assetId, versionId) =>
+        repos.mediaAssetRepo.descargarVersion(assetId, versionId),
+      restaurarVersion: (assetId, versionId) =>
+        repos.mediaAssetRepo.restaurarVersion(assetId, versionId),
+      eliminarVersion: (assetId, versionId) =>
+        repos.mediaAssetRepo.eliminarVersion(assetId, versionId),
+    },
+
+    miembros: {
+      ...buildCrudUseCases(repos.miembroRepo),
+      invitar: (input) => repos.miembroRepo.invitar(input),
+      cambiarRol: (usuarioId, rolId) => repos.miembroRepo.cambiarRol(usuarioId, rolId),
+    },
+    roles: { list: { execute: () => repos.rolRepo.listar() } },
+    auditoria: { list: { execute: (filters) => repos.auditoriaRepo.listar(filters) } },
+    empresa: {
+      obtener: { execute: () => repos.empresaRepo.obtenerActual() },
+      actualizar: { execute: (data) => repos.empresaRepo.actualizar(data) },
     },
 
     getWallet: { execute: () => repos.walletRepo.getWallet() },

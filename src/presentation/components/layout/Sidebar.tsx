@@ -6,9 +6,11 @@ import {
   BgColorsOutlined,
   HomeOutlined,
   LayoutOutlined,
+  PictureOutlined,
   NotificationOutlined,
   RobotOutlined,
   SettingOutlined,
+  TeamOutlined,
   UsergroupAddOutlined,
 } from "@ant-design/icons";
 import { useAuth, useWallet } from "@/presentation/hooks";
@@ -32,6 +34,7 @@ const ESPACIO: NavItem[] = [
   { key: "/propiedades", label: "Mis propiedades", icon: <ApartmentOutlined /> },
   { key: "/estudio", label: "Estudio IA", icon: <RobotOutlined /> },
   { key: "/plantillas", label: "Plantillas", icon: <LayoutOutlined /> },
+  { key: "/medios", label: "Medios", icon: <PictureOutlined /> },
   { key: "/brand-kit", label: "Brand Kit", icon: <BgColorsOutlined /> },
   { key: "/campanas", label: "Campañas Meta", icon: <NotificationOutlined /> },
   { key: "/contactos", label: "Contactos", icon: <UsergroupAddOutlined /> },
@@ -39,6 +42,7 @@ const ESPACIO: NavItem[] = [
 ];
 
 const ADMIN: NavItem[] = [
+  { key: "/equipo", label: "Equipo", icon: <TeamOutlined /> },
   { key: "/configuracion", label: "Configuración", icon: <SettingOutlined /> },
 ];
 
