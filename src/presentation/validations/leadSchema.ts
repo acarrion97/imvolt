@@ -12,8 +12,8 @@ export const leadSchema = z
       .optional()
       .nullable()
       .or(z.literal("")),
-    campaign_id: z.string().optional().nullable(),
-    property_id: z.string().optional().nullable(),
+    campaign_id: z.coerce.string().optional().nullable(),
+    property_id: z.coerce.string().optional().nullable(),
     fuente: z.enum(["meta_formulario", "whatsapp", "landing", "manual", "lotes_al_mando"], {
       message: "Selecciona la fuente del lead.",
     }),

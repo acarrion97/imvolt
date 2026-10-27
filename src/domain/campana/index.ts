@@ -49,6 +49,16 @@ export type CampanaCreate = Omit<
   estado?: CampanaEstado;
 };
 
+export interface PublicacionCampana {
+  message: string;
+  campania_publicitaria_id: string | number;
+  meta_campaign_id: string;
+  meta_estado: "published_paused";
+  simulado: boolean;
+  validado_solo: boolean;
+}
+
 export interface CampanaRepository extends CrudRepository<Campana, string, CampanaCreate> {
   getByPropiedadId(propertyId: string, filters?: FilterParams): Promise<Campana[]>;
+  publicar(campaignId: string): Promise<PublicacionCampana>;
 }

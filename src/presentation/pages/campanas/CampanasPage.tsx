@@ -8,7 +8,7 @@ import {
   Popconfirm,
   Select,
 } from "antd";
-import { DeleteOutlined, EditOutlined, PlusOutlined, SendOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, FacebookOutlined, PlusOutlined, SendOutlined } from "@ant-design/icons";
 import { DataTable } from "@/presentation/components/common/DataTable";
 import { EstadoCampanaTag, formatFecha, formatPrecio } from "@/presentation/components/common/status";
 import {
@@ -17,6 +17,7 @@ import {
   useCreateCampana,
   useDeleteCampana,
   usePropiedades,
+  usePublicarCampana,
   useUpdateCampana,
   useValidarCampana,
 } from "@/presentation/hooks";
@@ -69,6 +70,7 @@ export function CampanasPage() {
   const updateCampana = useUpdateCampana();
   const deleteCampana = useDeleteCampana();
   const validarCampana = useValidarCampana();
+  const publicarCampana = usePublicarCampana();
 
   const metaConectada = (conexiones ?? []).find((c) => c.estado === "conectada");
   const saving = createCampana.isPending || updateCampana.isPending;
@@ -207,6 +209,19 @@ export function CampanasPage() {
     }
   };
 
+  const handlePublicar = async (row: Campana) => {
+    try {
+      const resultado = await publicarCampana.mutateAsync(row.campaign_id);
+      if (resultado.simulado) {
+        message.warning("La API está en modo simulado: no se creó ninguna campaña real en Meta.");
+      } else {
+        message.success(`Campaña enviada a Meta y creada pausada (ID: ${resultado.meta_campaign_id}).`);
+      }
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "No se pudo enviar la campaña a Meta.");
+    }
+  };
+
   const columns: ColumnsType<Campana> = [
     {
       title: "Campaña",
@@ -252,9 +267,27 @@ export function CampanasPage() {
     {
       title: "",
       key: "acciones",
-      width: 175,
+      width: 255,
       render: (_, row) => (
         <span style={{ display: "flex", gap: 6 }}>
+          {!row.meta_campaign_id && ["awaiting_approval", "approved"].includes(row.estado) && (
+            <Popconfirm
+              title="¿Enviar campaña a Meta?"
+              description="Se creará pausada. No empezará a generar gasto hasta que la actives en Meta Ads."
+              okText="Enviar pausada"
+              cancelText="Cancelar"
+              onConfirm={() => handlePublicar(row)}
+            >
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ padding: "6px 10px", fontSize: 11 }}
+                disabled={!metaConectada || publicarCampana.isPending}
+              >
+                <FacebookOutlined /> Enviar a Meta
+              </button>
+            </Popconfirm>
+          )}
           {["local_draft", "validated"].includes(row.estado) && (
             <button
               type="button"
@@ -565,7 +598,8 @@ export function CampanasPage() {
       </div>
 
       <p className="footer-note">
-        Publicación real disponible al conectar Meta (API): approve → published_paused → active.
+        Las campañas enviadas se crean pausadas en Meta; confirma el estado real en Ads Manager
+        antes de activarlas.
       </p>
     </div>
   );

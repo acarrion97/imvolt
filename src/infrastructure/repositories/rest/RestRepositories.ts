@@ -11,6 +11,7 @@ import type {
 import type {
   Campana,
   CampanaCreate,
+  PublicacionCampana,
   CampanaRepository,
 } from "@/domain/campana";
 import type {
@@ -312,6 +313,10 @@ export class RestCampanaRepository
 
   async getByPropiedadId(propertyId: string): Promise<Campana[]> {
     return this.getAll({ property_id: propertyId });
+  }
+
+  publicar(campaignId: string): Promise<PublicacionCampana> {
+    return http.post<PublicacionCampana>(`/v1/campanias-publicitarias/${campaignId}/publicar`, {});
   }
 }
 

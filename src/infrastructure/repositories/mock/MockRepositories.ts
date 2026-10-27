@@ -9,6 +9,7 @@ import type {
 import type {
   Campana,
   CampanaCreate,
+  PublicacionCampana,
   CampanaRepository,
 } from "@/domain/campana";
 import type {
@@ -605,6 +606,25 @@ export class MockCampanaRepository
 
   async getByPropiedadId(propertyId: string): Promise<Campana[]> {
     return this.applyFilters(await this.getAll(), { property_id: propertyId });
+  }
+
+  async publicar(campaignId: string): Promise<PublicacionCampana> {
+    const campaign = await this.getById(campaignId);
+    if (!campaign) throw new Error("La campaña no existe.");
+    if (campaign.meta_campaign_id) throw new Error("La campaña ya fue publicada en Meta.");
+    const metaCampaignId = `META-SIM-${campaignId.slice(0, 8).toUpperCase()}`;
+    await this.update(campaignId, {
+      estado: "published_paused",
+      meta_campaign_id: metaCampaignId,
+    });
+    return {
+      message: "Campaña publicada en modo SIMULADO (pausada)",
+      campania_publicitaria_id: campaignId,
+      meta_campaign_id: metaCampaignId,
+      meta_estado: "published_paused",
+      simulado: true,
+      validado_solo: false,
+    };
   }
 }
 

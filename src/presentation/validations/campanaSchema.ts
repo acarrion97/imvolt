@@ -3,8 +3,8 @@ import { z } from "zod";
 /** Esquema de alta/edición de campaña (§10 flujo de publicación). */
 export const campanaSchema = z.object({
   nombre: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres."),
-  property_id: z.string().optional().nullable(),
-  connection_id: z.string().optional().nullable(),
+  property_id: z.coerce.string().optional().nullable(),
+  connection_id: z.coerce.string().optional().nullable(),
   objetivo: z.enum(["mensajes", "formularios", "visitas", "trafico", "branding"], {
     message: "Selecciona un objetivo.",
   }),

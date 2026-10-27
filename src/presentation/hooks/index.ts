@@ -109,6 +109,15 @@ export function useValidarCampana() {
   });
 }
 
+export function usePublicarCampana() {
+  const queryClient = useQueryClient();
+  const { publicarCampana } = getContainer();
+  return useMutation({
+    mutationFn: (campaignId: string) => publicarCampana.execute(campaignId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: domainKey("campanas") }),
+  });
+}
+
 // ── Leads ────────────────────────────────────────────────────────────────────
 const leadsHooks = createCrudHooks(getContainer().leads, "leads");
 export const {

@@ -30,6 +30,16 @@ VITE_DATA_PROVIDER=rest
 VITE_API_URL=http://localhost:3000/api
 ```
 
+El backend publica estos contratos REST sobre el esquema IMVOLT: campañas y
+leads se traducen sobre las tablas existentes; el catálogo de modelos, los jobs
+de generación, conexiones y ledger de créditos se habilitan con migraciones
+separadas que responden al Documento Maestro. Antes de desplegar la API, ejecuta
+en orden `imvolt-api/database/migrations/2026-10-27_01_ai_connections.sql`,
+`2026-10-27_02_campaign_lead_contract.sql` y
+`2026-10-27_03_credit_ledger.sql`; ejecuta también
+`2026-10-27_04_campaign_tenant_backfill.sql` para reparar campañas anteriores
+que quedaron sin empresa asociada.
+
 ## Autenticación
 
 Con `VITE_DATA_PROVIDER=rest` la app exige sesión:
