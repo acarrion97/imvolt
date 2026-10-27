@@ -558,7 +558,8 @@ export class MockConexionRepository
         organization_id: ORGANIZATION_ID,
         estado: data.estado ?? "pendiente",
         permisos: null,
-        created_at: nowIso(),
+         autenticada: false,
+         created_at: nowIso(),
       }),
       seedConexiones,
     );
@@ -566,6 +567,10 @@ export class MockConexionRepository
 
   override async create(data: ConexionCreate): Promise<Conexion> {
     return super.createWithId(uuid(), data);
+  }
+
+  async iniciarOAuthMeta(): Promise<{ authorization_url: string }> {
+    throw new Error("La conexión OAuth de Meta requiere el proveedor REST y una app de Meta configurada.");
   }
 }
 

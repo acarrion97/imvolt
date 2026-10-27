@@ -386,6 +386,7 @@ export const seedConexiones: Conexion[] = [
     nombre_cuenta: "Imvolt Ads Principal",
     estado: "conectada",
     permisos: { ads_management: true, leads_access: true },
+    autenticada: false,
     created_at: "2026-08-15T10:00:00Z",
   },
   {
@@ -395,6 +396,7 @@ export const seedConexiones: Conexion[] = [
     nombre_cuenta: "Campañas Cuenca",
     estado: "pendiente",
     permisos: null,
+    autenticada: false,
     created_at: "2026-09-28T17:30:00Z",
   },
 ];

@@ -10,14 +10,17 @@ export interface Conexion {
   nombre_cuenta: string;
   estado: ConexionEstado;
   permisos: Record<string, unknown> | null;
+  autenticada: boolean;
   created_at: string;
 }
 
 export type ConexionCreate = Omit<
   Conexion,
-  "connection_id" | "organization_id" | "estado" | "permisos" | "created_at"
+  "connection_id" | "organization_id" | "estado" | "permisos" | "autenticada" | "created_at"
 > & {
   estado?: ConexionEstado;
 };
 
-export interface ConexionRepository extends CrudRepository<Conexion, string, ConexionCreate> {}
+export interface ConexionRepository extends CrudRepository<Conexion, string, ConexionCreate> {
+  iniciarOAuthMeta(): Promise<{ authorization_url: string }>;
+}

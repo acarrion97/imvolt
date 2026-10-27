@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { App } from "antd";
 import {
   ApiOutlined,
@@ -6,14 +6,12 @@ import {
   CloseOutlined,
   CloudServerOutlined,
   MessageOutlined,
-  PlusOutlined,
   ReloadOutlined,
   WalletOutlined,
 } from "@ant-design/icons";
 import {
   useActualizarEmpresa,
   useConexiones,
-  useCreateConexion,
   useDeleteConexion,
   useEmpresa,
   useMiembros,
@@ -21,6 +19,7 @@ import {
   useRecargarCreditos,
   useTransacciones,
   useWallet,
+  useIniciarOAuthMeta,
 } from "@/presentation/hooks";
 import { empresaSchema } from "@/presentation/validations";
 import { formatFecha } from "@/presentation/components/common/status";
@@ -37,8 +36,8 @@ export function ConfiguracionPage() {
   const { data: conexiones, isLoading: loadingConexiones } = useConexiones();
   const { data: wallet } = useWallet();
   const { data: transacciones } = useTransacciones();
-  const createConexion = useCreateConexion();
   const deleteConexion = useDeleteConexion();
+  const iniciarOAuth = useIniciarOAuthMeta();
   const recargar = useRecargarCreditos();
   const [recargando, setRecargando] = useState<number | null>(null);
 
@@ -73,18 +72,28 @@ export function ConfiguracionPage() {
   const empresaSinCambios =
     !empresa || (razonSocial.trim() === empresa.razon_social && ruc.trim() === (empresa.ruc ?? ""));
 
-  const meta = (conexiones ?? []).find((c) => c.estado === "conectada");
+  const meta = (conexiones ?? []).find((c) => c.estado === "conectada" && c.autenticada);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("meta");
+    if (!result) return;
+    if (result === "connected") {
+      message.success("Meta conectada por OAuth. Ya puedes seleccionar la cuenta en una campaña.");
+    } else if (result === "cancelled") {
+      message.info("Se canceló la autorización de Meta.");
+    } else {
+      message.error("No se pudo completar la conexión con Meta. Revisa la configuración OAuth de la API.");
+    }
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [message]);
 
   const conectarMeta = async () => {
     try {
-      await createConexion.mutateAsync({
-        cuenta_publicitaria_id: `act_demo_${Math.floor(Math.random() * 900000 + 100000)}`,
-        nombre_cuenta: "Urbaniza Capital Ads",
-        estado: "conectada",
-      });
-      message.success("Cuenta publicitaria de Meta conectada (demo).");
+      const { authorization_url } = await iniciarOAuth.mutateAsync();
+      window.location.assign(authorization_url);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : "No se pudo conectar Meta.");
+      message.error(error instanceof Error ? error.message : "No se pudo iniciar OAuth con Meta.");
     }
   };
 
@@ -163,8 +172,7 @@ export function ConfiguracionPage() {
             <span className="info">
               <b>Meta Ads</b>
               <span>
-                {meta ? `Conectada: ${meta.cuenta_publicitaria_id}` : "Cuenta publicitaria de "}
-                Meta.
+                {meta ? `Conectada: ${meta.nombre_cuenta} (${meta.cuenta_publicitaria_id})` : "Autoriza Meta Ads para importar tus cuentas publicitarias."}
               </span>
             </span>
             {loadingConexiones ? (
@@ -189,9 +197,9 @@ export function ConfiguracionPage() {
                 className="btn btn-outline"
                 style={{ padding: "8px 13px", fontSize: 11 }}
                 onClick={conectarMeta}
-                disabled={createConexion.isPending}
+                disabled={iniciarOAuth.isPending}
               >
-                <PlusOutlined /> Conectar
+                <ApiOutlined /> Conectar con Meta
               </button>
             )}
           </div>

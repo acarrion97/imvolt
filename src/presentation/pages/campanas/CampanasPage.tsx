@@ -72,7 +72,7 @@ export function CampanasPage() {
   const validarCampana = useValidarCampana();
   const publicarCampana = usePublicarCampana();
 
-  const metaConectada = (conexiones ?? []).find((c) => c.estado === "conectada");
+  const metaConectada = (conexiones ?? []).find((c) => c.estado === "conectada" && c.autenticada);
   const saving = createCampana.isPending || updateCampana.isPending;
 
   const propiedadNombre = useMemo(() => {
@@ -270,7 +270,8 @@ export function CampanasPage() {
       width: 255,
       render: (_, row) => (
         <span style={{ display: "flex", gap: 6 }}>
-          {!row.meta_campaign_id && ["awaiting_approval", "approved"].includes(row.estado) && (
+          {!row.meta_campaign_id &&
+            ["validated", "awaiting_approval", "approved"].includes(row.estado) && (
             <Popconfirm
               title="¿Enviar campaña a Meta?"
               description="Se creará pausada. No empezará a generar gasto hasta que la actives en Meta Ads."
@@ -288,7 +289,7 @@ export function CampanasPage() {
               </button>
             </Popconfirm>
           )}
-          {["local_draft", "validated"].includes(row.estado) && (
+          {row.estado === "local_draft" && (
             <button
               type="button"
               className="btn btn-soft"
@@ -422,7 +423,7 @@ export function CampanasPage() {
                     allowClear
                     placeholder={metaConectada ? "Cuenta conectada" : "Sin conexión"}
                     options={(conexiones ?? [])
-                      .filter((c) => c.estado === "conectada")
+                      .filter((c) => c.estado === "conectada" && c.autenticada)
                       .map((c) => ({
                         value: c.connection_id,
                         label: `${c.nombre_cuenta} (${c.cuenta_publicitaria_id})`,

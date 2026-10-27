@@ -57,6 +57,7 @@ export interface UseCases {
   modelos: CrudUseCases<Modelo, string, ModeloCreate>;
   generaciones: CrudUseCases<Generacion, string, GeneracionCreate>;
   conexiones: CrudUseCases<Conexion, string, ConexionCreate>;
+  iniciarOAuthMeta: { execute(): Promise<{ authorization_url: string }> };
   campanas: CrudUseCases<Campana, string, CampanaCreate>;
   leads: CrudUseCases<Lead, string, LeadCreate>;
   transacciones: CrudUseCases<TransaccionCredito, string, TransaccionCreditoCreate>;
@@ -119,6 +120,7 @@ export function createUseCases(repos: Repositories): UseCases {
     modelos: buildCrudUseCases(repos.modeloRepo),
     generaciones: buildCrudUseCases(repos.generacionRepo),
     conexiones: buildCrudUseCases(repos.conexionRepo),
+    iniciarOAuthMeta: { execute: () => repos.conexionRepo.iniciarOAuthMeta() },
     campanas: buildCrudUseCases(repos.campanaRepo),
     leads: buildCrudUseCases(repos.leadRepo),
     transacciones: buildCrudUseCases(repos.transaccionRepo),
