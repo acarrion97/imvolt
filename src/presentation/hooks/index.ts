@@ -89,13 +89,6 @@ export const {
   useDelete: useDeleteConexion,
 } = conexionesHooks;
 
-export function useIniciarOAuthMeta() {
-  const { iniciarOAuthMeta } = getContainer();
-  return useMutation({
-    mutationFn: () => iniciarOAuthMeta.execute(),
-  });
-}
-
 // ── Campañas ─────────────────────────────────────────────────────────────────
 const campanasHooks = createCrudHooks(getContainer().campanas, "campanas");
 export const {

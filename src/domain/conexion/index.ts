@@ -21,6 +21,4 @@ export type ConexionCreate = Omit<
   estado?: ConexionEstado;
 };
 
-export interface ConexionRepository extends CrudRepository<Conexion, string, ConexionCreate> {
-  iniciarOAuthMeta(): Promise<{ authorization_url: string }>;
-}
+export type ConexionRepository = CrudRepository<Conexion, string, ConexionCreate>;

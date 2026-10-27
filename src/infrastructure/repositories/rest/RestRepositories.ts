@@ -302,9 +302,6 @@ export class RestConexionRepository
     super("v1/conexiones");
   }
 
-  iniciarOAuthMeta(): Promise<{ authorization_url: string }> {
-    return http.get<{ authorization_url: string }>("/v1/conexiones/meta/oauth/start");
-  }
 }
 
 export class RestCampanaRepository

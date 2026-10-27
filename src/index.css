@@ -895,6 +895,8 @@ a { color: var(--green); }
   gap: 34px;
 }
 
+.auth-brand > img { align-self: flex-start; }
+
 .auth-brand h1 {
   color: #fff;
   font-size: 34px;

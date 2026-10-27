@@ -13,7 +13,6 @@ import { DataTable } from "@/presentation/components/common/DataTable";
 import { EstadoCampanaTag, formatFecha, formatPrecio } from "@/presentation/components/common/status";
 import {
   useCampanas,
-  useConexiones,
   useCreateCampana,
   useDeleteCampana,
   usePropiedades,
@@ -43,7 +42,6 @@ const DESTINO_LABELS: Record<CampanaDestino, string> = {
 interface FormValues {
   nombre: string;
   property_id?: string | null;
-  connection_id?: string | null;
   objetivo: CampanaObjetivo;
   destino: CampanaDestino;
   presupuesto_maximo: number;
@@ -65,14 +63,12 @@ export function CampanasPage() {
 
   const { data: campanas, isLoading } = useCampanas();
   const { data: propiedades } = usePropiedades();
-  const { data: conexiones } = useConexiones();
   const createCampana = useCreateCampana();
   const updateCampana = useUpdateCampana();
   const deleteCampana = useDeleteCampana();
   const validarCampana = useValidarCampana();
   const publicarCampana = usePublicarCampana();
 
-  const metaConectada = (conexiones ?? []).find((c) => c.estado === "conectada" && c.autenticada);
   const saving = createCampana.isPending || updateCampana.isPending;
 
   const propiedadNombre = useMemo(() => {
@@ -86,7 +82,6 @@ export function CampanasPage() {
   const destino = Form.useWatch("destino", form);
   const presupuesto = Form.useWatch("presupuesto_maximo", form);
   const copy = Form.useWatch("copy", form);
-  const connectionId = Form.useWatch("connection_id", form);
   const fechas = Form.useWatch("fechas", form);
 
   const p1 = Boolean(nombre) && Boolean(propertyId);
@@ -116,7 +111,6 @@ export function CampanasPage() {
     form.setFieldsValue({
       nombre: row.nombre,
       property_id: row.property_id,
-      connection_id: row.connection_id,
       objetivo: row.objetivo,
       destino: row.destino,
       presupuesto_maximo: row.presupuesto_maximo,
@@ -138,7 +132,6 @@ export function CampanasPage() {
     const parsed = campanaSchema.safeParse({
       nombre: values.nombre,
       property_id: values.property_id ?? null,
-      connection_id: values.connection_id ?? null,
       objetivo: values.objetivo,
       destino: values.destino,
       presupuesto_maximo: values.presupuesto_maximo,
@@ -157,7 +150,7 @@ export function CampanasPage() {
     const payload = {
       ...parsed.data,
       property_id: parsed.data.property_id ?? null,
-      connection_id: parsed.data.connection_id ?? null,
+      connection_id: null,
       titulo: parsed.data.titulo ?? null,
       cta: parsed.data.cta ?? null,
       presupuesto_maximo: parsed.data.presupuesto_maximo,
@@ -353,18 +346,9 @@ export function CampanasPage() {
         </div>
       </div>
 
-      <div className={`notice ${metaConectada ? "ok" : "warning"}`}>
-        {metaConectada ? (
-          <>
-            <strong>Meta conectada.</strong> Cuenta «{metaConectada.nombre_cuenta}» lista para
-            publicar cuando la campaña sea aprobada.
-          </>
-        ) : (
-          <>
-            <strong>Meta no está conectado por OAuth.</strong> Puedes usar las credenciales de
-            prueba configuradas en el `.env` del backend o conectar una cuenta en Configuración.
-          </>
-        )}
+      <div className="notice">
+        <strong>Publicación directa en Meta.</strong> La API usa el token y la cuenta publicitaria
+        configurados de forma privada en el backend.
       </div>
 
       <div className="campaign-layout">
@@ -412,22 +396,6 @@ export function CampanasPage() {
                       value: p.propiedad_id,
                       label: p.nombre,
                     }))}
-                  />
-                </Form.Item>
-              </div>
-
-              <div className="field">
-                <span className="lbl">Conexión Meta</span>
-                <Form.Item name="connection_id" noStyle>
-                  <Select
-                    allowClear
-                    placeholder={metaConectada ? "Cuenta conectada" : "Opcional: usa la cuenta de prueba del backend"}
-                    options={(conexiones ?? [])
-                      .filter((c) => c.estado === "conectada" && c.autenticada)
-                      .map((c) => ({
-                        value: c.connection_id,
-                        label: `${c.nombre_cuenta} (${c.cuenta_publicitaria_id})`,
-                      }))}
                   />
                 </Form.Item>
               </div>
@@ -554,10 +522,6 @@ export function CampanasPage() {
           <div className="summ-row">
             <span>Duración</span>
             <strong>{duracionDias ? `${duracionDias} días` : "—"}</strong>
-          </div>
-          <div className="summ-row">
-            <span>Conexión Meta</span>
-            <strong>{connectionId ? "Cuenta conectada" : "Credenciales del backend"}</strong>
           </div>
           <div className="summ-row">
             <span>Copy</span>

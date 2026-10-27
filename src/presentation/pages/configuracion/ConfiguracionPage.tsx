@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { App } from "antd";
 import {
   ApiOutlined,
   CheckCircleOutlined,
-  CloseOutlined,
   CloudServerOutlined,
   MessageOutlined,
   ReloadOutlined,
@@ -11,15 +10,12 @@ import {
 } from "@ant-design/icons";
 import {
   useActualizarEmpresa,
-  useConexiones,
-  useDeleteConexion,
   useEmpresa,
   useMiembros,
   usePermisos,
   useRecargarCreditos,
   useTransacciones,
   useWallet,
-  useIniciarOAuthMeta,
 } from "@/presentation/hooks";
 import { empresaSchema } from "@/presentation/validations";
 import { formatFecha } from "@/presentation/components/common/status";
@@ -33,11 +29,8 @@ const RECARGAS = [10, 50, 100];
  */
 export function ConfiguracionPage() {
   const { message } = App.useApp();
-  const { data: conexiones, isLoading: loadingConexiones } = useConexiones();
   const { data: wallet } = useWallet();
   const { data: transacciones } = useTransacciones();
-  const deleteConexion = useDeleteConexion();
-  const iniciarOAuth = useIniciarOAuthMeta();
   const recargar = useRecargarCreditos();
   const [recargando, setRecargando] = useState<number | null>(null);
 
@@ -72,41 +65,6 @@ export function ConfiguracionPage() {
   const empresaSinCambios =
     !empresa || (razonSocial.trim() === empresa.razon_social && ruc.trim() === (empresa.ruc ?? ""));
 
-  const meta = (conexiones ?? []).find((c) => c.estado === "conectada" && c.autenticada);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const result = params.get("meta");
-    if (!result) return;
-    if (result === "connected") {
-      message.success("Meta conectada por OAuth. Ya puedes seleccionar la cuenta en una campaña.");
-    } else if (result === "cancelled") {
-      message.info("Se canceló la autorización de Meta.");
-    } else {
-      message.error("No se pudo completar la conexión con Meta. Revisa la configuración OAuth de la API.");
-    }
-    window.history.replaceState({}, "", window.location.pathname);
-  }, [message]);
-
-  const conectarMeta = async () => {
-    try {
-      const { authorization_url } = await iniciarOAuth.mutateAsync();
-      window.location.assign(authorization_url);
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "No se pudo iniciar OAuth con Meta.");
-    }
-  };
-
-  const desconectarMeta = async () => {
-    if (!meta) return;
-    try {
-      await deleteConexion.mutateAsync(meta.connection_id);
-      message.success("Conexión de Meta eliminada.");
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "No se pudo desconectar.");
-    }
-  };
-
   const recargarCreditos = async (monto: number) => {
     setRecargando(monto);
     try {
@@ -125,7 +83,11 @@ export function ConfiguracionPage() {
       ok: false,
       note: "20+ tablas con RLS, índices y seeds",
     },
-    { label: "Conectar cuenta publicitaria de Meta", ok: Boolean(meta), note: "OAuth en la API" },
+    {
+      label: "Configurar publicación de Meta",
+      ok: false,
+      note: "META_ACCESS_TOKEN y META_AD_ACCOUNT_ID en el backend",
+    },
     { label: "Configurar credenciales de Higgsfield", ok: false, note: "HIGGSFIELD_API_KEY" },
     {
       label: "Invitar al equipo de marketing",
@@ -172,36 +134,11 @@ export function ConfiguracionPage() {
             <span className="info">
               <b>Meta Ads</b>
               <span>
-                {meta ? `Conectada: ${meta.nombre_cuenta} (${meta.cuenta_publicitaria_id})` : "Autoriza Meta Ads para importar tus cuentas publicitarias."}
+                La publicación usa las credenciales privadas configuradas en el backend
+                (META_ACCESS_TOKEN y META_AD_ACCOUNT_ID). No se requiere conectar una cuenta aquí.
               </span>
             </span>
-            {loadingConexiones ? (
-              <span className="mini-badge grey">...</span>
-            ) : meta ? (
-              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span className="mini-badge">
-                  <span className="status-point" /> Conectada
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  style={{ padding: "7px 11px", fontSize: 11 }}
-                  onClick={desconectarMeta}
-                >
-                  <CloseOutlined /> Desconectar
-                </button>
-              </span>
-            ) : (
-              <button
-                type="button"
-                className="btn btn-outline"
-                style={{ padding: "8px 13px", fontSize: 11 }}
-                onClick={conectarMeta}
-                disabled={iniciarOAuth.isPending}
-              >
-                <ApiOutlined /> Conectar con Meta
-              </button>
-            )}
+            <span className="mini-badge grey">Servidor</span>
           </div>
 
           <div className="integration">

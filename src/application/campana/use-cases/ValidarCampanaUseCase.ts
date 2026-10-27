@@ -6,7 +6,7 @@ import type { Campana, CampanaRepository } from "@/domain/campana";
  * local_draft → validated → awaiting_approval
  *
  * La validación verifica los campos mínimos de publicación (presupuesto,
- * destino, copy y conexión Meta asociada). El resto de transiciones
+ * destino y copy). La conexión Meta se configura en el backend. El resto de transiciones
  * (approve/publish) son endpoints de la API en la fase de integración Meta.
  */
 const TRANSICIONES: Record<string, string> = {
@@ -39,9 +39,6 @@ export class ValidarCampanaUseCase {
     }
     if (!campana.copy || campana.copy.trim().length < 10) {
       problemas.push("El copy debe tener al menos 10 caracteres.");
-    }
-    if (siguiente === "awaiting_approval" && !campana.connection_id) {
-      problemas.push("Asocia una conexión de Meta publicitaria antes de enviar a aprobación.");
     }
     if (problemas.length > 0) {
       throw new Error(problemas.join(" "));

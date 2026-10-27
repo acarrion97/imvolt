@@ -569,9 +569,6 @@ export class MockConexionRepository
     return super.createWithId(uuid(), data);
   }
 
-  async iniciarOAuthMeta(): Promise<{ authorization_url: string }> {
-    throw new Error("La conexión OAuth de Meta requiere el proveedor REST y una app de Meta configurada.");
-  }
 }
 
 // ── Campañas ─────────────────────────────────────────────────────────────────
