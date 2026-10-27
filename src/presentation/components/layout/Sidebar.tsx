@@ -3,17 +3,14 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   ApartmentOutlined,
   BarChartOutlined,
-  BgColorsOutlined,
   HomeOutlined,
   LayoutOutlined,
-  PictureOutlined,
   NotificationOutlined,
   RobotOutlined,
   SettingOutlined,
-  TeamOutlined,
   UsergroupAddOutlined,
 } from "@ant-design/icons";
-import { useAuth, usePermisos, useWallet } from "@/presentation/hooks";
+import { useAuth, useWallet } from "@/presentation/hooks";
 import { capitalize, initials } from "@/presentation/components/common/userLabel";
 
 /**
@@ -31,19 +28,15 @@ interface NavItem {
 
 const ESPACIO: NavItem[] = [
   { key: "/inicio", label: "Inicio", icon: <HomeOutlined /> },
-  { key: "/proyectos", label: "Proyectos", icon: <ApartmentOutlined /> },
   { key: "/propiedades", label: "Mis propiedades", icon: <ApartmentOutlined /> },
-  { key: "/medios", label: "Medios", icon: <PictureOutlined /> },
   { key: "/estudio", label: "Estudio IA", icon: <RobotOutlined /> },
   { key: "/plantillas", label: "Plantillas", icon: <LayoutOutlined /> },
-  { key: "/brand-kit", label: "Brand Kit", icon: <BgColorsOutlined /> },
   { key: "/campanas", label: "Campañas Meta", icon: <NotificationOutlined /> },
   { key: "/contactos", label: "Contactos", icon: <UsergroupAddOutlined /> },
   { key: "/analitica", label: "Analítica", icon: <BarChartOutlined /> },
 ];
 
 const ADMIN: NavItem[] = [
-  { key: "/equipo", label: "Equipo", icon: <TeamOutlined /> },
   { key: "/configuracion", label: "Configuración", icon: <SettingOutlined /> },
 ];
 
@@ -59,7 +52,6 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   const navigate = useNavigate();
   const { data: wallet } = useWallet();
   const { perfil, rol } = useAuth();
-  const { puedeGestionarUsuarios } = usePermisos();
   const saldo = wallet?.saldo ?? 0;
   const pct = Math.max(4, Math.min(100, Math.round((saldo / CUOTA_MENSUAL) * 100)));
 
@@ -99,9 +91,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
       <nav className="nav">{renderItems(ESPACIO)}</nav>
 
       <div className="section-cap">Administración</div>
-      <nav className="nav">
-        {renderItems(ADMIN.filter((i) => i.key !== "/equipo" || puedeGestionarUsuarios))}
-      </nav>
+      <nav className="nav">{renderItems(ADMIN)}</nav>
 
       <div className="sidebar-bottom">
         <p className="workspace-label">WORKSPACE ACTIVO</p>

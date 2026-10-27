@@ -18,16 +18,13 @@ import { EquipoPage } from "@/presentation/pages/equipo/EquipoPage";
 import { ConfiguracionPage } from "@/presentation/pages/configuracion/ConfiguracionPage";
 
 /**
- * Rutas IMVOLT — mapa de navegación del prototipo (UI Concept 01):
+ * Navegación principal IMVOLT — mapa del prototipo (UI Concept 01):
  *
- *   /login          Acceso (solo VITE_DATA_PROVIDER=rest)
- *   /registro       Registro de cuenta (solo VITE_DATA_PROVIDER=rest)
- *   /inicio         Inicio            /plantillas      Plantillas
- *   /brand-kit      Brand Kit         /estudio         Estudio IA
- *   /propiedades    Mis propiedades   /campanas        Campañas Meta
- *   /contactos      Contactos         /analitica       Analítica
- *   /configuracion  Configuración     /proyectos       Proyectos (secundaria)
- *   /equipo         Equipo y auditoría   /medios  Medios (catálogo)
+ *   Inicio, Mis propiedades, Estudio IA, Plantillas, Campañas Meta,
+ *   Contactos, Analítica y Configuración.
+ *
+ * Las rutas de Proyectos, Medios, Brand Kit y Equipo se conservan, pero no
+ * aparecen como secciones independientes del menú.
  *
  * Todas las rutas de la app pasan por `RequireAuth`: con el API real exige
  * sesión (token en localStorage) y en modo mock deja pasar sin login.

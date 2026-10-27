@@ -79,6 +79,16 @@ export function EstudioPage() {
     () => modelosFiltrados.find((m) => m.model_id === selectedModelId),
     [modelosFiltrados, selectedModelId],
   );
+  const duracionesDisponibles = Array.isArray(modelo?.capabilities.duration_options)
+    ? modelo.capabilities.duration_options.filter(
+        (value): value is number => typeof value === "number",
+      )
+    : modelo?.duracion_min_s != null && modelo.duracion_max_s != null
+      ? Array.from(
+          { length: modelo.duracion_max_s - modelo.duracion_min_s + 1 },
+          (_, index) => modelo.duracion_min_s! + index,
+        )
+      : [];
 
   /** Prompt de la plantilla + contexto de la propiedad (modo fácil). */
   const promptGenerado = useMemo(() => {
@@ -329,16 +339,10 @@ export function EstudioPage() {
                   style={{ width: "100%" }}
                   value={duration}
                   onChange={setDuration}
-                  options={Array.from(
-                    {
-                      length:
-                        (modelo.duracion_max_s ?? 12) - (modelo.duracion_min_s ?? 5) + 1,
-                    },
-                    (_, i) => {
-                      const v = (modelo.duracion_min_s ?? 5) + i;
-                      return { value: v, label: `${v} s` };
-                    },
-                  )}
+                  options={duracionesDisponibles.map((value) => ({
+                      value,
+                      label: `${value} s`,
+                  }))}
                 />
               </div>
             )}
