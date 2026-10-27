@@ -1,11 +1,17 @@
 import type { Repositories } from "./create-repositories";
 import type { CrudUseCases } from "@/application/core/crud-use-cases";
 
-import type { LoginInput, Perfil, Session } from "@/domain/auth";
+import type { LoginInput, Perfil, RegisterInput, RegisterResult, Session } from "@/domain/auth";
 import type { Campana, CampanaCreate } from "@/domain/campana";
 import type { Conexion, ConexionCreate } from "@/domain/conexion";
 import type { Generacion, GeneracionCreate } from "@/domain/generacion";
 import type { Lead, LeadCreate } from "@/domain/lead";
+import type {
+  MediaAsset,
+  MediaAssetCreate,
+  MediaAssetDescarga,
+  MediaAssetVersion,
+} from "@/domain/media-asset";
 import type {
   BrandAsset,
   BrandAssetCreate,
@@ -31,6 +37,7 @@ import { ValidarCampanaUseCase } from "@/application/campana/use-cases/ValidarCa
 
 /** Casos de uso expuestos a la presentación: `container.proyectos.list.execute(...)`. */
 export interface UseCases {
+  tiposPlantilla(tiposPlantilla: any, arg1: string): { useList: any; };
   proyectos: CrudUseCases<Proyecto, string, ProyectoCreate>;
   propiedades: CrudUseCases<Propiedad, string, PropiedadCreate>;
   tiposPropiedad: CrudUseCases<TipoPropiedad, string, TipoPropiedadCreate>;
@@ -54,6 +61,15 @@ export interface UseCases {
     restaurarVersion(assetId: string, versionId: string): Promise<BrandAsset>;
     eliminarVersion(assetId: string, versionId: string): Promise<void>;
   };
+  mediaAssets: CrudUseCases<MediaAsset, string, MediaAssetCreate>;
+  mediaAssetStorage: {
+    listarVersiones(assetId: string): Promise<MediaAssetVersion[]>;
+    subirVersion(assetId: string, file: File, nota?: string | null): Promise<MediaAssetVersion>;
+    descargar(assetId: string): Promise<MediaAssetDescarga>;
+    descargarVersion(assetId: string, versionId: string): Promise<MediaAssetDescarga>;
+    restaurarVersion(assetId: string, versionId: string): Promise<MediaAsset>;
+    eliminarVersion(assetId: string, versionId: string): Promise<void>;
+  };
 
   // casos de uso de negocio (no CRUD)
   getWallet: { execute(): Promise<Wallet> };
@@ -63,6 +79,7 @@ export interface UseCases {
 
   // autenticación (solo con VITE_DATA_PROVIDER=rest)
   login: { execute(input: LoginInput): Promise<Session> };
+  register: { execute(input: RegisterInput): Promise<RegisterResult> };
   obtenerPerfil: { execute(): Promise<Perfil> };
 }
 
@@ -92,6 +109,18 @@ export function createUseCases(repos: Repositories): UseCases {
       eliminarVersion: (assetId, versionId) =>
         repos.brandAssetRepo.eliminarVersion(assetId, versionId),
     },
+    mediaAssets: buildCrudUseCases(repos.mediaAssetRepo),
+    mediaAssetStorage: {
+      listarVersiones: (assetId) => repos.mediaAssetRepo.listarVersiones(assetId),
+      subirVersion: (assetId, file, nota) => repos.mediaAssetRepo.subirVersion(assetId, file, nota),
+      descargar: (assetId) => repos.mediaAssetRepo.descargar(assetId),
+      descargarVersion: (assetId, versionId) =>
+        repos.mediaAssetRepo.descargarVersion(assetId, versionId),
+      restaurarVersion: (assetId, versionId) =>
+        repos.mediaAssetRepo.restaurarVersion(assetId, versionId),
+      eliminarVersion: (assetId, versionId) =>
+        repos.mediaAssetRepo.eliminarVersion(assetId, versionId),
+    },
 
     getWallet: { execute: () => repos.walletRepo.getWallet() },
     getTransacciones: { execute: () => repos.walletRepo.getTransacciones() },
@@ -99,6 +128,7 @@ export function createUseCases(repos: Repositories): UseCases {
     validarCampana: new ValidarCampanaUseCase(repos.campanaRepo),
 
     login: { execute: (input) => repos.authRepo.login(input) },
+    register: { execute: (input) => repos.authRepo.register(input) },
     obtenerPerfil: { execute: () => repos.authRepo.me() },
   };
 }

@@ -52,6 +52,7 @@ import {
   useUpdateBrandColor,
 } from "@/presentation/hooks";
 import { brandAssetSchema, brandColorSchema } from "@/presentation/validations";
+import { useAuth } from "@/presentation/auth/AuthProvider";
 import {
   ACEPTADOS_POR_CATEGORIA,
   CATEGORIAS_ASSET,
@@ -117,6 +118,7 @@ function abrirDescarga(res: BrandAssetDescarga): void {
 // ── Tarjeta de archivo ───────────────────────────────────────────────────────
 interface AssetCardProps {
   asset: BrandAsset;
+  puedeGestionar: boolean;
   onEditar: (asset: BrandAsset) => void;
   onHistorial: (asset: BrandAsset) => void;
   onEliminar: (asset: BrandAsset) => void;
@@ -128,7 +130,14 @@ interface AssetCardProps {
  * pedir la URL firmada de la previsualización con un hook por tarjeta
  * (las reglas de hooks prohíben llamarlos dentro del `map` del listado).
  */
-function AssetCard({ asset, onEditar, onHistorial, onEliminar, onDescargar }: AssetCardProps) {
+function AssetCard({
+  asset,
+  puedeGestionar,
+  onEditar,
+  onHistorial,
+  onEliminar,
+  onDescargar,
+}: AssetCardProps) {
   const version = asset.version_activa;
   const previewHabilitado = esImagenPreview(asset.categoria) && Boolean(asset.version_activa_id);
   const { data: preview, isPending: cargandoPreview } = useBrandAssetPreview(
@@ -209,24 +218,28 @@ function AssetCard({ asset, onEditar, onHistorial, onEliminar, onDescargar }: As
           >
             <HistoryOutlined style={{ fontSize: 13 }} />
           </button>
-          <button
-            type="button"
-            style={iconBtn}
-            title="Editar"
-            onClick={() => onEditar(asset)}
-          >
-            <EditOutlined style={{ fontSize: 13 }} />
-          </button>
-          <Popconfirm
-            title="¿Eliminar este archivo?"
-            okText="Eliminar"
-            cancelText="Cancelar"
-            onConfirm={() => onEliminar(asset)}
-          >
-            <button type="button" style={iconBtn} title="Eliminar">
-              <DeleteOutlined style={{ fontSize: 13 }} />
-            </button>
-          </Popconfirm>
+          {puedeGestionar && (
+            <>
+              <button
+                type="button"
+                style={iconBtn}
+                title="Editar"
+                onClick={() => onEditar(asset)}
+              >
+                <EditOutlined style={{ fontSize: 13 }} />
+              </button>
+              <Popconfirm
+                title="¿Eliminar este archivo?"
+                okText="Eliminar"
+                cancelText="Cancelar"
+                onConfirm={() => onEliminar(asset)}
+              >
+                <button type="button" style={iconBtn} title="Eliminar">
+                  <DeleteOutlined style={{ fontSize: 13 }} />
+                </button>
+              </Popconfirm>
+            </>
+          )}
         </div>
       </div>
 
@@ -279,6 +292,11 @@ function AssetCard({ asset, onEditar, onHistorial, onEliminar, onDescargar }: As
  */
 export function BrandKitPage() {
   const { message, modal } = App.useApp();
+  const { status, perfil, tienePermiso } = useAuth();
+  const puedeGestionarAssets = tienePermiso("crear_contenidos");
+  const puedeGestionarColores =
+    status === "disabled" ||
+    perfil?.roles.some((rol) => ["propietario", "administrador"].includes(rol.nombre)) === true;
 
   const [pestana, setPestana] = useState<Pestana>("archivos");
   const [search, setSearch] = useState("");
@@ -655,15 +673,15 @@ export function BrandKitPage() {
           </p>
         </div>
         <div className="header-actions">
-          {pestana === "archivos" ? (
+          {pestana === "archivos" && puedeGestionarAssets ? (
             <button type="button" className="btn btn-primary" onClick={abrirAltaAsset}>
               <PlusOutlined /> Nuevo archivo
             </button>
-          ) : (
+          ) : pestana === "colores" && puedeGestionarColores ? (
             <button type="button" className="btn btn-primary" onClick={abrirAltaColor}>
               <PlusOutlined /> Nuevo color
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -715,6 +733,7 @@ export function BrandKitPage() {
                 <AssetCard
                   key={asset.brand_asset_id}
                   asset={asset}
+                  puedeGestionar={puedeGestionarAssets}
                   onEditar={abrirEdicionAsset}
                   onHistorial={abrirHistorial}
                   onEliminar={eliminarAssetConfirmado}
@@ -732,7 +751,7 @@ export function BrandKitPage() {
                       ? "Ningún archivo coincide con los filtros."
                       : "Aún no hay archivos en el Brand Kit."}
                   </p>
-                  <div style={{ marginTop: 14 }}>
+                  {puedeGestionarAssets && <div style={{ marginTop: 14 }}>
                     <button type="button" className="btn btn-primary" onClick={abrirAltaAsset}>
                       <PlusOutlined /> Nuevo archivo
                     </button>
@@ -812,7 +831,7 @@ export function BrandKitPage() {
                       >
                         {USO_COLOR_LABEL[color.uso]}
                       </span>
-                      <div
+                      {puedeGestionarColores && <div
                         style={{
                           position: "absolute",
                           top: 11,
@@ -839,7 +858,7 @@ export function BrandKitPage() {
                             <DeleteOutlined style={{ fontSize: 13 }} />
                           </button>
                         </Popconfirm>
-                      </div>
+                      </div>}
                     </div>
 
                     <div className="item-meta">
@@ -860,11 +879,11 @@ export function BrandKitPage() {
                       ? "Ningún color coincide con los filtros."
                       : "La paleta de la empresa está vacía."}
                   </p>
-                  <div style={{ marginTop: 14 }}>
+                  {puedeGestionarColores && <div style={{ marginTop: 14 }}>
                     <button type="button" className="btn btn-primary" onClick={abrirAltaColor}>
                       <PlusOutlined /> Nuevo color
                     </button>
-                  </div>
+                  </div>}
                 </div>
               )}
             </div>
@@ -878,11 +897,11 @@ export function BrandKitPage() {
         size="large"
         open={assetOpen}
         onClose={() => setAssetOpen(false)}
-        extra={
+        extra={puedeGestionarAssets && (
           <Button type="primary" onClick={guardarAsset} loading={guardandoAsset}>
             Guardar
           </Button>
-        }
+        )}
       >
         <Form form={assetForm} layout="vertical" requiredMark={false}>
           <Form.Item
@@ -938,7 +957,7 @@ export function BrandKitPage() {
       >
         {historialAsset && (
           <>
-            <div className="card card-pad" style={{ marginBottom: 18 }}>
+            {puedeGestionarAssets && <div className="card card-pad" style={{ marginBottom: 18 }}>
               <div className="field">
                 <label>Subir nueva versión</label>
                 <Upload
@@ -971,7 +990,7 @@ export function BrandKitPage() {
                     historialAsset.categoria,
                   ).join(", ")}`}
                 </p>
-              </div>
+              </div>}
 
               <div className="field">
                 <label>Nota del cambio (opcional)</label>
@@ -992,7 +1011,7 @@ export function BrandKitPage() {
               >
                 Subir versión
               </Button>
-            </div>
+            </div>}
 
             <Spin spinning={cargandoVersiones}>
               {(versiones ?? []).map((v: BrandAssetVersion) => {
@@ -1030,7 +1049,7 @@ export function BrandKitPage() {
                       >
                         <DownloadOutlined style={{ fontSize: 13 }} />
                       </button>
-                      {!esActiva && (
+                      {puedeGestionarAssets && !esActiva && (
                         <button
                           type="button"
                           style={{ ...iconBtn, boxShadow: "none", background: "#eff5f1" }}
@@ -1040,7 +1059,7 @@ export function BrandKitPage() {
                           <UndoOutlined style={{ fontSize: 13 }} />
                         </button>
                       )}
-                      <Popconfirm
+                      {puedeGestionarAssets && <Popconfirm
                         title="¿Eliminar esta versión?"
                         okText="Eliminar"
                         cancelText="Cancelar"
@@ -1053,7 +1072,7 @@ export function BrandKitPage() {
                         >
                           <DeleteOutlined style={{ fontSize: 13, color: "#a8432e" }} />
                         </button>
-                      </Popconfirm>
+                      </Popconfirm>}
                     </div>
                   </div>
                 );
@@ -1074,11 +1093,11 @@ export function BrandKitPage() {
         title={colorEditing ? "Editar color" : "Nuevo color"}
         open={colorOpen}
         onClose={() => setColorOpen(false)}
-        extra={
+        extra={puedeGestionarColores && (
           <Button type="primary" onClick={guardarColor} loading={guardandoColor}>
             Guardar
           </Button>
-        }
+        )}
       >
         <Form form={colorForm} layout="vertical" requiredMark={false}>
           <Form.Item

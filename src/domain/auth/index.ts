@@ -57,9 +57,24 @@ export interface LoginInput {
   password: string;
 }
 
+export interface RegisterInput extends LoginInput {
+  nombres: string;
+  apellidos: string;
+  telefono?: string;
+  organization_name: string;
+  ruc?: string;
+}
+
+export interface RegisterResult {
+  user_id: string;
+  empresa_id: number | null;
+  usuario_id: number | null;
+}
+
 /** Contrato de autenticación; lo implementa el repositorio REST. */
 export interface AuthRepository {
   login(input: LoginInput): Promise<Session>;
+  register(input: RegisterInput): Promise<RegisterResult>;
   /** Requiere un token válido; sin sesión local el API responde 404. */
   me(): Promise<Perfil>;
 }

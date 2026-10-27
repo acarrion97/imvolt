@@ -20,10 +20,12 @@ import {
   useCreatePropiedad,
   useDeletePropiedad,
   usePropiedades,
+  useProyectos,
   useTiposPropiedad,
   useUpdatePropiedad,
 } from "@/presentation/hooks";
 import { propiedadSchema } from "@/presentation/validations";
+import { useAuth } from "@/presentation/auth/AuthProvider";
 import {
   categoriaDe,
   MEDIOS_AUTORIZADOS,
@@ -36,6 +38,7 @@ import {
 interface FormValues {
   nombre: string;
   tipo_propiedad_id: string;
+  proyecto_id?: string | null;
   ubicacion: string;
   precio: number;
   disponibilidad: PropiedadDisponibilidad;
@@ -53,6 +56,8 @@ interface FormValues {
  */
 export function PropiedadesPage() {
   const { message, modal } = App.useApp();
+  const { tienePermiso } = useAuth();
+  const puedeGestionar = tienePermiso("gestionar_propiedades");
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState<PropiedadCategoria | undefined>();
@@ -65,6 +70,7 @@ export function PropiedadesPage() {
   const [form] = Form.useForm<FormValues>();
 
   const { data: propiedades, isLoading } = usePropiedades();
+  const { data: proyectos } = useProyectos();
   const { data: tipos } = useTiposPropiedad();
   const createPropiedad = useCreatePropiedad();
   const updatePropiedad = useUpdatePropiedad();
@@ -110,6 +116,7 @@ export function PropiedadesPage() {
     form.setFieldsValue({
       nombre: row.nombre,
       tipo_propiedad_id: String(row.tipo_propiedad_id),
+      proyecto_id: row.proyecto_id ? String(row.proyecto_id) : undefined,
       ubicacion: row.ubicacion,
       precio: Number(row.precio),
       disponibilidad: row.disponibilidad,
@@ -185,9 +192,11 @@ export function PropiedadesPage() {
           </p>
         </div>
         <div className="header-actions">
-          <button type="button" className="btn btn-primary" onClick={openCreate}>
-            <PlusOutlined /> Nueva propiedad
-          </button>
+          {puedeGestionar && (
+            <button type="button" className="btn btn-primary" onClick={openCreate}>
+              <PlusOutlined /> Nueva propiedad
+            </button>
+          )}
         </div>
       </div>
 
@@ -243,7 +252,7 @@ export function PropiedadesPage() {
               <div key={p.propiedad_id} className="card item-card">
                 <div className={`art ${artVariant(categoria)}`}>
                   <span className="tag">{CATEGORIA_LABEL[categoria]}</span>
-                  <div
+                  {puedeGestionar && <div
                     style={{
                       position: "absolute",
                       top: 11,
@@ -271,12 +280,15 @@ export function PropiedadesPage() {
                         <DeleteOutlined style={{ fontSize: 13 }} />
                       </button>
                     </Popconfirm>
-                  </div>
+                  </div>}
                 </div>
 
                 <div className="item-meta">
                   <h3>{p.nombre}</h3>
                   <span className="where">{p.ubicacion}</span>
+                  {p.proyecto?.nombre && (
+                    <span className="where">Proyecto: {p.proyecto.nombre}</span>
+                  )}
                   <div style={{ display: "flex", gap: 6, marginTop: 9, flexWrap: "wrap" }}>
                     <span className={badge.cls}>{badge.label}</span>
                     {medios.length === 0 && (
@@ -315,11 +327,13 @@ export function PropiedadesPage() {
                   ? "Ninguna propiedad coincide con los filtros."
                   : "Aún no has registrado propiedades."}
               </p>
-              <div style={{ marginTop: 14 }}>
-                <button type="button" className="btn btn-primary" onClick={openCreate}>
-                  <PlusOutlined /> Nueva propiedad
-                </button>
-              </div>
+              {puedeGestionar && (
+                <div style={{ marginTop: 14 }}>
+                  <button type="button" className="btn btn-primary" onClick={openCreate}>
+                    <PlusOutlined /> Nueva propiedad
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -370,6 +384,18 @@ export function PropiedadesPage() {
                 options={(["disponible", "reservada", "vendida", "no_disponible"] as const).map(
                   (v) => ({ value: v, label: v.replace(/_/g, " ") }),
                 )}
+              />
+            </Form.Item>
+            <Form.Item name="proyecto_id" label="Proyecto (opcional)">
+              <Select
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                placeholder="Propiedad individual"
+                options={(proyectos ?? []).map((project) => ({
+                  value: project.project_id,
+                  label: project.nombre,
+                }))}
               />
             </Form.Item>
 

@@ -35,7 +35,8 @@ VITE_API_URL=http://localhost:3000/api
 Con `VITE_DATA_PROVIDER=rest` la app exige sesión:
 
 - `/login` llama a `POST /api/auth/login` y persiste la sesión en `localStorage`
-  (clave `imvolt-session`); `presentation/auth/AuthProvider.tsx` la restaura con
+  (clave `imvolt-session`); `/registro` crea la cuenta con `POST /api/auth/register`.
+  `presentation/auth/AuthProvider.tsx` la restaura con
   `GET /api/auth/me` al recargar y expone `useAuth()` → `status`, `perfil`,
   `rol`, `login()`, `logout()`.
 - Todas las rutas pasan por `RequireAuth`: sin sesión → `/login` recordando la
@@ -114,7 +115,12 @@ propiedad están en `src/presentation/theme/art.css` (SVG del prototipo).
 
 ## Comandos
 
-```bash
+```
+
+En producción, publica la aplicación detrás de un proxy HTTPS y configura
+`VITE_API_URL` con la URL HTTPS pública del API. Las variables `VITE_*` son
+públicas y se incorporan al bundle: no coloques ahí claves de API, contraseñas
+ni otros secretos.bash
 npm run dev        # desarrollo
 npm run build      # typecheck (tsc -b) + bundle de producción
 npm run lint       # eslint

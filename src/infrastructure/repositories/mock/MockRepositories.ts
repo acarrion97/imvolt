@@ -1,4 +1,11 @@
-import type { AuthRepository, LoginInput, Perfil, Session } from "@/domain/auth";
+import type {
+  AuthRepository,
+  LoginInput,
+  Perfil,
+  RegisterInput,
+  RegisterResult,
+  Session,
+} from "@/domain/auth";
 import type {
   Campana,
   CampanaCreate,
@@ -15,6 +22,13 @@ import type {
   GeneracionRepository,
 } from "@/domain/generacion";
 import type { Lead, LeadCreate, LeadRepository } from "@/domain/lead";
+import type {
+  MediaAsset,
+  MediaAssetCreate,
+  MediaAssetDescarga,
+  MediaAssetRepository,
+  MediaAssetVersion,
+} from "@/domain/media-asset";
 import type { Modelo, ModeloCreate, ModeloRepository } from "@/domain/modelo";
 import type {
   BrandAsset,
@@ -135,6 +149,8 @@ export class MockPropiedadRepository
           seedTiposPropiedad.find(
             (t) => String(t.tipo_propiedad_id) === String(data.tipo_propiedad_id),
           ) ?? null;
+        const proyecto =
+          seedProyectos.find((p) => String(p.project_id) === String(data.proyecto_id)) ?? null;
 
         return {
           ...data,
@@ -143,6 +159,14 @@ export class MockPropiedadRepository
           estado: "activo",
           empresa: seedEmpresa,
           tipo_propiedad: tipo,
+          proyecto_id: data.proyecto_id ?? null,
+          proyecto: proyecto
+            ? {
+                proyecto_id: proyecto.project_id,
+                nombre: proyecto.nombre,
+                tipo: proyecto.tipo,
+              }
+            : null,
           creado_en: nowIso(),
           actualizado_en: nowIso(),
         };
@@ -154,6 +178,22 @@ export class MockPropiedadRepository
   // Los IDs de las semillas no son numéricos: `create` debe generar UUID reales.
   override async create(data: PropiedadCreate): Promise<Propiedad> {
     return super.createWithId(uuid(), data);
+  }
+
+  override async update(id: string, data: Partial<Propiedad>): Promise<Propiedad> {
+    const current = await this.getById(id);
+    if (!current) throw new Error(`No existe la propiedad ${id}`);
+    const proyectoId =
+      data.proyecto_id === undefined ? (current.proyecto_id ?? null) : data.proyecto_id;
+    const proyecto =
+      seedProyectos.find((item) => String(item.project_id) === String(proyectoId)) ?? null;
+    return super.update(id, {
+      ...data,
+      proyecto_id: proyectoId,
+      proyecto: proyecto
+        ? { proyecto_id: proyecto.project_id, nombre: proyecto.nombre, tipo: proyecto.tipo }
+        : null,
+    });
   }
 }
 
@@ -344,6 +384,179 @@ function svgPlaceholder(nombre: string, mime: string): string {
     `<text x="98" y="108" font-family="Segoe UI, Arial" font-size="12" fill="#8fd8ac">vista previa · mock</text>` +
     `</svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+// ── Catálogo: media assets (CRUD + versiones en memoria) ────────────────────
+export class MockMediaAssetRepository
+  extends InMemoryCrudRepository<MediaAsset, string, MediaAssetCreate>
+  implements MediaAssetRepository
+{
+  private versiones: MediaAssetVersion[] = [];
+  private readonly blobs = new Map<string, string>();
+
+  constructor() {
+    super(
+      (row) => row.media_asset_id,
+      (data, id) => {
+        const proyecto = seedProyectos.find(
+          (row) => String(row.project_id) === String(data.proyecto_id),
+        );
+        const propiedad = seedPropiedades.find(
+          (row) => String(row.propiedad_id) === String(data.propiedad_id),
+        );
+        return {
+          ...data,
+          media_asset_id: id,
+          categoria: data.categoria ?? "imagen",
+          descripcion: data.descripcion ?? null,
+          proyecto_id: data.proyecto_id ?? null,
+          propiedad_id: data.propiedad_id ?? null,
+          version_activa_id: null,
+          empresa_id: seedEmpresa.empresa_id,
+          estado: "activo",
+          proyecto: proyecto
+            ? { proyecto_id: proyecto.project_id, nombre: proyecto.nombre, tipo: proyecto.tipo }
+            : null,
+          propiedad: propiedad
+            ? {
+                propiedad_id: propiedad.propiedad_id,
+                nombre: propiedad.nombre,
+                ubicacion: propiedad.ubicacion,
+              }
+            : null,
+          version_activa: null,
+          creado_en: nowIso(),
+          actualizado_en: nowIso(),
+        };
+      },
+    );
+  }
+
+  override async create(data: MediaAssetCreate): Promise<MediaAsset> {
+    return super.createWithId(uuid(), data);
+  }
+
+  override async delete(id: string): Promise<void> {
+    const versionIds = this.versiones
+      .filter((version) => String(version.media_asset_id) === String(id))
+      .map((version) => version.media_asset_version_id);
+    for (const versionId of versionIds) {
+      const url = this.blobs.get(versionId);
+      if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+      this.blobs.delete(versionId);
+    }
+    this.versiones = this.versiones.filter(
+      (version) => String(version.media_asset_id) !== String(id),
+    );
+    await super.delete(id);
+  }
+
+  private async getAsset(assetId: string): Promise<MediaAsset> {
+    const asset = await this.getById(assetId);
+    if (!asset) throw new Error(`No existe el medio ${assetId}`);
+    return asset;
+  }
+
+  private getVersion(versionId: string): MediaAssetVersion {
+    const version = this.versiones.find(
+      (item) => String(item.media_asset_version_id) === String(versionId),
+    );
+    if (!version) throw new Error(`No existe la versión ${versionId}`);
+    return version;
+  }
+
+  async listarVersiones(assetId: string): Promise<MediaAssetVersion[]> {
+    return this.versiones
+      .filter((version) => String(version.media_asset_id) === String(assetId))
+      .sort((a, b) => b.numero - a.numero);
+  }
+
+  async subirVersion(
+    assetId: string,
+    file: File,
+    nota?: string | null,
+  ): Promise<MediaAssetVersion> {
+    const asset = await this.getAsset(assetId);
+    const versions = await this.listarVersiones(assetId);
+    const now = nowIso();
+    const version: MediaAssetVersion = {
+      media_asset_version_id: uuid(),
+      media_asset_id: assetId,
+      numero: (versions[0]?.numero ?? 0) + 1,
+      nombre_archivo: file.name,
+      mime_type: file.type || null,
+      tamano_bytes: file.size,
+      nota: nota ?? null,
+      subido_por: null,
+      empresa_id: asset.empresa_id,
+      estado: "activo",
+      creado_en: now,
+      actualizado_en: now,
+    };
+    this.versiones = [version, ...this.versiones];
+    this.blobs.set(version.media_asset_version_id, URL.createObjectURL(file));
+    await this.update(assetId, {
+      version_activa_id: version.media_asset_version_id,
+      version_activa: version,
+      actualizado_en: now,
+    });
+    return version;
+  }
+
+  async descargar(assetId: string): Promise<MediaAssetDescarga> {
+    const asset = await this.getAsset(assetId);
+    if (!asset.version_activa_id) throw new Error("Este medio aún no tiene versiones.");
+    return this.descargarVersion(assetId, asset.version_activa_id);
+  }
+
+  async descargarVersion(assetId: string, versionId: string): Promise<MediaAssetDescarga> {
+    const version = this.getVersion(versionId);
+    if (String(version.media_asset_id) !== String(assetId)) {
+      throw new Error("La versión no pertenece a este medio.");
+    }
+    return {
+      url: this.blobs.get(versionId) ?? "data:application/octet-stream,",
+      expira_en_segundos: 300,
+      nombre_archivo: version.nombre_archivo,
+      mime_type: version.mime_type,
+      tamano_bytes: version.tamano_bytes,
+      numero: version.numero,
+    };
+  }
+
+  async restaurarVersion(assetId: string, versionId: string): Promise<MediaAsset> {
+    const version = this.getVersion(versionId);
+    if (String(version.media_asset_id) !== String(assetId)) {
+      throw new Error("La versión no pertenece a este medio.");
+    }
+    return this.update(assetId, {
+      version_activa_id: versionId,
+      version_activa: version,
+      actualizado_en: nowIso(),
+    });
+  }
+
+  async eliminarVersion(assetId: string, versionId: string): Promise<void> {
+    const version = this.getVersion(versionId);
+    if (String(version.media_asset_id) !== String(assetId)) {
+      throw new Error("La versión no pertenece a este medio.");
+    }
+    this.versiones = this.versiones.filter(
+      (item) => String(item.media_asset_version_id) !== String(versionId),
+    );
+    const url = this.blobs.get(versionId);
+    if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+    this.blobs.delete(versionId);
+    const asset = await this.getAsset(assetId);
+    if (String(asset.version_activa_id) === String(versionId)) {
+      const next = (await this.listarVersiones(assetId))[0] ?? null;
+      await this.update(assetId, {
+        version_activa_id: next?.media_asset_version_id ?? null,
+        version_activa: next,
+        actualizado_en: nowIso(),
+      });
+    }
+  }
 }
 
 // ── Brand Kit: colores de la paleta ─────────────────────────────────────────
@@ -623,6 +836,10 @@ const AUTH_MOCK_ERROR =
   'La autenticación no está disponible con VITE_DATA_PROVIDER="mock". Usa "rest" para entrar con el API.';
 
 export class MockAuthRepository implements AuthRepository {
+  async register(_input: RegisterInput): Promise<RegisterResult> {
+    throw new Error(AUTH_MOCK_ERROR);
+  }
+
   async login(_input: LoginInput): Promise<Session> {
     throw new Error(AUTH_MOCK_ERROR);
   }

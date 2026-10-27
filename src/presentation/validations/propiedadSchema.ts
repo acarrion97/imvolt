@@ -17,6 +17,7 @@ export const propiedadSchema = z.object({
     .int("Selecciona la categoría.")
     .positive("Selecciona la categoría.")
     .transform(String),
+  proyecto_id: z.string().nullable().optional(),
   ubicacion: z
     .string()
     .trim()

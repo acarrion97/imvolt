@@ -932,11 +932,25 @@ a { color: var(--green); }
 .auth-card .ant-input-affix-wrapper { border-radius: 11px; }
 .auth-card .notice { font-size: 12px; }
 
+.auth-card-register { width: min(560px, 100%); }
+.auth-card-register .auth-card-head { margin-bottom: 18px; }
+.auth-fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+.auth-fields-grid .auth-fields-full { grid-column: 1 / -1; }
+.auth-switch { margin-top: 18px; text-align: center; color: var(--muted); font-size: 12px; }
+.auth-switch a { color: var(--green); font-weight: 700; }
+
 [data-theme='dark'] .auth-card { box-shadow: 0 9px 32px rgba(0, 0, 0, 0.35); }
 
 @media (max-width: 900px) {
   .auth-page { grid-template-columns: 1fr; }
   .auth-brand { display: none; }
+}
+
+@media (max-width: 640px) {
+  .auth-form { padding: 24px 16px; }
+  .auth-card { padding: 28px 22px 24px; }
+  .auth-fields-grid { grid-template-columns: 1fr; }
+  .auth-fields-grid .auth-fields-full { grid-column: auto; }
 }
 
 /* ── Menú de usuario en la barra superior ─────────────────────────────────── */

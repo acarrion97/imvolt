@@ -51,6 +51,10 @@ export const queryKeys = {
   brandColors: () => ["brand_colors"] as const,
   brandColor: (id: string) => ["brand_colors", id] as const,
 
+  mediaAssets: () => ["media_assets"] as const,
+  mediaAsset: (id: string) => ["media_assets", id] as const,
+  mediaAssetVersiones: (assetId: string) => ["media_assets", assetId, "versiones"] as const,
+
   // Identity: equipo, roles (catálogo §13), bitácora y organización.
   miembros: () => ["miembros"] as const,
   miembro: (id: string) => ["miembros", id] as const,

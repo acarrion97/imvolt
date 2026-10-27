@@ -6,6 +6,7 @@ import {
   BgColorsOutlined,
   HomeOutlined,
   LayoutOutlined,
+  PictureOutlined,
   NotificationOutlined,
   RobotOutlined,
   SettingOutlined,
@@ -29,7 +30,9 @@ interface NavItem {
 
 const ESPACIO: NavItem[] = [
   { key: "/inicio", label: "Inicio", icon: <HomeOutlined /> },
+  { key: "/proyectos", label: "Proyectos", icon: <ApartmentOutlined /> },
   { key: "/propiedades", label: "Mis propiedades", icon: <ApartmentOutlined /> },
+  { key: "/medios", label: "Medios", icon: <PictureOutlined /> },
   { key: "/estudio", label: "Estudio IA", icon: <RobotOutlined /> },
   { key: "/plantillas", label: "Plantillas", icon: <LayoutOutlined /> },
   { key: "/brand-kit", label: "Brand Kit", icon: <BgColorsOutlined /> },

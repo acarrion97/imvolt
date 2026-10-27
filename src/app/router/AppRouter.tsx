@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/presentation/components/layout/AppLayout";
 import { LoginPage } from "@/presentation/pages/auth/LoginPage";
+import { RegisterPage } from "@/presentation/pages/auth/RegisterPage";
 import { RequireAuth } from "./RequireAuth";
 import { DashboardPage } from "@/presentation/pages/dashboard/DashboardPage";
 import { ProyectosPage } from "@/presentation/pages/proyectos/ProyectosPage";
+import { MediaAssetsPage } from "@/presentation/pages/catalogo/MediaAssetsPage";
 import { PropiedadesPage } from "@/presentation/pages/propiedades/PropiedadesPage";
 import { PlantillasPage } from "@/presentation/pages/plantillas/PlantillasPage";
 import { BrandKitPage } from "@/presentation/pages/brand-kit/BrandKitPage";
@@ -17,6 +19,7 @@ import { ConfiguracionPage } from "@/presentation/pages/configuracion/Configurac
  * Rutas IMVOLT — mapa de navegación del prototipo (UI Concept 01):
  *
  *   /login          Acceso (solo VITE_DATA_PROVIDER=rest)
+ *   /registro       Registro de cuenta (solo VITE_DATA_PROVIDER=rest)
  *   /inicio         Inicio            /plantillas      Plantillas
  *   /brand-kit      Brand Kit         /estudio         Estudio IA
  *   /propiedades    Mis propiedades   /campanas        Campañas Meta
@@ -31,6 +34,7 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/registro" element={<RegisterPage />} />
 
         <Route
           element={
@@ -42,6 +46,7 @@ export function AppRouter() {
           <Route path="/inicio" element={<DashboardPage />} />
           <Route path="/propiedades" element={<PropiedadesPage />} />
           <Route path="/proyectos" element={<ProyectosPage />} />
+          <Route path="/medios" element={<MediaAssetsPage />} />
           <Route path="/plantillas" element={<PlantillasPage />} />
           <Route path="/brand-kit" element={<BrandKitPage />} />
           <Route path="/estudio" element={<EstudioPage />} />

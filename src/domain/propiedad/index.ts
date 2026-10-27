@@ -58,6 +58,9 @@ export interface Propiedad {
   medios_autorizados: MedioAutorizado[];
   empresa_id: number;
   tipo_propiedad_id: string;
+  /** Proyecto inmobiliario al que pertenece, si aplica. */
+  proyecto_id?: string | null;
+  proyecto?: { proyecto_id: string; nombre: string; tipo: string } | null;
   estado: PropiedadEstado;
   /** Relación incrustada (FK → empresas). */
   empresa: PropiedadEmpresa | null;
@@ -79,6 +82,7 @@ export type PropiedadCreate = {
   descripcion: string;
   medios_autorizados: MedioAutorizado[];
   tipo_propiedad_id: string;
+  proyecto_id?: string | null;
 };
 
 const CATEGORIAS: string[] = ["lote", "casa", "departamento", "oficina", "local", "proyecto"];

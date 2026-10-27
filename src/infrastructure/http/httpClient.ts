@@ -69,6 +69,16 @@ async function request<T>(
     );
   }
 
+  let apiUrl: URL;
+  try {
+    apiUrl = new URL(API_URL);
+  } catch {
+    throw new ApiError("VITE_API_URL debe ser una URL absoluta válida.", 0);
+  }
+  if (import.meta.env.PROD && apiUrl.protocol !== "https:") {
+    throw new ApiError("VITE_API_URL debe usar HTTPS en producción.", 0);
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -78,10 +88,8 @@ async function request<T>(
     const isForm = init?.body instanceof FormData;
     if (init?.body && !isForm) headers["Content-Type"] = "application/json";
 
-    // La sesión del login manda; VITE_API_TOKEN queda como alternativa de
-    // desarrollo para golpear el API sin pasar por /auth/login.
     const session = readSession();
-    const token = session?.access_token ?? import.meta.env.VITE_API_TOKEN;
+    const token = session?.access_token;
     if (token) headers.Authorization = `Bearer ${token}`;
     // Tenant activo (multiempresa): el API lo resuelve por defecto con la
     // empresa del usuario y este header permite alternar (README del API).

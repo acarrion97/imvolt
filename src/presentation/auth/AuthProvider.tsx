@@ -32,6 +32,8 @@ interface AuthContextValue {
   perfil: Perfil | null;
   /** Rol principal (§13) o `null` si aún no hay perfil. */
   rol: string | null;
+  /** Comprueba permisos de escritura (el API sigue siendo la autoridad). */
+  tienePermiso(permiso: string): boolean;
   login(input: LoginInput): Promise<void>;
   logout(): Promise<void>;
 }
@@ -140,15 +142,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await clearCachePersistence(queryClient);
   }, [queryClient]);
 
+  const tienePermiso = useCallback(
+    (permiso: string): boolean =>
+      !AUTH_ENABLED ||
+      perfil?.roles.some((rol) => rol.nombre === "propietario") === true ||
+      perfil?.permisos.includes(permiso) === true,
+    [perfil],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
       perfil,
       rol: perfil?.roles[0]?.nombre ?? null,
+      tienePermiso,
       login,
       logout,
     }),
-    [status, perfil, login, logout],
+    [status, perfil, tienePermiso, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

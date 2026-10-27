@@ -82,6 +82,7 @@ export function PlantillasPage() {
   const [editing, setEditing] = useState<Plantilla | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [form] = Form.useForm<FormValues>();
+  const { data: tipos_plantillas } = useTiposPlantillas();
 
   const { data: plantillas, isLoading } = usePlantillas();
   const createPlantilla = useCreatePlantilla();

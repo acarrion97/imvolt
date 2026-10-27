@@ -3,6 +3,7 @@ import type { AuthRepository } from "@/domain/auth";
 import type { ConexionRepository } from "@/domain/conexion";
 import type { GeneracionRepository } from "@/domain/generacion";
 import type { LeadRepository } from "@/domain/lead";
+import type { MediaAssetRepository } from "@/domain/media-asset";
 import type { BrandAssetRepository, BrandColorRepository } from "@/domain/brand-kit";
 import type { ModeloRepository } from "@/domain/modelo";
 import type { PlantillaRepository } from "@/domain/plantilla";
@@ -18,6 +19,7 @@ import {
   MockConexionRepository,
   MockGeneracionRepository,
   MockLeadRepository,
+  MockMediaAssetRepository,
   MockModeloRepository,
   MockPlantillaRepository,
   MockPropiedadRepository,
@@ -34,6 +36,7 @@ import {
   RestConexionRepository,
   RestGeneracionRepository,
   RestLeadRepository,
+  RestMediaAssetRepository,
   RestModeloRepository,
   RestPlantillaRepository,
   RestPropiedadRepository,
@@ -58,6 +61,7 @@ export interface Repositories {
   conexionRepo: ConexionRepository;
   campanaRepo: CampanaRepository;
   leadRepo: LeadRepository;
+  mediaAssetRepo: MediaAssetRepository;
   brandAssetRepo: BrandAssetRepository;
   brandColorRepo: BrandColorRepository;
   walletRepo: WalletRepository;
@@ -77,6 +81,7 @@ function createMockRepositories(): Repositories {
     conexionRepo: new MockConexionRepository(),
     campanaRepo: new MockCampanaRepository(),
     leadRepo: new MockLeadRepository(),
+    mediaAssetRepo: new MockMediaAssetRepository(),
     brandAssetRepo: new MockBrandAssetRepository(),
     brandColorRepo: new MockBrandColorRepository(),
     walletRepo: new MockWalletRepository(),
@@ -102,6 +107,7 @@ function createRestRepositories(): Repositories {
     conexionRepo: new RestConexionRepository(),
     campanaRepo: new RestCampanaRepository(),
     leadRepo: new RestLeadRepository(),
+    mediaAssetRepo: new RestMediaAssetRepository(),
     brandAssetRepo: new RestBrandAssetRepository(),
     brandColorRepo: new RestBrandColorRepository(),
     walletRepo: new RestWalletRepository(),

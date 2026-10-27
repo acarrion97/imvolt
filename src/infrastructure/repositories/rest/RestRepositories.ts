@@ -4,6 +4,8 @@ import type {
   AuthUsuario,
   LoginInput,
   Perfil,
+  RegisterInput,
+  RegisterResult,
   Session,
 } from "@/domain/auth";
 import type {
@@ -22,6 +24,13 @@ import type {
   GeneracionRepository,
 } from "@/domain/generacion";
 import type { Lead, LeadCreate, LeadRepository } from "@/domain/lead";
+import type {
+  MediaAsset,
+  MediaAssetCreate,
+  MediaAssetDescarga,
+  MediaAssetRepository,
+  MediaAssetVersion,
+} from "@/domain/media-asset";
 import type { Modelo, ModeloCreate, ModeloRepository } from "@/domain/modelo";
 import type {
   BrandAsset,
@@ -91,6 +100,40 @@ export class RestProyectoRepository
 {
   constructor() {
     super("v1/proyectos");
+  }
+
+  private mapProyecto(
+    row: Proyecto & {
+      proyecto_id?: number | string;
+      empresa_id?: number;
+      creado_en?: string;
+      actualizado_en?: string;
+    },
+  ): Proyecto {
+    return {
+      ...row,
+      project_id: String(row.proyecto_id ?? row.project_id),
+      organization_id: String(row.empresa_id ?? row.organization_id),
+      created_at: row.creado_en ?? row.created_at,
+    };
+  }
+
+  override async getAll(filters?: FilterParams): Promise<Proyecto[]> {
+    const rows = await super.getAll(filters);
+    return rows.map((row) => this.mapProyecto(row));
+  }
+
+  override async getById(id: string): Promise<Proyecto | null> {
+    const row = await super.getById(id);
+    return row ? this.mapProyecto(row) : null;
+  }
+
+  override async create(data: ProyectoCreate): Promise<Proyecto> {
+    return this.mapProyecto(await super.create(data));
+  }
+
+  override async update(id: string, data: Partial<Proyecto>): Promise<Proyecto> {
+    return this.mapProyecto(await super.update(id, data));
   }
 }
 
@@ -169,6 +212,52 @@ export class RestBrandAssetRepository
 
   async eliminarVersion(assetId: string, versionId: string): Promise<void> {
     await http.del(`/v1/brand-assets/${assetId}/versiones/${versionId}`);
+  }
+}
+
+// ── Catálogo: media assets (CRUD + storage privado) ─────────────────────────
+export class RestMediaAssetRepository
+  extends RestCrudRepository<MediaAsset, string, MediaAssetCreate>
+  implements MediaAssetRepository
+{
+  constructor() {
+    super("v1/media-assets");
+  }
+
+  async listarVersiones(assetId: string): Promise<MediaAssetVersion[]> {
+    return http.get<MediaAssetVersion[]>(`/v1/media-assets/${assetId}/versiones`);
+  }
+
+  async subirVersion(
+    assetId: string,
+    file: File,
+    nota?: string | null,
+  ): Promise<MediaAssetVersion> {
+    const form = new FormData();
+    form.append("archivo", file, file.name);
+    if (nota) form.append("nota", nota);
+    return http.postForm<MediaAssetVersion>(`/v1/media-assets/${assetId}/versiones`, form);
+  }
+
+  async descargar(assetId: string): Promise<MediaAssetDescarga> {
+    return http.get<MediaAssetDescarga>(`/v1/media-assets/${assetId}/descarga`);
+  }
+
+  async descargarVersion(assetId: string, versionId: string): Promise<MediaAssetDescarga> {
+    return http.get<MediaAssetDescarga>(
+      `/v1/media-assets/${assetId}/versiones/${versionId}/descarga`,
+    );
+  }
+
+  async restaurarVersion(assetId: string, versionId: string): Promise<MediaAsset> {
+    return http.post<MediaAsset>(
+      `/v1/media-assets/${assetId}/versiones/${versionId}/restaurar`,
+      {},
+    );
+  }
+
+  async eliminarVersion(assetId: string, versionId: string): Promise<void> {
+    await http.del(`/v1/media-assets/${assetId}/versiones/${versionId}`);
   }
 }
 
@@ -353,6 +442,7 @@ export class RestEmpresaRepository implements EmpresaRepository {
 /**
  * Autenticación contra el API (`/api/auth`):
  *
+ *   POST /api/auth/register → crea usuario, empresa y rol propietario
  *   POST /api/auth/login  → { access_token, refresh_token, user_id }
  *   GET  /api/auth/me     → { usuario (con empresa), roles[] }
  *
@@ -360,6 +450,10 @@ export class RestEmpresaRepository implements EmpresaRepository {
  * expone logout y los tokens de Supabase caducan por sí solos.
  */
 export class RestAuthRepository implements AuthRepository {
+  async register(input: RegisterInput): Promise<RegisterResult> {
+    return http.post<RegisterResult>("/auth/register", input);
+  }
+
   async login(input: LoginInput): Promise<Session> {
     return http.post<Session>("/auth/login", input);
   }

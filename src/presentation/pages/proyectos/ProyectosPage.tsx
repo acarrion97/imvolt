@@ -5,18 +5,27 @@ import { DataTable } from "@/presentation/components/common/DataTable";
 import { EstadoProyectoTag, formatFecha } from "@/presentation/components/common/status";
 import { useCreateProyecto, useDeleteProyecto, useProyectos, useUpdateProyecto } from "@/presentation/hooks";
 import { proyectoSchema } from "@/presentation/validations";
+import { useAuth } from "@/presentation/auth/AuthProvider";
 import type { Proyecto, ProyectoTipo } from "@/domain/proyecto";
 import type { ColumnsType } from "antd/es/table";
 
 const { Text } = Typography;
 
 const TIPO_LABELS: Record<ProyectoTipo, string> = {
-  lotizacion: "LotizaciÃ³n",
-  urbanizacion: "UrbanizaciÃ³n",
+  lotizacion: "Lotizaciòn",
+  urbanizacion: "Urbanizaciòn",
   edificio: "Edificio",
   proyecto_planos: "Proyecto en planos",
   individual: "Individual",
 };
+
+function mensajeErrorProyecto(error: unknown, fallback: string): string {
+  const detail = error instanceof Error ? error.message : "";
+  if (/public\.proyectos|schema cache/i.test(detail)) {
+    return "La base de datos conectada al API no tiene la tabla public.proyectos. Ejecuta el esquema de imvolt-api/database/schema.sql en Supabase y actualiza la caché de esquema de PostgREST.";
+  }
+  return detail || fallback;
+}
 
 interface FormValues {
   nombre: string;
@@ -29,6 +38,8 @@ interface FormValues {
 
 export function ProyectosPage() {
   const { message } = App.useApp();
+  const { tienePermiso } = useAuth();
+  const puedeGestionar = tienePermiso("gestionar_propiedades");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Proyecto | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -97,7 +108,7 @@ export function ProyectosPage() {
       }
       setDrawerOpen(false);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : "No se pudo guardar el proyecto.");
+      message.error(mensajeErrorProyecto(error, "No se pudo guardar el proyecto."));
     }
   };
 
@@ -106,7 +117,7 @@ export function ProyectosPage() {
       await deleteProyecto.mutateAsync(id);
       message.success("Proyecto eliminado.");
     } catch (error) {
-      message.error(error instanceof Error ? error.message : "No se pudo eliminar.");
+      message.error(mensajeErrorProyecto(error, "No se pudo eliminar."));
     }
   };
 
@@ -120,7 +131,7 @@ export function ProyectosPage() {
           <Text strong>{nombre}</Text>
           <br />
           <Text type="secondary" style={{ fontSize: 12 }}>
-            {row.ubicacion ?? "Sin ubicaciÃ³n"}
+            {row.ubicacion ?? "Sin ubicaciòn"}
           </Text>
         </div>
       ),
@@ -156,7 +167,8 @@ export function ProyectosPage() {
       title: "",
       key: "acciones",
       width: 110,
-      render: (_, row) => (
+      render: (_, row) =>
+        puedeGestionar ? (
         <Space>
           <Button type="text" icon={<EditOutlined />} onClick={() => openEdit(row)} />
           <Popconfirm
@@ -169,7 +181,7 @@ export function ProyectosPage() {
             <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
-      ),
+        ) : null,
     },
   ];
 
@@ -182,9 +194,11 @@ export function ProyectosPage() {
           <p className="sub">Lotizaciones, urbanizaciones y desarrollos de la organizaciÃ³n.</p>
         </div>
         <div className="header-actions">
-          <button type="button" className="btn btn-primary" onClick={openCreate}>
-            <PlusOutlined /> Nuevo proyecto
-          </button>
+          {puedeGestionar && (
+            <button type="button" className="btn btn-primary" onClick={openCreate}>
+              <PlusOutlined /> Nuevo proyecto
+            </button>
+          )}
         </div>
       </div>
 
@@ -194,7 +208,7 @@ export function ProyectosPage() {
             className="search"
             allowClear
             prefix={<SearchOutlined style={{ color: "#9db3a8" }} />}
-            placeholder="Buscar por nombre o ubicaciÃ³n..."
+            placeholder="Buscar por nombre o ubicaciòn..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -245,7 +259,7 @@ export function ProyectosPage() {
             />
           </Form.Item>
 
-          <Form.Item name="ubicacion" label="UbicaciÃ³n">
+          <Form.Item name="ubicacion" label="Ubicaciòn">
             <Input placeholder="Ciudad, provincia" maxLength={200} />
           </Form.Item>
 
@@ -253,7 +267,7 @@ export function ProyectosPage() {
             <InputNumber min={1} style={{ width: "100%" }} placeholder="Ej: 120" />
           </Form.Item>
 
-          <Form.Item name="descripcion" label="DescripciÃ³n">
+          <Form.Item name="descripcion" label="Descripción">
             <Input.TextArea rows={3} maxLength={500} showCount placeholder="DescripciÃ³n del desarrollo" />
           </Form.Item>
 

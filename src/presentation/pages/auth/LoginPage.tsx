@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { App, Button, Form, Input } from "antd";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { ImvoltLogo } from "@/presentation/components/brand/ImvoltLogo";
@@ -106,9 +106,8 @@ export function LoginPage() {
             </Button>
           </Form>
 
-          <div className="notice" style={{ marginTop: 18 }}>
-            ¿Todavía no tenés cuenta? El registro se hace por ahora desde la documentación del API (
-            <b>POST /api/auth/register</b> en <b>/documentacion</b>).
+          <div className="auth-switch">
+            ¿Todavía no tenés cuenta? <Link to="/registro">Crear una cuenta</Link>
           </div>
         </div>
       </main>
