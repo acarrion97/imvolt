@@ -40,7 +40,9 @@ en orden `imvolt-api/database/migrations/2026-10-27_01_ai_connections.sql`,
 `2026-10-27_04_campaign_tenant_backfill.sql` para reparar campañas anteriores
 que quedaron sin empresa asociada. Para conectar cuentas Meta por OAuth,
 ejecuta además `imvolt-api/database/migrations/2026-10-27_05_meta_oauth_tokens.sql`
-y configura las variables OAuth descritas en el README de la API.
+y configura las variables OAuth descritas en el README de la API. Para una
+prueba local sin OAuth ni conexión importada, la API puede usar
+`META_ACCESS_TOKEN` y `META_AD_ACCOUNT_ID` del `.env` del backend.
 
 ## Autenticación
 

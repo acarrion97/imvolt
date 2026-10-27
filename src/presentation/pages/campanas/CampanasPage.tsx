@@ -283,7 +283,7 @@ export function CampanasPage() {
                 type="button"
                 className="btn btn-primary"
                 style={{ padding: "6px 10px", fontSize: 11 }}
-                disabled={!metaConectada || publicarCampana.isPending}
+                disabled={publicarCampana.isPending}
               >
                 <FacebookOutlined /> Enviar a Meta
               </button>
@@ -361,8 +361,8 @@ export function CampanasPage() {
           </>
         ) : (
           <>
-            <strong>Meta no está conectado.</strong> Puedes preparar el borrador; la publicación
-            quedará pendiente hasta conectar la cuenta publicitaria en Configuración.
+            <strong>Meta no está conectado por OAuth.</strong> Puedes usar las credenciales de
+            prueba configuradas en el `.env` del backend o conectar una cuenta en Configuración.
           </>
         )}
       </div>
@@ -421,7 +421,7 @@ export function CampanasPage() {
                 <Form.Item name="connection_id" noStyle>
                   <Select
                     allowClear
-                    placeholder={metaConectada ? "Cuenta conectada" : "Sin conexión"}
+                    placeholder={metaConectada ? "Cuenta conectada" : "Opcional: usa la cuenta de prueba del backend"}
                     options={(conexiones ?? [])
                       .filter((c) => c.estado === "conectada" && c.autenticada)
                       .map((c) => ({
@@ -557,7 +557,7 @@ export function CampanasPage() {
           </div>
           <div className="summ-row">
             <span>Conexión Meta</span>
-            <strong>{connectionId ? "Cuenta publicitaria" : "Sin conectar"}</strong>
+            <strong>{connectionId ? "Cuenta conectada" : "Credenciales del backend"}</strong>
           </div>
           <div className="summ-row">
             <span>Copy</span>
