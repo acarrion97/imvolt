@@ -10,9 +10,10 @@ import {
   NotificationOutlined,
   RobotOutlined,
   SettingOutlined,
+  TeamOutlined,
   UsergroupAddOutlined,
 } from "@ant-design/icons";
-import { useAuth, useWallet } from "@/presentation/hooks";
+import { useAuth, usePermisos, useWallet } from "@/presentation/hooks";
 import { capitalize, initials } from "@/presentation/components/common/userLabel";
 
 /**
@@ -42,6 +43,7 @@ const ESPACIO: NavItem[] = [
 ];
 
 const ADMIN: NavItem[] = [
+  { key: "/equipo", label: "Equipo", icon: <TeamOutlined /> },
   { key: "/configuracion", label: "Configuración", icon: <SettingOutlined /> },
 ];
 
@@ -57,6 +59,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   const navigate = useNavigate();
   const { data: wallet } = useWallet();
   const { perfil, rol } = useAuth();
+  const { puedeGestionarUsuarios } = usePermisos();
   const saldo = wallet?.saldo ?? 0;
   const pct = Math.max(4, Math.min(100, Math.round((saldo / CUOTA_MENSUAL) * 100)));
 
@@ -96,7 +99,9 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
       <nav className="nav">{renderItems(ESPACIO)}</nav>
 
       <div className="section-cap">Administración</div>
-      <nav className="nav">{renderItems(ADMIN)}</nav>
+      <nav className="nav">
+        {renderItems(ADMIN.filter((i) => i.key !== "/equipo" || puedeGestionarUsuarios))}
+      </nav>
 
       <div className="sidebar-bottom">
         <p className="workspace-label">WORKSPACE ACTIVO</p>

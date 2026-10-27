@@ -1,4 +1,5 @@
 import type { CrudRepository } from "@/domain/core/repositories/CrudRepository";
+import type { ProyectoReferencia } from "@/domain/proyecto";
 
 /** Categorías del catálogo `public.tipos_propiedades` (semilla de la API). */
 export type PropiedadCategoria =
@@ -35,7 +36,6 @@ export interface TipoPropiedad {
   creado_en: string;
   actualizado_en: string;
 }
-
 export type TipoPropiedadCreate = {
   nombre: string;
 };
@@ -58,14 +58,15 @@ export interface Propiedad {
   medios_autorizados: MedioAutorizado[];
   empresa_id: number;
   tipo_propiedad_id: string;
-  /** Proyecto inmobiliario al que pertenece, si aplica. */
-  proyecto_id?: string | null;
-  proyecto?: { proyecto_id: string; nombre: string; tipo: string } | null;
+  /** Desarrollo al que pertenece; `null` = inmueble individual. */
+  proyecto_id: string | null;
   estado: PropiedadEstado;
   /** Relación incrustada (FK → empresas). */
   empresa: PropiedadEmpresa | null;
   /** Relación incrustada (FK → tipos_propiedades). */
   tipo_propiedad: TipoPropiedad | null;
+  /** Relación incrustada (FK → proyectos; referencia ligera). */
+  proyecto: ProyectoReferencia | null;
   creado_en: string;
   actualizado_en: string;
 }

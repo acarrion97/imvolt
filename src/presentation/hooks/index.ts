@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getContainer } from "@/infrastructure/container";
 import { createCrudHooks } from "./createCrudHooks";
 import { domainKey, queryKeys } from "@/infrastructure/cache/queryKeys";
+import type { FilterParams } from "@/domain/core/repositories/CrudRepository";
+import type { EmpresaUpdate, InvitacionMiembro } from "@/domain/identity";
 
 // ── Proyectos ────────────────────────────────────────────────────────────────
 const proyectosHooks = createCrudHooks(getContainer().proyectos, "proyectos");
@@ -39,10 +41,16 @@ export const {
   useUpdate: useUpdatePlantilla,
   useDelete: useDeletePlantilla,
 } = plantillasHooks;
+
+
+// ── Tipos de propiedad (catálogo de plantillas) ──────────────────────────────
 export const { useList: useTiposPlantilla } = createCrudHooks(
   getContainer().tiposPlantilla,
-  "tiposPlantilla",
+  "tiposPlantilla" as Parameters<typeof createCrudHooks>[1],
 );
+
+
+
 // ── Modelos (catálogo vivo §09) ──────────────────────────────────────────────
 export function useModelos() {
   const { modelos } = getContainer();
@@ -139,80 +147,6 @@ export const {
   useDelete: useDeleteBrandColor,
 } = brandColorsHooks;
 
-// ── Catálogo: media assets ───────────────────────────────────────────────────
-const mediaAssetsHooks = createCrudHooks(getContainer().mediaAssets, "mediaAssets");
-export const {
-  useList: useMediaAssets,
-  useById: useMediaAsset,
-  useCreate: useCreateMediaAsset,
-  useUpdate: useUpdateMediaAsset,
-  useDelete: useDeleteMediaAsset,
-} = mediaAssetsHooks;
-
-export function useMediaAssetVersiones(assetId: string | undefined) {
-  const { mediaAssetStorage } = getContainer();
-  return useQuery({
-    queryKey: queryKeys.mediaAssetVersiones(assetId ?? ""),
-    queryFn: () => mediaAssetStorage.listarVersiones(assetId as string),
-    enabled: Boolean(assetId),
-  });
-}
-
-export function useSubirMediaAssetVersion() {
-  const queryClient = useQueryClient();
-  const { mediaAssetStorage } = getContainer();
-  return useMutation({
-    mutationFn: ({ assetId, file, nota }: { assetId: string; file: File; nota?: string | null }) =>
-      mediaAssetStorage.subirVersion(assetId, file, nota),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: domainKey("mediaAssets") });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.mediaAssetVersiones(variables.assetId),
-      });
-    },
-  });
-}
-
-export function useDescargarMediaAsset() {
-  const { mediaAssetStorage } = getContainer();
-  return useMutation({
-    mutationFn: ({ assetId, versionId }: { assetId: string; versionId?: string }) =>
-      versionId
-        ? mediaAssetStorage.descargarVersion(assetId, versionId)
-        : mediaAssetStorage.descargar(assetId),
-  });
-}
-
-export function useRestaurarMediaAssetVersion() {
-  const queryClient = useQueryClient();
-  const { mediaAssetStorage } = getContainer();
-  return useMutation({
-    mutationFn: ({ assetId, versionId }: { assetId: string; versionId: string }) =>
-      mediaAssetStorage.restaurarVersion(assetId, versionId),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: domainKey("mediaAssets") });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.mediaAssetVersiones(variables.assetId),
-      });
-    },
-  });
-}
-
-export function useEliminarMediaAssetVersion() {
-  const queryClient = useQueryClient();
-  const { mediaAssetStorage } = getContainer();
-  return useMutation({
-    mutationFn: ({ assetId, versionId }: { assetId: string; versionId: string }) =>
-      mediaAssetStorage.eliminarVersion(assetId, versionId),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: domainKey("mediaAssets") });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.mediaAssetVersiones(variables.assetId),
-      });
-    },
-  });
-}
-
 /** Historial de versiones de un archivo del Brand Kit. */
 export function useBrandAssetVersiones(assetId: string | undefined) {
   const { brandAssetStorage } = getContainer();
@@ -305,6 +239,85 @@ export function useEliminarBrandAssetVersion() {
   });
 }
 
+// ── Catalog: media assets ────────────────────────────────────────────────────
+const mediaAssetsHooks = createCrudHooks(getContainer().mediaAssets, "mediaAssets");
+export const {
+  useList: useMediaAssets,
+  useCreate: useCreateMediaAsset,
+  useUpdate: useUpdateMediaAsset,
+  useDelete: useDeleteMediaAsset,
+} = mediaAssetsHooks;
+
+export function useMediaAssetVersiones(assetId: string | undefined) {
+  const { mediaAssetStorage } = getContainer();
+  return useQuery({
+    queryKey: queryKeys.mediaAssetVersiones(assetId ?? ""),
+    queryFn: () => mediaAssetStorage.listarVersiones(assetId as string),
+    enabled: Boolean(assetId),
+  });
+}
+
+/** URL firmada de la versión activa; se vuelve a pedir antes de los 5 min de caducidad. */
+export function useMediaAssetPreview(assetId: string | undefined, activo: boolean) {
+  const { mediaAssetStorage } = getContainer();
+  return useQuery({
+    queryKey: queryKeys.mediaAssetPreview(assetId ?? ""),
+    queryFn: () => mediaAssetStorage.descargar(assetId as string),
+    enabled: Boolean(assetId) && activo,
+    staleTime: 4 * 60 * 1000,
+    retry: false,
+  });
+}
+
+function invalidarMedia(
+  queryClient: ReturnType<typeof useQueryClient>,
+  assetId: string,
+) {
+  queryClient.invalidateQueries({ queryKey: domainKey("mediaAssets") });
+  queryClient.invalidateQueries({ queryKey: queryKeys.mediaAssetVersiones(assetId) });
+}
+
+export function useSubirMediaAssetVersion() {
+  const queryClient = useQueryClient();
+  const { mediaAssetStorage } = getContainer();
+  return useMutation({
+    mutationFn: ({ assetId, file, nota }: { assetId: string; file: File; nota?: string | null }) =>
+      mediaAssetStorage.subirVersion(assetId, file, nota),
+    onSuccess: (_d, v) => invalidarMedia(queryClient, v.assetId),
+  });
+}
+
+/** Devuelve la URL firmada de descarga (caduca en 5 minutos). */
+export function useDescargarMediaAsset() {
+  const { mediaAssetStorage } = getContainer();
+  return useMutation({
+    mutationFn: ({ assetId, versionId }: { assetId: string; versionId?: string }) =>
+      versionId
+        ? mediaAssetStorage.descargarVersion(assetId, versionId)
+        : mediaAssetStorage.descargar(assetId),
+  });
+}
+
+export function useRestaurarMediaAssetVersion() {
+  const queryClient = useQueryClient();
+  const { mediaAssetStorage } = getContainer();
+  return useMutation({
+    mutationFn: ({ assetId, versionId }: { assetId: string; versionId: string }) =>
+      mediaAssetStorage.restaurarVersion(assetId, versionId),
+    onSuccess: (_d, v) => invalidarMedia(queryClient, v.assetId),
+  });
+}
+
+export function useEliminarMediaAssetVersion() {
+  const queryClient = useQueryClient();
+  const { mediaAssetStorage } = getContainer();
+  return useMutation({
+    mutationFn: ({ assetId, versionId }: { assetId: string; versionId: string }) =>
+      mediaAssetStorage.eliminarVersion(assetId, versionId),
+    onSuccess: (_d, v) => invalidarMedia(queryClient, v.assetId),
+  });
+}
+
 // ── Créditos (billetera) ─────────────────────────────────────────────────────
 export function useWallet() {
   const { getWallet } = getContainer();
@@ -335,6 +348,76 @@ export function useRecargarCreditos() {
   });
 }
 
+// ── Identity: equipo, roles, bitácora y organización ─────────────────────────
+const miembrosHooks = createCrudHooks(getContainer().miembros, "miembros");
+export const { useList: useMiembros, useUpdate: useUpdateMiembro } = miembrosHooks;
+
+/** Invita a un miembro (devuelve la contraseña temporal, única vez). */
+export function useInvitarMiembro() {
+  const queryClient = useQueryClient();
+  const { miembros } = getContainer();
+  return useMutation({
+    mutationFn: (input: InvitacionMiembro) => miembros.invitar(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: domainKey("miembros") });
+      queryClient.invalidateQueries({ queryKey: domainKey("auditoria") });
+    },
+  });
+}
+
+export function useCambiarRolMiembro() {
+  const queryClient = useQueryClient();
+  const { miembros } = getContainer();
+  return useMutation({
+    mutationFn: ({ usuarioId, rolId }: { usuarioId: string; rolId: string }) =>
+      miembros.cambiarRol(usuarioId, rolId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: domainKey("miembros") });
+      queryClient.invalidateQueries({ queryKey: domainKey("auditoria") });
+    },
+  });
+}
+
+export function useRoles() {
+  const { roles } = getContainer();
+  return useQuery({
+    queryKey: queryKeys.roles(),
+    queryFn: () => roles.list.execute(),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+/** Bitácora de auditoría; `enabled=false` evita el 403 a quien no es propietario/admin. */
+export function useAuditoria(filters?: FilterParams, enabled = true) {
+  const { auditoria } = getContainer();
+  return useQuery({
+    queryKey: [...queryKeys.auditoria(), filters ?? {}] as const,
+    queryFn: () => auditoria.list.execute(filters),
+    enabled,
+  });
+}
+
+export function useEmpresa() {
+  const { empresa } = getContainer();
+  return useQuery({
+    queryKey: queryKeys.empresa(),
+    queryFn: () => empresa.obtener.execute(),
+  });
+}
+
+export function useActualizarEmpresa() {
+  const queryClient = useQueryClient();
+  const { empresa } = getContainer();
+  return useMutation({
+    mutationFn: (data: EmpresaUpdate) => empresa.actualizar.execute(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.empresa() });
+      queryClient.invalidateQueries({ queryKey: domainKey("auditoria") });
+    },
+  });
+}
+
 // ── Utilidades ───────────────────────────────────────────────────────────────
 export { useOnlineStatus } from "./useOnlineStatus";
 export { useAuth } from "@/presentation/auth/AuthProvider";
+export { usePermisos } from "./usePermisos";

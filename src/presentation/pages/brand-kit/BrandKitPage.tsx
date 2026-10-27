@@ -755,7 +755,7 @@ export function BrandKitPage() {
                     <button type="button" className="btn btn-primary" onClick={abrirAltaAsset}>
                       <PlusOutlined /> Nuevo archivo
                     </button>
-                  </div>
+                  </div>}
                 </div>
               )}
             </div>
@@ -990,7 +990,7 @@ export function BrandKitPage() {
                     historialAsset.categoria,
                   ).join(", ")}`}
                 </p>
-              </div>}
+              </div>
 
               <div className="field">
                 <label>Nota del cambio (opcional)</label>

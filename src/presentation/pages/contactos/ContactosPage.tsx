@@ -166,13 +166,13 @@ export function ContactosPage() {
         <div>
           <span style={{ fontWeight: 650, display: "block" }}>{nombre}</span>
           <span style={{ color: "#8b9a93", fontSize: 11.5 }}>
-            {row.telefono ?? "sin telÃ©fono"} Â· {row.email ?? "sin email"}
+            {row.telefono ?? "sin teléfono"} · {row.email ?? "sin email"}
           </span>
         </div>
       ),
     },
     {
-      title: "InterÃ©s",
+      title: "Interés",
       dataIndex: "property_id",
       key: "property_id",
       render: (id: string | null) => interesMap(id),
@@ -217,7 +217,7 @@ export function ContactosPage() {
             <EditOutlined /> Editar
           </button>
           <Popconfirm
-            title="Â¿Eliminar este contacto?"
+            title="¿Eliminar este contacto?"
             okText="Eliminar"
             cancelText="Cancelar"
             onConfirm={() => handleDelete(row.lead_id)}
@@ -242,7 +242,7 @@ export function ContactosPage() {
           <p className="eyebrow">Crecimiento</p>
           <h1>Contactos potenciales</h1>
           <p className="sub">
-            Pipeline de leads de Meta, WhatsApp y landing con deduplicaciÃ³n por fuente (Â§11).
+            Pipeline de leads de Meta, WhatsApp y landing con deduplicación por fuente (§11).
           </p>
         </div>
         <div className="header-actions">
@@ -254,7 +254,7 @@ export function ContactosPage() {
 
       <div className="notice">
         <strong>Demo interactiva.</strong> Los leads llegan simulados hasta conectar Meta y el
-        webhook de captaciÃ³n.
+        webhook de captación.
       </div>
 
       <div className="card card-pad" style={{ marginBottom: 20 }}>
@@ -263,7 +263,7 @@ export function ContactosPage() {
             className="search"
             allowClear
             prefix={<SearchOutlined style={{ color: "#9db3a8" }} />}
-            placeholder="Buscar por nombre, email o telÃ©fono..."
+            placeholder="Buscar por nombre, email o teléfono..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -307,8 +307,8 @@ export function ContactosPage() {
       </Spin>
 
       <p className="footer-note">
-        Estado actual: {filtered.filter((l) => l.estado === "nuevo").length} nuevos Â·{" "}
-        {filtered.filter((l) => l.estado === "calificado").length} calificados Â·{" "}
+        Estado actual: {filtered.filter((l) => l.estado === "nuevo").length} nuevos ·{" "}
+        {filtered.filter((l) => l.estado === "calificado").length} calificados ·{" "}
         {filtered.filter((l) => l.estado === "cerrado").length} cerrados
       </p>
 
@@ -333,7 +333,7 @@ export function ContactosPage() {
           </Form.Item>
 
           <div className="form-grid">
-            <Form.Item name="telefono" label="TelÃ©fono">
+            <Form.Item name="telefono" label="Teléfono">
               <Input placeholder="+593 99 123 4567" maxLength={20} />
             </Form.Item>
             <Form.Item name="email" label="Email">
@@ -363,17 +363,17 @@ export function ContactosPage() {
               />
             </Form.Item>
 
-            <Form.Item name="campaign_id" label="CampaÃ±a de origen">
+            <Form.Item name="campaign_id" label="Campaña de origen">
               <Select
                 allowClear
-                placeholder="Sin campaÃ±a"
+                placeholder="Sin campaña"
                 options={(campanas ?? []).map((c) => ({
                   value: c.campaign_id,
                   label: c.nombre,
                 }))}
               />
             </Form.Item>
-            <Form.Item name="property_id" label="Propiedad de interÃ©s">
+            <Form.Item name="property_id" label="Propiedad de interés">
               <Select
                 allowClear
                 placeholder="Sin propiedad"

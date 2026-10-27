@@ -4,28 +4,20 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant
 import { DataTable } from "@/presentation/components/common/DataTable";
 import { EstadoProyectoTag, formatFecha } from "@/presentation/components/common/status";
 import { useCreateProyecto, useDeleteProyecto, useProyectos, useUpdateProyecto } from "@/presentation/hooks";
-import { proyectoSchema } from "@/presentation/validations";
 import { useAuth } from "@/presentation/auth/AuthProvider";
+import { proyectoSchema } from "@/presentation/validations";
 import type { Proyecto, ProyectoTipo } from "@/domain/proyecto";
 import type { ColumnsType } from "antd/es/table";
 
 const { Text } = Typography;
 
 const TIPO_LABELS: Record<ProyectoTipo, string> = {
-  lotizacion: "Lotizaciòn",
-  urbanizacion: "Urbanizaciòn",
+  lotizacion: "Lotización",
+  urbanizacion: "Urbanización",
   edificio: "Edificio",
   proyecto_planos: "Proyecto en planos",
   individual: "Individual",
 };
-
-function mensajeErrorProyecto(error: unknown, fallback: string): string {
-  const detail = error instanceof Error ? error.message : "";
-  if (/public\.proyectos|schema cache/i.test(detail)) {
-    return "La base de datos conectada al API no tiene la tabla public.proyectos. Ejecuta el esquema de imvolt-api/database/schema.sql en Supabase y actualiza la caché de esquema de PostgREST.";
-  }
-  return detail || fallback;
-}
 
 interface FormValues {
   nombre: string;
@@ -33,17 +25,18 @@ interface FormValues {
   descripcion?: string | null;
   ubicacion?: string | null;
   total_lotes?: number | null;
-  estado?: "activo" | "pausado" | "terminado";
 }
 
 export function ProyectosPage() {
   const { message } = App.useApp();
-  const { tienePermiso } = useAuth();
-  const puedeGestionar = tienePermiso("gestionar_propiedades");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Proyecto | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [form] = Form.useForm<FormValues>();
+
+  /** UX de mínimo privilegio: el API sigue siendo la autoridad (403). */
+  const { tienePermiso } = useAuth();
+  const puedeGestionar = tienePermiso("gestionar_propiedades");
 
   const { data: proyectos, isLoading } = useProyectos();
   const createProyecto = useCreateProyecto();
@@ -77,7 +70,6 @@ export function ProyectosPage() {
       descripcion: proyecto.descripcion,
       ubicacion: proyecto.ubicacion,
       total_lotes: proyecto.total_lotes,
-      estado: proyecto.estado,
     });
     setDrawerOpen(true);
   };
@@ -94,7 +86,15 @@ export function ProyectosPage() {
 
     try {
       if (editing) {
-        await updateProyecto.mutateAsync({ id: editing.project_id, data: parsed.data });
+        await updateProyecto.mutateAsync({
+          id: editing.proyecto_id,
+          data: {
+            ...parsed.data,
+            descripcion: parsed.data.descripcion ?? null,
+            ubicacion: parsed.data.ubicacion ?? null,
+            total_lotes: parsed.data.total_lotes ?? null,
+          },
+        });
         message.success("Proyecto actualizado.");
       } else {
         await createProyecto.mutateAsync({
@@ -108,7 +108,7 @@ export function ProyectosPage() {
       }
       setDrawerOpen(false);
     } catch (error) {
-      message.error(mensajeErrorProyecto(error, "No se pudo guardar el proyecto."));
+      message.error(error instanceof Error ? error.message : "No se pudo guardar el proyecto.");
     }
   };
 
@@ -117,7 +117,7 @@ export function ProyectosPage() {
       await deleteProyecto.mutateAsync(id);
       message.success("Proyecto eliminado.");
     } catch (error) {
-      message.error(mensajeErrorProyecto(error, "No se pudo eliminar."));
+      message.error(error instanceof Error ? error.message : "No se pudo eliminar.");
     }
   };
 
@@ -131,7 +131,7 @@ export function ProyectosPage() {
           <Text strong>{nombre}</Text>
           <br />
           <Text type="secondary" style={{ fontSize: 12 }}>
-            {row.ubicacion ?? "Sin ubicaciòn"}
+            {row.ubicacion ?? "Sin ubicación"}
           </Text>
         </div>
       ),
@@ -158,8 +158,8 @@ export function ProyectosPage() {
     },
     {
       title: "Creado",
-      dataIndex: "created_at",
-      key: "created_at",
+      dataIndex: "creado_en",
+      key: "creado_en",
       width: 130,
       render: (v: string) => formatFecha(v),
     },
@@ -169,18 +169,18 @@ export function ProyectosPage() {
       width: 110,
       render: (_, row) =>
         puedeGestionar ? (
-        <Space>
-          <Button type="text" icon={<EditOutlined />} onClick={() => openEdit(row)} />
-          <Popconfirm
-            title="Â¿Eliminar este proyecto?"
-            description="Las propiedades asociadas quedarÃ¡n sin proyecto."
-            okText="Eliminar"
-            cancelText="Cancelar"
-            onConfirm={() => handleDelete(row.project_id)}
-          >
-            <Button type="text" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
+          <Space>
+            <Button type="text" icon={<EditOutlined />} onClick={() => openEdit(row)} />
+            <Popconfirm
+              title="¿Eliminar este proyecto?"
+              description="Las propiedades asociadas quedarán sin proyecto."
+              okText="Eliminar"
+              cancelText="Cancelar"
+              onConfirm={() => handleDelete(row.proyecto_id)}
+            >
+              <Button type="text" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          </Space>
         ) : null,
     },
   ];
@@ -189,9 +189,9 @@ export function ProyectosPage() {
     <div>
       <div className="header">
         <div>
-          <p className="eyebrow">OperaciÃ³n</p>
+          <p className="eyebrow">Operación</p>
           <h1>Proyectos</h1>
-          <p className="sub">Lotizaciones, urbanizaciones y desarrollos de la organizaciÃ³n.</p>
+          <p className="sub">Lotizaciones, urbanizaciones y desarrollos de la organización.</p>
         </div>
         <div className="header-actions">
           {puedeGestionar && (
@@ -208,7 +208,7 @@ export function ProyectosPage() {
             className="search"
             allowClear
             prefix={<SearchOutlined style={{ color: "#9db3a8" }} />}
-            placeholder="Buscar por nombre o ubicaciòn..."
+            placeholder="Buscar por nombre o ubicación..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -222,7 +222,7 @@ export function ProyectosPage() {
           card={false}
           columns={columns}
           dataSource={filtered}
-          rowKey="project_id"
+          rowKey="proyecto_id"
           loading={isLoading}
           pagination={false}
         />
@@ -245,7 +245,7 @@ export function ProyectosPage() {
             label="Nombre"
             rules={[{ required: true, message: "Indica el nombre del proyecto." }]}
           >
-            <Input placeholder="Ej: Vista Hermosa LotizaciÃ³n" maxLength={120} />
+            <Input placeholder="Ej: Vista Hermosa Lotización" maxLength={120} />
           </Form.Item>
 
           <Form.Item
@@ -259,8 +259,8 @@ export function ProyectosPage() {
             />
           </Form.Item>
 
-          <Form.Item name="ubicacion" label="Ubicaciòn">
-            <Input placeholder="Ciudad, provincia" maxLength={200} />
+          <Form.Item name="ubicacion" label="Ubicación">
+            <Input placeholder="Ciudad, provincia" maxLength={500} />
           </Form.Item>
 
           <Form.Item name="total_lotes" label="Total de lotes">
@@ -268,20 +268,9 @@ export function ProyectosPage() {
           </Form.Item>
 
           <Form.Item name="descripcion" label="Descripción">
-            <Input.TextArea rows={3} maxLength={500} showCount placeholder="DescripciÃ³n del desarrollo" />
+            <Input.TextArea rows={3} maxLength={1000} showCount placeholder="Descripción del desarrollo" />
           </Form.Item>
 
-          {editing && (
-            <Form.Item name="estado" label="Estado">
-              <Select
-                options={[
-                  { value: "activo", label: "Activo" },
-                  { value: "pausado", label: "Pausado" },
-                  { value: "terminado", label: "Terminado" },
-                ]}
-              />
-            </Form.Item>
-          )}
         </Form>
       </Drawer>
     </div>

@@ -22,13 +22,7 @@ import type {
   GeneracionRepository,
 } from "@/domain/generacion";
 import type { Lead, LeadCreate, LeadRepository } from "@/domain/lead";
-import type {
-  MediaAsset,
-  MediaAssetCreate,
-  MediaAssetDescarga,
-  MediaAssetRepository,
-  MediaAssetVersion,
-} from "@/domain/media-asset";
+
 import type { Modelo, ModeloCreate, ModeloRepository } from "@/domain/modelo";
 import type {
   BrandAsset,
@@ -40,7 +34,14 @@ import type {
   BrandColorCreate,
   BrandColorRepository,
 } from "@/domain/brand-kit";
-import type { Plantilla, PlantillaCreate, PlantillaRepository } from "@/domain/plantilla";
+import type {
+  Plantilla,
+  PlantillaCreate,
+  PlantillaRepository,
+  TipoPlantilla,
+  TipoPlantillaCreate,
+  TipoPlantillaRepository,
+} from "@/domain/plantilla";
 import type {
   Propiedad,
   PropiedadCreate,
@@ -50,6 +51,28 @@ import type {
   TipoPropiedadRepository,
 } from "@/domain/propiedad";
 import type { Proyecto, ProyectoCreate, ProyectoRepository } from "@/domain/proyecto";
+import type {
+  AuditoriaLog,
+  AuditoriaRepository,
+  Empresa,
+  EmpresaRepository,
+  EmpresaUpdate,
+  InvitacionMiembro,
+  InvitacionResultado,
+  Miembro,
+  MiembroCreate,
+  MiembroRepository,
+  Rol,
+  RolRepository,
+} from "@/domain/identity";
+import type { FilterParams } from "@/domain/core/repositories/CrudRepository";
+import type {
+  MediaAsset,
+  MediaAssetCreate,
+  MediaAssetDescarga,
+  MediaAssetRepository,
+  MediaAssetVersion,
+} from "@/domain/media-asset";
 import type {
   TransaccionCredito,
   TransaccionCreditoCreate,
@@ -66,13 +89,20 @@ import {
   seedBrandColors,
   seedCampanas,
   seedConexiones,
+  seedAuditoria,
   seedEmpresa,
+  seedEmpresaIdentity,
+  seedMediaAssetVersions,
+  seedMediaAssets,
+  seedMiembros,
+  seedRoles,
   seedGeneraciones,
   seedLeads,
   seedModelos,
   seedPlantillas,
   seedPropiedades,
   seedProyectos,
+  seedTiposPlantilla,
   seedTiposPropiedad,
   seedTransacciones,
   seedWallet,
@@ -98,13 +128,19 @@ export class MockProyectoRepository
 {
   constructor() {
     super(
-      (row) => row.project_id,
+      (row) => row.proyecto_id,
       (data, id) => ({
-        ...data,
-        project_id: id,
-        organization_id: ORGANIZATION_ID,
-        estado: data.estado ?? "activo",
-        created_at: nowIso(),
+        nombre: data.nombre,
+        tipo: data.tipo,
+        descripcion: data.descripcion ?? null,
+        ubicacion: data.ubicacion ?? null,
+        total_lotes: data.total_lotes ?? null,
+        proyecto_id: id,
+        empresa_id: seedEmpresa.empresa_id,
+        empresa: seedEmpresa,
+        estado: "activo",
+        creado_en: nowIso(),
+        actualizado_en: nowIso(),
       }),
       seedProyectos,
     );
@@ -135,6 +171,24 @@ export class MockTipoPropiedadRepository
     );
   }
 }
+export class MockTipoPlantillaRepository
+  extends InMemoryCrudRepository<TipoPlantilla, string, TipoPlantillaCreate>
+  implements TipoPlantillaRepository
+{
+  constructor() {
+    super(
+      (row) => String(row.tipo_plantilla_id),
+      (data, id) => ({
+        ...data,
+        tipo_plantilla_id: Number(id),
+        estado: "activo",
+        creado_en: nowIso(),
+        actualizado_en: nowIso(),
+      }),
+      seedTiposPlantilla,
+    );
+  }
+}
 
 // ── Propiedades ──────────────────────────────────────────────────────────────
 export class MockPropiedadRepository
@@ -149,24 +203,21 @@ export class MockPropiedadRepository
           seedTiposPropiedad.find(
             (t) => String(t.tipo_propiedad_id) === String(data.tipo_propiedad_id),
           ) ?? null;
-        const proyecto =
-          seedProyectos.find((p) => String(p.project_id) === String(data.proyecto_id)) ?? null;
+        const proyecto = data.proyecto_id
+          ? (seedProyectos.find((p) => String(p.proyecto_id) === String(data.proyecto_id)) ?? null)
+          : null;
 
         return {
           ...data,
           propiedad_id: id,
+          proyecto_id: proyecto ? String(proyecto.proyecto_id) : null,
+          proyecto: proyecto
+            ? { proyecto_id: proyecto.proyecto_id, nombre: proyecto.nombre, tipo: proyecto.tipo }
+            : null,
           empresa_id: seedEmpresa.empresa_id,
           estado: "activo",
           empresa: seedEmpresa,
           tipo_propiedad: tipo,
-          proyecto_id: data.proyecto_id ?? null,
-          proyecto: proyecto
-            ? {
-                proyecto_id: proyecto.project_id,
-                nombre: proyecto.nombre,
-                tipo: proyecto.tipo,
-              }
-            : null,
           creado_en: nowIso(),
           actualizado_en: nowIso(),
         };
@@ -186,12 +237,12 @@ export class MockPropiedadRepository
     const proyectoId =
       data.proyecto_id === undefined ? (current.proyecto_id ?? null) : data.proyecto_id;
     const proyecto =
-      seedProyectos.find((item) => String(item.project_id) === String(proyectoId)) ?? null;
+      seedProyectos.find((item) => String(item.proyecto_id) === String(proyectoId)) ?? null;
     return super.update(id, {
       ...data,
       proyecto_id: proyectoId,
       proyecto: proyecto
-        ? { proyecto_id: proyecto.project_id, nombre: proyecto.nombre, tipo: proyecto.tipo }
+        ? { proyecto_id: proyecto.proyecto_id, nombre: proyecto.nombre, tipo: proyecto.tipo }
         : null,
     });
   }
@@ -386,179 +437,6 @@ function svgPlaceholder(nombre: string, mime: string): string {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-// ── Catálogo: media assets (CRUD + versiones en memoria) ────────────────────
-export class MockMediaAssetRepository
-  extends InMemoryCrudRepository<MediaAsset, string, MediaAssetCreate>
-  implements MediaAssetRepository
-{
-  private versiones: MediaAssetVersion[] = [];
-  private readonly blobs = new Map<string, string>();
-
-  constructor() {
-    super(
-      (row) => row.media_asset_id,
-      (data, id) => {
-        const proyecto = seedProyectos.find(
-          (row) => String(row.project_id) === String(data.proyecto_id),
-        );
-        const propiedad = seedPropiedades.find(
-          (row) => String(row.propiedad_id) === String(data.propiedad_id),
-        );
-        return {
-          ...data,
-          media_asset_id: id,
-          categoria: data.categoria ?? "imagen",
-          descripcion: data.descripcion ?? null,
-          proyecto_id: data.proyecto_id ?? null,
-          propiedad_id: data.propiedad_id ?? null,
-          version_activa_id: null,
-          empresa_id: seedEmpresa.empresa_id,
-          estado: "activo",
-          proyecto: proyecto
-            ? { proyecto_id: proyecto.project_id, nombre: proyecto.nombre, tipo: proyecto.tipo }
-            : null,
-          propiedad: propiedad
-            ? {
-                propiedad_id: propiedad.propiedad_id,
-                nombre: propiedad.nombre,
-                ubicacion: propiedad.ubicacion,
-              }
-            : null,
-          version_activa: null,
-          creado_en: nowIso(),
-          actualizado_en: nowIso(),
-        };
-      },
-    );
-  }
-
-  override async create(data: MediaAssetCreate): Promise<MediaAsset> {
-    return super.createWithId(uuid(), data);
-  }
-
-  override async delete(id: string): Promise<void> {
-    const versionIds = this.versiones
-      .filter((version) => String(version.media_asset_id) === String(id))
-      .map((version) => version.media_asset_version_id);
-    for (const versionId of versionIds) {
-      const url = this.blobs.get(versionId);
-      if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
-      this.blobs.delete(versionId);
-    }
-    this.versiones = this.versiones.filter(
-      (version) => String(version.media_asset_id) !== String(id),
-    );
-    await super.delete(id);
-  }
-
-  private async getAsset(assetId: string): Promise<MediaAsset> {
-    const asset = await this.getById(assetId);
-    if (!asset) throw new Error(`No existe el medio ${assetId}`);
-    return asset;
-  }
-
-  private getVersion(versionId: string): MediaAssetVersion {
-    const version = this.versiones.find(
-      (item) => String(item.media_asset_version_id) === String(versionId),
-    );
-    if (!version) throw new Error(`No existe la versión ${versionId}`);
-    return version;
-  }
-
-  async listarVersiones(assetId: string): Promise<MediaAssetVersion[]> {
-    return this.versiones
-      .filter((version) => String(version.media_asset_id) === String(assetId))
-      .sort((a, b) => b.numero - a.numero);
-  }
-
-  async subirVersion(
-    assetId: string,
-    file: File,
-    nota?: string | null,
-  ): Promise<MediaAssetVersion> {
-    const asset = await this.getAsset(assetId);
-    const versions = await this.listarVersiones(assetId);
-    const now = nowIso();
-    const version: MediaAssetVersion = {
-      media_asset_version_id: uuid(),
-      media_asset_id: assetId,
-      numero: (versions[0]?.numero ?? 0) + 1,
-      nombre_archivo: file.name,
-      mime_type: file.type || null,
-      tamano_bytes: file.size,
-      nota: nota ?? null,
-      subido_por: null,
-      empresa_id: asset.empresa_id,
-      estado: "activo",
-      creado_en: now,
-      actualizado_en: now,
-    };
-    this.versiones = [version, ...this.versiones];
-    this.blobs.set(version.media_asset_version_id, URL.createObjectURL(file));
-    await this.update(assetId, {
-      version_activa_id: version.media_asset_version_id,
-      version_activa: version,
-      actualizado_en: now,
-    });
-    return version;
-  }
-
-  async descargar(assetId: string): Promise<MediaAssetDescarga> {
-    const asset = await this.getAsset(assetId);
-    if (!asset.version_activa_id) throw new Error("Este medio aún no tiene versiones.");
-    return this.descargarVersion(assetId, asset.version_activa_id);
-  }
-
-  async descargarVersion(assetId: string, versionId: string): Promise<MediaAssetDescarga> {
-    const version = this.getVersion(versionId);
-    if (String(version.media_asset_id) !== String(assetId)) {
-      throw new Error("La versión no pertenece a este medio.");
-    }
-    return {
-      url: this.blobs.get(versionId) ?? "data:application/octet-stream,",
-      expira_en_segundos: 300,
-      nombre_archivo: version.nombre_archivo,
-      mime_type: version.mime_type,
-      tamano_bytes: version.tamano_bytes,
-      numero: version.numero,
-    };
-  }
-
-  async restaurarVersion(assetId: string, versionId: string): Promise<MediaAsset> {
-    const version = this.getVersion(versionId);
-    if (String(version.media_asset_id) !== String(assetId)) {
-      throw new Error("La versión no pertenece a este medio.");
-    }
-    return this.update(assetId, {
-      version_activa_id: versionId,
-      version_activa: version,
-      actualizado_en: nowIso(),
-    });
-  }
-
-  async eliminarVersion(assetId: string, versionId: string): Promise<void> {
-    const version = this.getVersion(versionId);
-    if (String(version.media_asset_id) !== String(assetId)) {
-      throw new Error("La versión no pertenece a este medio.");
-    }
-    this.versiones = this.versiones.filter(
-      (item) => String(item.media_asset_version_id) !== String(versionId),
-    );
-    const url = this.blobs.get(versionId);
-    if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
-    this.blobs.delete(versionId);
-    const asset = await this.getAsset(assetId);
-    if (String(asset.version_activa_id) === String(versionId)) {
-      const next = (await this.listarVersiones(assetId))[0] ?? null;
-      await this.update(assetId, {
-        version_activa_id: next?.media_asset_version_id ?? null,
-        version_activa: next,
-        actualizado_en: nowIso(),
-      });
-    }
-  }
-}
-
 // ── Brand Kit: colores de la paleta ─────────────────────────────────────────
 export class MockBrandColorRepository
   extends InMemoryCrudRepository<BrandColor, string, BrandColorCreate>
@@ -594,22 +472,20 @@ export class MockPlantillaRepository
 {
   constructor() {
     super(
-      (row) => row.template_id,
+      (row) => String(row.plantilla_id),
       (data, id) => ({
         ...data,
-        template_id: id,
-        organization_id: null,
-        variables: data.variables ?? [],
-        activo: data.activo ?? true,
-        creditos_base: data.creditos_base ?? 1,
-        created_at: nowIso(),
+        plantilla_id: Number(id),
+        estado: "activo",
+        creado_en: nowIso(),
+        actualizado_en: nowIso(),
       }),
       seedPlantillas,
     );
   }
 
   override async create(data: PlantillaCreate): Promise<Plantilla> {
-    return super.createWithId(uuid(), data);
+    return super.create(data);
   }
 }
 
@@ -846,5 +722,301 @@ export class MockAuthRepository implements AuthRepository {
 
   async me(): Promise<Perfil> {
     throw new Error(AUTH_MOCK_ERROR);
+  }
+}
+
+// ── Identity: equipo, roles, bitácora y organización ─────────────────────────
+const MOCK_EMPRESA_ID = seedEmpresaIdentity[0].empresa_id;
+
+/** Miembros del equipo: mismas reglas de negocio mínimas que el API (correo único). */
+export class MockMiembroRepository
+  extends InMemoryCrudRepository<Miembro, string, MiembroCreate>
+  implements MiembroRepository
+{
+  private seqId = seedMiembros.reduce((max, m) => Math.max(max, Number(m.usuario_id)), 0);
+
+  constructor() {
+    super(
+      (row) => row.usuario_id,
+      (data, id) => ({
+        usuario_id: id,
+        nombre: data.nombre,
+        email: data.email.trim().toLowerCase(),
+        telefono: data.telefono ?? null,
+        empresa_id: MOCK_EMPRESA_ID,
+        empresa: {
+          empresa_id: MOCK_EMPRESA_ID,
+          razon_social: seedEmpresaIdentity[0].razon_social,
+        },
+        contrasenia_temporal_hasta: null,
+        estado: "activo",
+        roles: [],
+        creado_en: nowIso(),
+        actualizado_en: nowIso(),
+      }),
+      seedMiembros,
+    );
+  }
+
+  override async create(data: MiembroCreate): Promise<Miembro> {
+    this.seqId += 1;
+    return super.createWithId(String(this.seqId), data);
+  }
+
+  async invitar(input: InvitacionMiembro): Promise<InvitacionResultado> {
+    const email = input.email.trim().toLowerCase();
+    const existentes = await this.getAll();
+    if (existentes.some((m) => m.email === email)) {
+      throw new Error(`El correo ${email} ya tiene una cuenta en la plataforma`);
+    }
+
+    const creado = await this.create({
+      nombre: input.nombre.trim(),
+      email,
+      telefono: input.telefono || null,
+    });
+    const hasta = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    await this.update(creado.usuario_id, {
+      roles: [input.rol],
+      contrasenia_temporal_hasta: hasta,
+    });
+
+    return {
+      usuario_id: creado.usuario_id,
+      auth_user_id: uuid(),
+      empresa_id: MOCK_EMPRESA_ID,
+      rol: input.rol,
+      contrasenia_temporal: Math.random().toString(36).slice(2, 14).padEnd(12, "x"),
+      contrasenia_temporal_hasta: hasta,
+    };
+  }
+
+  async cambiarRol(usuarioId: string, rolId: string): Promise<void> {
+    const rol = seedRoles.find((r) => String(r.rol_id) === String(rolId));
+    if (!rol) throw new Error("El rol no existe en el catálogo");
+    await this.update(usuarioId, { roles: [rol.nombre], actualizado_en: nowIso() });
+  }
+}
+
+export class MockRolRepository implements RolRepository {
+  async listar(): Promise<Rol[]> {
+    return [...seedRoles];
+  }
+}
+
+export class MockAuditoriaRepository implements AuditoriaRepository {
+  async listar(filters?: FilterParams): Promise<AuditoriaLog[]> {
+    const entries = Object.entries(filters ?? {}).filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    );
+    return seedAuditoria
+      .filter((row) =>
+        entries.every(
+          ([key, value]) => String((row as unknown as Record<string, unknown>)[key]) === String(value),
+        ),
+      )
+      .sort((a, b) => b.creado_en.localeCompare(a.creado_en));
+  }
+}
+
+export class MockEmpresaRepository implements EmpresaRepository {
+  private empresa: Empresa = { ...seedEmpresaIdentity[0] };
+
+  async obtenerActual(): Promise<Empresa | null> {
+    return { ...this.empresa };
+  }
+
+  async actualizar(data: EmpresaUpdate): Promise<Empresa> {
+    this.empresa = { ...this.empresa, ...data, actualizado_en: nowIso() };
+    return { ...this.empresa };
+  }
+}
+
+// ── Catalog: media assets (bucket privado simulado en memoria) ───────────────
+export class MockMediaAssetRepository
+  extends InMemoryCrudRepository<MediaAsset, string, MediaAssetCreate>
+  implements MediaAssetRepository
+{
+  private versiones: MediaAssetVersion[] = [...seedMediaAssetVersions];
+  /** versionId → URL navegable (objectURL o data-URL de las semillas). */
+  private blobs = new Map<string, string>();
+
+  constructor() {
+    super(
+      (row) => row.media_asset_id,
+      (data, id) => {
+        const proyecto = data.proyecto_id
+          ? (seedProyectos.find((p) => String(p.proyecto_id) === String(data.proyecto_id)) ?? null)
+          : null;
+        const propiedad = data.propiedad_id
+          ? (seedPropiedades.find((p) => String(p.propiedad_id) === String(data.propiedad_id)) ??
+            null)
+          : null;
+        return {
+          media_asset_id: id,
+          nombre: data.nombre,
+          categoria: data.categoria,
+          descripcion: data.descripcion ?? null,
+          proyecto_id: proyecto ? String(proyecto.proyecto_id) : null,
+          propiedad_id: propiedad ? String(propiedad.propiedad_id) : null,
+          version_activa_id: null,
+          empresa_id: seedEmpresa.empresa_id,
+          estado: "activo",
+          empresa: seedEmpresa,
+          proyecto: proyecto
+            ? { proyecto_id: proyecto.proyecto_id, nombre: proyecto.nombre, tipo: proyecto.tipo }
+            : null,
+          propiedad: propiedad
+            ? {
+                propiedad_id: propiedad.propiedad_id,
+                nombre: propiedad.nombre,
+                ubicacion: propiedad.ubicacion,
+              }
+            : null,
+          version_activa: null,
+          creado_en: nowIso(),
+          actualizado_en: nowIso(),
+        };
+      },
+      seedMediaAssets,
+    );
+    for (const version of this.versiones) {
+      this.blobs.set(
+        version.media_asset_version_id,
+        svgPlaceholder(version.nombre_archivo, version.mime_type ?? "image/png"),
+      );
+    }
+  }
+
+  override async create(data: MediaAssetCreate): Promise<MediaAsset> {
+    return super.createWithId(uuid(), data);
+  }
+
+  /** `update` genérico no resuelve las referencias incrustadas: se recalculan aquí. */
+  override async update(id: string, data: Partial<MediaAsset>): Promise<MediaAsset> {
+    const patch: Partial<MediaAsset> = { ...data, actualizado_en: nowIso() };
+    if ("proyecto_id" in data) {
+      const p = data.proyecto_id
+        ? seedProyectos.find((x) => String(x.proyecto_id) === String(data.proyecto_id))
+        : null;
+      patch.proyecto = p ? { proyecto_id: p.proyecto_id, nombre: p.nombre, tipo: p.tipo } : null;
+    }
+    if ("propiedad_id" in data) {
+      const p = data.propiedad_id
+        ? seedPropiedades.find((x) => String(x.propiedad_id) === String(data.propiedad_id))
+        : null;
+      patch.propiedad = p
+        ? { propiedad_id: p.propiedad_id, nombre: p.nombre, ubicacion: p.ubicacion }
+        : null;
+    }
+    return super.update(id, patch);
+  }
+
+  private async recargar(assetId: string): Promise<MediaAsset> {
+    const asset = await this.getById(assetId);
+    if (!asset) throw new Error(`No existe el medio ${assetId}`);
+    return asset;
+  }
+
+  private versionDe(assetId: string, versionId: string): MediaAssetVersion {
+    const version = this.versiones.find(
+      (v) => String(v.media_asset_version_id) === String(versionId),
+    );
+    if (!version || String(version.media_asset_id) !== String(assetId)) {
+      throw new Error("La versión no pertenece a este medio.");
+    }
+    return version;
+  }
+
+  async listarVersiones(assetId: string): Promise<MediaAssetVersion[]> {
+    return this.versiones
+      .filter((v) => String(v.media_asset_id) === String(assetId))
+      .sort((a, b) => b.numero - a.numero);
+  }
+
+  async subirVersion(
+    assetId: string,
+    file: File,
+    nota?: string | null,
+  ): Promise<MediaAssetVersion> {
+    const asset = await this.recargar(assetId);
+    const numero =
+      (await this.listarVersiones(assetId)).reduce((max, v) => Math.max(max, v.numero), 0) + 1;
+
+    const version: MediaAssetVersion = {
+      media_asset_version_id: uuid(),
+      media_asset_id: assetId,
+      numero,
+      nombre_archivo: file.name,
+      mime_type: file.type || null,
+      tamano_bytes: file.size,
+      nota: nota ?? null,
+      subido_por: null,
+      empresa_id: asset.empresa_id,
+      estado: "activo",
+      creado_en: nowIso(),
+      actualizado_en: nowIso(),
+    };
+
+    this.versiones = [version, ...this.versiones];
+    this.blobs.set(version.media_asset_version_id, URL.createObjectURL(file));
+    await this.update(assetId, {
+      version_activa_id: version.media_asset_version_id,
+      version_activa: version,
+    });
+    return version;
+  }
+
+  async descargar(assetId: string): Promise<MediaAssetDescarga> {
+    const asset = await this.recargar(assetId);
+    if (!asset.version_activa_id) {
+      throw new Error("Este medio aún no tiene versiones para descargar.");
+    }
+    return this.descargarVersion(assetId, asset.version_activa_id);
+  }
+
+  async descargarVersion(assetId: string, versionId: string): Promise<MediaAssetDescarga> {
+    const version = this.versionDe(assetId, versionId);
+    return {
+      url:
+        this.blobs.get(version.media_asset_version_id) ??
+        svgPlaceholder(version.nombre_archivo, version.mime_type ?? "image/png"),
+      expira_en_segundos: 300,
+      nombre_archivo: version.nombre_archivo,
+      mime_type: version.mime_type,
+      tamano_bytes: version.tamano_bytes,
+      numero: version.numero,
+    };
+  }
+
+  async restaurarVersion(assetId: string, versionId: string): Promise<MediaAsset> {
+    const version = this.versionDe(assetId, versionId);
+    return this.update(assetId, {
+      version_activa_id: version.media_asset_version_id,
+      version_activa: version,
+    });
+  }
+
+  async eliminarVersion(assetId: string, versionId: string): Promise<void> {
+    const version = this.versionDe(assetId, versionId);
+    this.versiones = this.versiones.filter(
+      (v) => String(v.media_asset_version_id) !== String(versionId),
+    );
+    this.blobs.delete(version.media_asset_version_id);
+
+    const asset = await this.recargar(assetId);
+    if (String(asset.version_activa_id) === String(versionId)) {
+      const siguiente = (await this.listarVersiones(assetId))[0] ?? null;
+      await this.update(assetId, {
+        version_activa_id: siguiente?.media_asset_version_id ?? null,
+        version_activa: siguiente,
+      });
+    }
+  }
+
+  /** Borrar el medio elimina también sus versiones (como el API). */
+  override async delete(id: string): Promise<void> {
+    this.versiones = this.versiones.filter((v) => String(v.media_asset_id) !== String(id));
+    await super.delete(id);
   }
 }

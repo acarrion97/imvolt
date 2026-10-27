@@ -3,9 +3,9 @@ import { AppLayout } from "@/presentation/components/layout/AppLayout";
 import { LoginPage } from "@/presentation/pages/auth/LoginPage";
 import { RegisterPage } from "@/presentation/pages/auth/RegisterPage";
 import { RequireAuth } from "./RequireAuth";
+import { RequirePermiso } from "./RequirePermiso";
 import { DashboardPage } from "@/presentation/pages/dashboard/DashboardPage";
 import { ProyectosPage } from "@/presentation/pages/proyectos/ProyectosPage";
-import { MediaAssetsPage } from "@/presentation/pages/catalogo/MediaAssetsPage";
 import { PropiedadesPage } from "@/presentation/pages/propiedades/PropiedadesPage";
 import { PlantillasPage } from "@/presentation/pages/plantillas/PlantillasPage";
 import { BrandKitPage } from "@/presentation/pages/brand-kit/BrandKitPage";
@@ -13,6 +13,8 @@ import { EstudioPage } from "@/presentation/pages/estudio/EstudioPage";
 import { CampanasPage } from "@/presentation/pages/campanas/CampanasPage";
 import { ContactosPage } from "@/presentation/pages/contactos/ContactosPage";
 import { AnaliticaPage } from "@/presentation/pages/analitica/AnaliticaPage";
+import { MediosPage } from "@/presentation/pages/medios/MediosPage";
+import { EquipoPage } from "@/presentation/pages/equipo/EquipoPage";
 import { ConfiguracionPage } from "@/presentation/pages/configuracion/ConfiguracionPage";
 
 /**
@@ -25,6 +27,7 @@ import { ConfiguracionPage } from "@/presentation/pages/configuracion/Configurac
  *   /propiedades    Mis propiedades   /campanas        Campañas Meta
  *   /contactos      Contactos         /analitica       Analítica
  *   /configuracion  Configuración     /proyectos       Proyectos (secundaria)
+ *   /equipo         Equipo y auditoría   /medios  Medios (catálogo)
  *
  * Todas las rutas de la app pasan por `RequireAuth`: con el API real exige
  * sesión (token en localStorage) y en modo mock deja pasar sin login.
@@ -46,13 +49,21 @@ export function AppRouter() {
           <Route path="/inicio" element={<DashboardPage />} />
           <Route path="/propiedades" element={<PropiedadesPage />} />
           <Route path="/proyectos" element={<ProyectosPage />} />
-          <Route path="/medios" element={<MediaAssetsPage />} />
           <Route path="/plantillas" element={<PlantillasPage />} />
           <Route path="/brand-kit" element={<BrandKitPage />} />
           <Route path="/estudio" element={<EstudioPage />} />
           <Route path="/campanas" element={<CampanasPage />} />
           <Route path="/contactos" element={<ContactosPage />} />
           <Route path="/analitica" element={<AnaliticaPage />} />
+          <Route path="/medios" element={<MediosPage />} />
+          <Route
+            path="/equipo"
+            element={
+              <RequirePermiso capacidad="puedeGestionarUsuarios">
+                <EquipoPage />
+              </RequirePermiso>
+            }
+          />
           <Route path="/configuracion" element={<ConfiguracionPage />} />
           <Route path="/" element={<Navigate to="/inicio" replace />} />
           <Route path="/dashboard" element={<Navigate to="/inicio" replace />} />

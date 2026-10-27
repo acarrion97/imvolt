@@ -1,44 +1,39 @@
 import type { CrudRepository } from "@/domain/core/repositories/CrudRepository";
 
-export type PlantillaCategoria =
-  | "lotizaciones"
-  | "casas"
-  | "departamentos"
-  | "proyecto_planos"
-  | "publicidad_comercial"
-  | "marca_inmobiliaria";
+export type PlantillaEstado = "activo" | "inactivo";
 
-export type PlantillaObjetivo = "visitas" | "mensajes" | "formularios" | "branding";
-
-export type PlantillaFormato = "reels_9_16" | "imagen_4_5" | "feed_1_1" | "banner_16_9";
-
-/** Entidad `public.ai_templates` — plantillas creativas del sistema. */
+/** Entidad `public.plantillas` de la API. */
 export interface Plantilla {
-  template_id: string;
-  organization_id: string | null;
+  plantilla_id: number;
   nombre: string;
-  categoria: PlantillaCategoria;
-  objetivo: PlantillaObjetivo;
-  media_type: "image" | "video";
-  formato: PlantillaFormato;
-  variables: string[];
-  estructura_narrativa: string | null;
-  movimiento_camara: string | null;
-  estilo_visual: string | null;
-  prompt_base: string;
-  requiere_referencia_original: boolean;
-  creditos_base: number;
-  activo: boolean;
-  created_at: string;
+  descripcion: string | null;
+  url_logo: string | null;
+  tipo_plantilla_id: number;
+  estado: PlantillaEstado;
+  creado_en: string;
+  actualizado_en: string;
+  tipo_plantilla?: TipoPlantilla | null;
 }
 
-export type PlantillaCreate = Omit<
-  Plantilla,
-  "template_id" | "organization_id" | "created_at" | "variables" | "activo" | "creditos_base"
-> & {
-  variables?: string[];
-  activo?: boolean;
-  creditos_base?: number;
-};
+export interface TipoPlantilla {
+  tipo_plantilla_id: number;
+  nombre: string;
+  descripcion: string;
+  estado: PlantillaEstado;
+  creado_en: string;
+  actualizado_en: string;
+}
 
-export interface PlantillaRepository extends CrudRepository<Plantilla, string, PlantillaCreate> {}
+export type TipoPlantillaCreate = Pick<TipoPlantilla, "nombre" | "descripcion">;
+
+export type PlantillaCreate = Pick<
+  Plantilla,
+  "nombre" | "descripcion" | "url_logo" | "tipo_plantilla_id"
+>;
+
+export type PlantillaRepository = CrudRepository<Plantilla, string, PlantillaCreate>;
+export type TipoPlantillaRepository = CrudRepository<
+  TipoPlantilla,
+  string,
+  TipoPlantillaCreate
+>;

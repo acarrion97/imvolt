@@ -16,6 +16,7 @@ import {
   artVariant,
 } from "@/presentation/components/common/propiedadArt";
 import { formatPrecio } from "@/presentation/components/common/status";
+import { useAuth } from "@/presentation/auth/AuthProvider";
 import {
   useCreatePropiedad,
   useDeletePropiedad,
@@ -25,7 +26,6 @@ import {
   useUpdatePropiedad,
 } from "@/presentation/hooks";
 import { propiedadSchema } from "@/presentation/validations";
-import { useAuth } from "@/presentation/auth/AuthProvider";
 import {
   categoriaDe,
   MEDIOS_AUTORIZADOS,
@@ -56,8 +56,6 @@ interface FormValues {
  */
 export function PropiedadesPage() {
   const { message, modal } = App.useApp();
-  const { tienePermiso } = useAuth();
-  const puedeGestionar = tienePermiso("gestionar_propiedades");
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState<PropiedadCategoria | undefined>();
@@ -69,9 +67,13 @@ export function PropiedadesPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [form] = Form.useForm<FormValues>();
 
+  /** UX de mínimo privilegio: el API sigue siendo la autoridad (403). */
+  const { tienePermiso } = useAuth();
+  const puedeGestionar = tienePermiso("gestionar_propiedades");
+
   const { data: propiedades, isLoading } = usePropiedades();
-  const { data: proyectos } = useProyectos();
   const { data: tipos } = useTiposPropiedad();
+  const { data: proyectos } = useProyectos();
   const createPropiedad = useCreatePropiedad();
   const updatePropiedad = useUpdatePropiedad();
   const deletePropiedad = useDeletePropiedad();
@@ -116,7 +118,7 @@ export function PropiedadesPage() {
     form.setFieldsValue({
       nombre: row.nombre,
       tipo_propiedad_id: String(row.tipo_propiedad_id),
-      proyecto_id: row.proyecto_id ? String(row.proyecto_id) : undefined,
+      proyecto_id: row.proyecto_id ? String(row.proyecto_id) : null,
       ubicacion: row.ubicacion,
       precio: Number(row.precio),
       disponibilidad: row.disponibilidad,
@@ -138,10 +140,13 @@ export function PropiedadesPage() {
 
     try {
       if (editing) {
-        await updatePropiedad.mutateAsync({ id: editing.propiedad_id, data: parsed.data });
+        await updatePropiedad.mutateAsync({
+          id: editing.propiedad_id,
+          data: { ...parsed.data, proyecto_id: parsed.data.proyecto_id ?? null },
+        });
         message.success("Propiedad actualizada.");
       } else {
-        await createPropiedad.mutateAsync(parsed.data);
+        await createPropiedad.mutateAsync({ ...parsed.data, proyecto_id: parsed.data.proyecto_id ?? null });
         message.success("Propiedad creada.");
       }
       setDrawerOpen(false);
@@ -252,43 +257,45 @@ export function PropiedadesPage() {
               <div key={p.propiedad_id} className="card item-card">
                 <div className={`art ${artVariant(categoria)}`}>
                   <span className="tag">{CATEGORIA_LABEL[categoria]}</span>
-                  {puedeGestionar && <div
-                    style={{
-                      position: "absolute",
-                      top: 11,
-                      right: 11,
-                      zIndex: 2,
-                      display: "flex",
-                      gap: 6,
-                    }}
-                  >
-                    <button
-                      type="button"
-                      style={iconBtn}
-                      onClick={() => openEdit(p)}
-                      title="Editar"
+                  {puedeGestionar && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 11,
+                        right: 11,
+                        zIndex: 2,
+                        display: "flex",
+                        gap: 6,
+                      }}
                     >
-                      <EditOutlined style={{ fontSize: 13 }} />
-                    </button>
-                    <Popconfirm
-                      title="¿Eliminar esta propiedad?"
-                      okText="Eliminar"
-                      cancelText="Cancelar"
-                      onConfirm={() => handleDelete(p)}
-                    >
-                      <button type="button" style={iconBtn} title="Eliminar">
-                        <DeleteOutlined style={{ fontSize: 13 }} />
+                      <button
+                        type="button"
+                        style={iconBtn}
+                        onClick={() => openEdit(p)}
+                        title="Editar"
+                      >
+                        <EditOutlined style={{ fontSize: 13 }} />
                       </button>
-                    </Popconfirm>
-                  </div>}
+                      <Popconfirm
+                        title="¿Eliminar esta propiedad?"
+                        okText="Eliminar"
+                        cancelText="Cancelar"
+                        onConfirm={() => handleDelete(p)}
+                      >
+                        <button type="button" style={iconBtn} title="Eliminar">
+                          <DeleteOutlined style={{ fontSize: 13 }} />
+                        </button>
+                      </Popconfirm>
+                    </div>
+                  )}
                 </div>
 
                 <div className="item-meta">
                   <h3>{p.nombre}</h3>
-                  <span className="where">{p.ubicacion}</span>
-                  {p.proyecto?.nombre && (
-                    <span className="where">Proyecto: {p.proyecto.nombre}</span>
-                  )}
+                  <span className="where">
+                    {p.ubicacion}
+                    {p.proyecto ? ` · ${p.proyecto.nombre}` : ""}
+                  </span>
                   <div style={{ display: "flex", gap: 6, marginTop: 9, flexWrap: "wrap" }}>
                     <span className={badge.cls}>{badge.label}</span>
                     {medios.length === 0 && (
@@ -327,13 +334,13 @@ export function PropiedadesPage() {
                   ? "Ninguna propiedad coincide con los filtros."
                   : "Aún no has registrado propiedades."}
               </p>
-              {puedeGestionar && (
-                <div style={{ marginTop: 14 }}>
+              <div style={{ marginTop: 14 }}>
+                {puedeGestionar && (
                   <button type="button" className="btn btn-primary" onClick={openCreate}>
                     <PlusOutlined /> Nueva propiedad
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -375,6 +382,18 @@ export function PropiedadesPage() {
                 }))}
               />
             </Form.Item>
+            <Form.Item name="proyecto_id" label="Proyecto">
+              <Select
+                allowClear
+                placeholder="Individual (sin proyecto)"
+                showSearch
+                optionFilterProp="label"
+                options={(proyectos ?? []).map((p) => ({
+                  value: String(p.proyecto_id),
+                  label: p.nombre,
+                }))}
+              />
+            </Form.Item>
             <Form.Item
               name="disponibilidad"
               label="Disponibilidad"
@@ -384,18 +403,6 @@ export function PropiedadesPage() {
                 options={(["disponible", "reservada", "vendida", "no_disponible"] as const).map(
                   (v) => ({ value: v, label: v.replace(/_/g, " ") }),
                 )}
-              />
-            </Form.Item>
-            <Form.Item name="proyecto_id" label="Proyecto (opcional)">
-              <Select
-                allowClear
-                showSearch
-                optionFilterProp="label"
-                placeholder="Propiedad individual"
-                options={(proyectos ?? []).map((project) => ({
-                  value: project.project_id,
-                  label: project.nombre,
-                }))}
               />
             </Form.Item>
 

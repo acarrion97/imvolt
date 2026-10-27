@@ -48,8 +48,48 @@ Con `VITE_DATA_PROVIDER=rest` la app exige sesión:
 - En modo `mock` **no hay login**: el `AuthProvider` queda en `disabled` y la
   app arranca directo al Inicio, como siempre.
 
-El registro todavía no tiene pantalla: se hace con `POST /api/auth/register`
-desde `/documentacion` del API.
+El registro tiene pantalla en `/registro` (solo con `VITE_DATA_PROVIDER=rest`):
+crea la cuenta con `POST /api/auth/register` y entra con las credenciales nuevas.
+
+## Seguridad: HTTPS/TLS, secretos y mínimos privilegios
+
+- **HTTPS/TLS:** `VITE_API_URL` se valida al arrancar (`infrastructure/http/apiUrl.ts`):
+  en producción solo `https://`; en desarrollo `http://` únicamente hacia `localhost`;
+  nunca credenciales embebidas. `vercel.json` añade HSTS, CSP (`upgrade-insecure-requests`,
+  `frame-ancestors 'none'`, `object-src 'none'`), `nosniff`, `Referrer-Policy` y
+  `Permissions-Policy`. Si despliegas en otro host, replica esas cabeceras allí.
+- **Secretos:** toda variable `VITE_*` se incrusta en el bundle público, así que aquí no
+  van secretos. `VITE_API_TOKEN` solo se honra con `vite dev` (se ignora en producción) y
+  las claves reales (service-role de Supabase, Higgsfield, Meta) viven solo en el backend.
+  Los archivos `.env*` están en `.gitignore`; solo se versiona `.env.example`.
+- **Mínimos privilegios:** la UI se puntea con `usePermisos()` (rol + `permisos[]` de
+  `/auth/me`): `/equipo` exige `gestionar_usuarios`, la bitácora y la edición de la
+  organización exigen propietario/administrador, y el menú oculta lo que no aplica. Es
+  solo UX; el API (RBAC + tenant) sigue siendo la autoridad.
+- **Pendiente recomendado:** el token de sesión vive en `localStorage` (expuesto ante XSS);
+  lo ideal es que el API lo entregue en cookie `HttpOnly; Secure; SameSite` y el CSP actual
+  (sin scripts inline) reduce, pero no elimina, ese riesgo.
+
+## Equipo, auditoría y organización (identity)
+
+`/equipo` (Administración → Equipo): miembros de la empresa con **invitación**
+(`POST /v1/usuarios/invitaciones`, devuelve una contraseña temporal de 7 días que se
+muestra una sola vez), **cambio de rol** (§13), activar/desactivar acceso y la
+**bitácora de auditoría** (`GET /v1/auditoria`, solo propietario/administrador, con
+filtro por acción/tabla y detalle expandible). Las acciones se puertean con
+`usePermisos()` a partir de `permisos[]` de `/auth/me`; el API sigue siendo la autoridad.
+En Configuración, el perfil de trabajo edita razón social y RUC (`PATCH /v1/empresas/{id}`).
+
+## Catálogo (proyectos, propiedades, medios, Brand Kit)
+
+- **Proyectos** y **Propiedades** usan el contrato del API (`proyecto_id`, `empresa_id`,
+  `creado_en`, `estado: activo|inactivo`); una propiedad puede asignarse a un proyecto
+  (`proyecto_id`, `null` = individual) y la tarjeta muestra su proyecto.
+- **Medios** (`/medios`, `/api/v1/media-assets`): metadatos (categoría imagen/video/
+  documento/otro, vínculo opcional a proyecto y propiedad) + versiones en bucket privado
+  (100 MB, validación de MIME cliente espejo del API), miniatura y descarga por URL
+  firmada de 5 min, historial con restaurar/eliminar versión.
+- **Brand Kit** (`/brand-kit`): archivos con versiones y paleta de colores.
 
 ## Pantallas
 
@@ -115,12 +155,7 @@ propiedad están en `src/presentation/theme/art.css` (SVG del prototipo).
 
 ## Comandos
 
-```
-
-En producción, publica la aplicación detrás de un proxy HTTPS y configura
-`VITE_API_URL` con la URL HTTPS pública del API. Las variables `VITE_*` son
-públicas y se incorporan al bundle: no coloques ahí claves de API, contraseñas
-ni otros secretos.bash
+```bash
 npm run dev        # desarrollo
 npm run build      # typecheck (tsc -b) + bundle de producción
 npm run lint       # eslint

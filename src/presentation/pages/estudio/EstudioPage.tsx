@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { App, Empty, Input, Select, Spin } from "antd";
 import {
@@ -39,25 +39,15 @@ export function EstudioPage() {
   const { data: wallet } = useWallet();
   const createGeneracion = useCreateGeneracion();
 
+  const preset = location.state as { propertyId?: string; templateId?: string } | null;
   const [media, setMedia] = useState<Media>("image");
   const [modo, setModo] = useState<Modo>("facil");
-  const [propertyId, setPropertyId] = useState<string | undefined>();
-  const [templateId, setTemplateId] = useState<string | undefined>();
+  const [propertyId, setPropertyId] = useState<string | undefined>(preset?.propertyId);
+  const [templateId, setTemplateId] = useState<string | undefined>(preset?.templateId);
   const [modelId, setModelId] = useState<string | undefined>();
   const [duration, setDuration] = useState<number | undefined>();
   const [ratio, setRatio] = useState<string | undefined>();
   const [promptPro, setPromptPro] = useState("");
-
-  // Preselección desde Propiedades ("Crear") o Plantillas ("Utilizar").
-  const preset = location.state as { propertyId?: string; templateId?: string } | null;
-  useEffect(() => {
-    if (preset?.propertyId) setPropertyId(preset.propertyId);
-    if (preset?.templateId) {
-      setTemplateId(preset.templateId);
-      const t = (plantillas ?? []).find((x) => x.template_id === preset.templateId);
-      if (t) setMedia(t.media_type);
-    }
-  }, [preset, plantillas]);
 
   const modelosFiltrados = useMemo(
     () =>
@@ -65,17 +55,20 @@ export function EstudioPage() {
     [modelos, media],
   );
 
-  // Mantiene seleccionado un modelo activo del medio elegido.
-  useEffect(() => {
-    if (!modelosFiltrados.some((m) => m.model_id === modelId)) {
-      setModelId(modelosFiltrados[0]?.model_id);
-      setRatio(undefined);
-      setDuration(undefined);
-    }
-  }, [modelosFiltrados, modelId]);
+  const selectedModelId = modelosFiltrados.some((m) => m.model_id === modelId)
+    ? modelId
+    : modelosFiltrados[0]?.model_id;
+
+  const handleMediaChange = (nextMedia: Media) => {
+    if (nextMedia === media) return;
+    setMedia(nextMedia);
+    setModelId(undefined);
+    setRatio(undefined);
+    setDuration(undefined);
+  };
 
   const plantilla = useMemo(
-    () => (plantillas ?? []).find((p) => p.template_id === templateId),
+    () => (plantillas ?? []).find((p) => String(p.plantilla_id) === templateId),
     [plantillas, templateId],
   );
   const propiedad = useMemo(
@@ -83,28 +76,21 @@ export function EstudioPage() {
     [propiedades, propertyId],
   );
   const modelo = useMemo(
-    () => modelosFiltrados.find((m) => m.model_id === modelId),
-    [modelosFiltrados, modelId],
+    () => modelosFiltrados.find((m) => m.model_id === selectedModelId),
+    [modelosFiltrados, selectedModelId],
   );
 
   /** Prompt de la plantilla + contexto de la propiedad (modo fácil). */
   const promptGenerado = useMemo(() => {
     const base =
-      plantilla?.prompt_base ??
+      plantilla?.descripcion ??
       "Render fotorrealista de la propiedad con iluminación natural de tarde, ángulo amplio y ambiente premium.";
-    const extras = [
-      plantilla?.estructura_narrativa,
-      plantilla?.movimiento_camara,
-      plantilla?.estilo_visual,
-    ]
-      .filter(Boolean)
-      .join(". ");
     const contexto = propiedad
       ? ` Propiedad: ${propiedad.nombre}${propiedad.ubicacion ? `, ${propiedad.ubicacion}` : ""}${
           propiedad.precio ? `, ${formatPrecio(propiedad.precio)}` : ""
         }.`
       : "";
-    return `${base}${extras ? ` ${extras}.` : ""}${contexto}`.trim();
+    return `${base}${contexto}`.trim();
   }, [plantilla, propiedad]);
 
   // §09: la cotización sale SIEMPRE del registro vivo de modelos (sin hardcodeo).
@@ -120,7 +106,7 @@ export function EstudioPage() {
   const saldo = wallet?.saldo ?? 0;
   const saldoSuficiente = saldo >= creditosCotizados;
   const plantillasDeMedio = (plantillas ?? []).filter(
-    (p) => p.activo && p.media_type === media,
+    (p) => p.estado === "activo",
   );
 
   const handleGenerar = async () => {
@@ -277,8 +263,8 @@ export function EstudioPage() {
                 onChange={setTemplateId}
                 loading={loadingPlantillas}
                 options={plantillasDeMedio.map((p) => ({
-                  value: p.template_id,
-                  label: `${p.nombre} (${p.creditos_base} cr.)`,
+                  value: String(p.plantilla_id),
+                  label: p.nombre,
                 }))}
               />
             </div>
@@ -289,14 +275,14 @@ export function EstudioPage() {
                 <button
                   type="button"
                   className={`tab${media === "video" ? " active" : ""}`}
-                  onClick={() => setMedia("video")}
+                  onClick={() => handleMediaChange("video")}
                 >
                   <VideoCameraOutlined /> Video
                 </button>
                 <button
                   type="button"
                   className={`tab${media === "image" ? " active" : ""}`}
-                  onClick={() => setMedia("image")}
+                  onClick={() => handleMediaChange("image")}
                 >
                   <PictureOutlined /> Imagen
                 </button>
@@ -310,7 +296,7 @@ export function EstudioPage() {
                 optionFilterProp="label"
                 placeholder="Selecciona el modelo"
                 style={{ width: "100%" }}
-                value={modelId}
+                value={selectedModelId}
                 onChange={(v) => {
                   setModelId(v);
                   setRatio(undefined);

@@ -51,9 +51,11 @@ export const queryKeys = {
   brandColors: () => ["brand_colors"] as const,
   brandColor: (id: string) => ["brand_colors", id] as const,
 
-  mediaAssets: () => ["media_assets"] as const,
-  mediaAsset: (id: string) => ["media_assets", id] as const,
-  mediaAssetVersiones: (assetId: string) => ["media_assets", assetId, "versiones"] as const,
+  // Catalog: biblioteca de medios (bucket privado con versiones).
+  mediaAssets: () => ["mediaAssets"] as const,
+  mediaAsset: (id: string) => ["mediaAssets", id] as const,
+  mediaAssetVersiones: (id: string) => ["mediaAssets", id, "versiones"] as const,
+  mediaAssetPreview: (id: string) => ["mediaAssets", id, "preview"] as const,
 
   // Identity: equipo, roles (catálogo §13), bitácora y organización.
   miembros: () => ["miembros"] as const,

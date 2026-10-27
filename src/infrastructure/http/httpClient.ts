@@ -1,7 +1,19 @@
 import type { FilterParams } from "@/domain/core/repositories/CrudRepository";
 import { clearSession, readSession } from "@/infrastructure/auth/sessionStore";
+import { resolveApiUrl } from "@/infrastructure/http/apiUrl";
 
-const API_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
+/**
+ * URL base validada: en producción exige HTTPS. Si es inválida/insegura no se
+ * lanza al importar (rompería toda la app, incluso en modo mock): se guarda el
+ * motivo y cada petición falla con un `ApiError` explícito.
+ */
+let API_URL = "";
+let API_URL_ERROR: string | null = null;
+try {
+  API_URL = resolveApiUrl(import.meta.env.VITE_API_URL, import.meta.env.PROD);
+} catch (error) {
+  API_URL_ERROR = error instanceof Error ? error.message : "VITE_API_URL inválido.";
+}
 const TIMEOUT_MS = 15000;
 /**
  * Timeout de las SUBIDAS de archivo (multipart): un blob de 10 MB en una
@@ -62,21 +74,12 @@ async function request<T>(
   init?: RequestInit,
   timeoutMs: number = TIMEOUT_MS,
 ): Promise<T> {
+  if (API_URL_ERROR) throw new ApiError(API_URL_ERROR, 0);
   if (!API_URL) {
     throw new ApiError(
       "VITE_API_URL no está definido. Configúralo en .env para usar el proveedor REST.",
       0,
     );
-  }
-
-  let apiUrl: URL;
-  try {
-    apiUrl = new URL(API_URL);
-  } catch {
-    throw new ApiError("VITE_API_URL debe ser una URL absoluta válida.", 0);
-  }
-  if (import.meta.env.PROD && apiUrl.protocol !== "https:") {
-    throw new ApiError("VITE_API_URL debe usar HTTPS en producción.", 0);
   }
 
   const controller = new AbortController();
@@ -88,8 +91,13 @@ async function request<T>(
     const isForm = init?.body instanceof FormData;
     if (init?.body && !isForm) headers["Content-Type"] = "application/json";
 
+    // La sesión del login manda. VITE_API_TOKEN queda como alternativa de
+    // desarrollo, SOLO en `vite dev`: toda variable VITE_* se incrusta en el
+    // bundle público, así que en producción un token ahí sería un secreto
+    // expuesto y se ignora.
     const session = readSession();
-    const token = session?.access_token;
+    const devToken = import.meta.env.DEV ? import.meta.env.VITE_API_TOKEN : undefined;
+    const token = session?.access_token ?? devToken;
     if (token) headers.Authorization = `Bearer ${token}`;
     // Tenant activo (multiempresa): el API lo resuelve por defecto con la
     // empresa del usuario y este header permite alternar (README del API).

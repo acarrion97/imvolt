@@ -21,7 +21,7 @@ import type {
   BrandColorCreate,
 } from "@/domain/brand-kit";
 import type { Modelo, ModeloCreate } from "@/domain/modelo";
-import type { Plantilla, PlantillaCreate } from "@/domain/plantilla";
+import type { Plantilla, PlantillaCreate, TipoPlantilla, TipoPlantillaCreate } from "@/domain/plantilla";
 import type {
   Propiedad,
   PropiedadCreate,
@@ -29,6 +29,17 @@ import type {
   TipoPropiedadCreate,
 } from "@/domain/propiedad";
 import type { Proyecto, ProyectoCreate } from "@/domain/proyecto";
+import type {
+  AuditoriaLog,
+  Empresa,
+  EmpresaUpdate,
+  InvitacionMiembro,
+  InvitacionResultado,
+  Miembro,
+  MiembroCreate,
+  Rol,
+} from "@/domain/identity";
+import type { FilterParams } from "@/domain/core/repositories/CrudRepository";
 import type { TransaccionCredito, TransaccionCreditoCreate, Wallet } from "@/domain/credito";
 
 import { buildCrudUseCases } from "@/application/core/crud-use-cases";
@@ -37,10 +48,11 @@ import { ValidarCampanaUseCase } from "@/application/campana/use-cases/ValidarCa
 
 /** Casos de uso expuestos a la presentación: `container.proyectos.list.execute(...)`. */
 export interface UseCases {
-  tiposPlantilla(tiposPlantilla: any, arg1: string): { useList: any; };
   proyectos: CrudUseCases<Proyecto, string, ProyectoCreate>;
   propiedades: CrudUseCases<Propiedad, string, PropiedadCreate>;
   tiposPropiedad: CrudUseCases<TipoPropiedad, string, TipoPropiedadCreate>;
+  tiposPlantilla: CrudUseCases<TipoPlantilla, string, TipoPlantillaCreate>;
+
   plantillas: CrudUseCases<Plantilla, string, PlantillaCreate>;
   modelos: CrudUseCases<Modelo, string, ModeloCreate>;
   generaciones: CrudUseCases<Generacion, string, GeneracionCreate>;
@@ -71,6 +83,19 @@ export interface UseCases {
     eliminarVersion(assetId: string, versionId: string): Promise<void>;
   };
 
+  // Identity: equipo (CRUD + invitación + cambio de rol), catálogo de roles,
+  // bitácora (solo lectura) y perfil de la organización.
+  miembros: CrudUseCases<Miembro, string, MiembroCreate> & {
+    invitar(input: InvitacionMiembro): Promise<InvitacionResultado>;
+    cambiarRol(usuarioId: string, rolId: string): Promise<void>;
+  };
+  roles: { list: { execute(): Promise<Rol[]> } };
+  auditoria: { list: { execute(filters?: FilterParams): Promise<AuditoriaLog[]> } };
+  empresa: {
+    obtener: { execute(): Promise<Empresa | null> };
+    actualizar: { execute(data: EmpresaUpdate): Promise<Empresa> };
+  };
+
   // casos de uso de negocio (no CRUD)
   getWallet: { execute(): Promise<Wallet> };
   getTransacciones: { execute(): Promise<TransaccionCredito[]> };
@@ -88,6 +113,7 @@ export function createUseCases(repos: Repositories): UseCases {
     proyectos: buildCrudUseCases(repos.proyectoRepo),
     propiedades: buildCrudUseCases(repos.propiedadRepo),
     tiposPropiedad: buildCrudUseCases(repos.tipoPropiedadRepo),
+    tiposPlantilla: buildCrudUseCases(repos.tipoPlantillaRepo),
     plantillas: buildCrudUseCases(repos.plantillaRepo),
     modelos: buildCrudUseCases(repos.modeloRepo),
     generaciones: buildCrudUseCases(repos.generacionRepo),
@@ -109,6 +135,7 @@ export function createUseCases(repos: Repositories): UseCases {
       eliminarVersion: (assetId, versionId) =>
         repos.brandAssetRepo.eliminarVersion(assetId, versionId),
     },
+
     mediaAssets: buildCrudUseCases(repos.mediaAssetRepo),
     mediaAssetStorage: {
       listarVersiones: (assetId) => repos.mediaAssetRepo.listarVersiones(assetId),
@@ -120,6 +147,18 @@ export function createUseCases(repos: Repositories): UseCases {
         repos.mediaAssetRepo.restaurarVersion(assetId, versionId),
       eliminarVersion: (assetId, versionId) =>
         repos.mediaAssetRepo.eliminarVersion(assetId, versionId),
+    },
+
+    miembros: {
+      ...buildCrudUseCases(repos.miembroRepo),
+      invitar: (input) => repos.miembroRepo.invitar(input),
+      cambiarRol: (usuarioId, rolId) => repos.miembroRepo.cambiarRol(usuarioId, rolId),
+    },
+    roles: { list: { execute: () => repos.rolRepo.listar() } },
+    auditoria: { list: { execute: (filters) => repos.auditoriaRepo.listar(filters) } },
+    empresa: {
+      obtener: { execute: () => repos.empresaRepo.obtenerActual() },
+      actualizar: { execute: (data) => repos.empresaRepo.actualizar(data) },
     },
 
     getWallet: { execute: () => repos.walletRepo.getWallet() },
