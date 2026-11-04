@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { App } from "antd";
 import {
-  ApiOutlined,
   CheckCircleOutlined,
-  CloudServerOutlined,
   MessageOutlined,
   ReloadOutlined,
   WalletOutlined,
@@ -19,6 +17,7 @@ import {
 } from "@/presentation/hooks";
 import { empresaSchema } from "@/presentation/validations";
 import { formatFecha } from "@/presentation/components/common/status";
+import { IntegracionesEmpresaPanel } from "./IntegracionesEmpresaPanel";
 
 const RECARGAS = [10, 50, 100];
 
@@ -86,9 +85,9 @@ export function ConfiguracionPage() {
     {
       label: "Configurar publicación de Meta",
       ok: false,
-      note: "META_ACCESS_TOKEN y META_AD_ACCOUNT_ID en el backend",
+      note: "Credenciales en la integración Meta Ads de la empresa",
     },
-    { label: "Configurar credenciales de Higgsfield", ok: false, note: "HIGGSFIELD_API_KEY" },
+    { label: "Configurar credenciales de Higgsfield", ok: false, note: "Integración de la empresa" },
     {
       label: "Invitar al equipo de marketing",
       ok: (miembros ?? []).length > 1,
@@ -111,35 +110,12 @@ export function ConfiguracionPage() {
         </div>
       </div>
 
+      <IntegracionesEmpresaPanel />
+
       <div className="grid cols2" style={{ alignItems: "start" }}>
         {/* ── Integraciones ──────────────────────────────────────────────── */}
         <div className="card card-pad">
-          <h2 style={{ fontSize: 17, marginBottom: 14 }}>Integraciones</h2>
-
-          <div className="integration">
-            <span className="connect-logo">
-              <CloudServerOutlined />
-            </span>
-            <span className="info">
-              <b>Higgsfield</b>
-              <span>Motor de generación de imágenes y video (§09).</span>
-            </span>
-            <span className="mini-badge warn">Simulado</span>
-          </div>
-
-          <div className="integration">
-            <span className="connect-logo">
-              <ApiOutlined />
-            </span>
-            <span className="info">
-              <b>Meta Ads</b>
-              <span>
-                La publicación usa las credenciales privadas configuradas en el backend
-                (META_ACCESS_TOKEN y META_AD_ACCOUNT_ID). No se requiere conectar una cuenta aquí.
-              </span>
-            </span>
-            <span className="mini-badge grey">Servidor</span>
-          </div>
+          <h2 style={{ fontSize: 17, marginBottom: 14 }}>Otras integraciones</h2>
 
           <div className="integration">
             <span className="connect-logo">

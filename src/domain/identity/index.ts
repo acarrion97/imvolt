@@ -233,3 +233,47 @@ export interface EmpresaRepository {
   obtenerActual(): Promise<Empresa | null>;
   actualizar(data: EmpresaUpdate): Promise<Empresa>;
 }
+
+export interface IntegracionCatalogo {
+  integracion_id: number;
+  nombre: string;
+  proveedor: string | null;
+  descripcion: string | null;
+  activa: boolean;
+  estado: string;
+}
+
+export interface ConfiguracionIntegracionEmpresa {
+  configuracion_integracion_id: number;
+  empresa_id: number | null;
+  url_base: string;
+  api_key: string | null;
+  entorno: string;
+  api_id: string | null;
+  app_secret: string | null;
+  access_token: string | null;
+  estado: string;
+}
+
+export interface EmpresaIntegracionConfig {
+  empresa_integracion_id: number;
+  empresa_id: number;
+  integracion_id: number;
+  configuracion_integracion_id: number;
+  referencia_credencial: string;
+  estado: string;
+  integracion: IntegracionCatalogo | null;
+  configuracion_integracion: ConfiguracionIntegracionEmpresa | null;
+}
+
+export interface GuardarIntegracionInput {
+  integracion: IntegracionCatalogo;
+  existente?: EmpresaIntegracionConfig;
+  referencia: string;
+  url_base: string;
+  entorno: "sandbox" | "produccion";
+  api_key?: string;
+  api_id?: string;
+  app_secret?: string;
+  access_token?: string;
+}

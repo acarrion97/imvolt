@@ -63,6 +63,8 @@ export const queryKeys = {
   roles: () => ["roles"] as const,
   auditoria: () => ["auditoria"] as const,
   empresa: () => ["empresa"] as const,
+  integracionesCatalogo: () => ["integraciones_catalogo"] as const,
+  integracionesEmpresa: () => ["integraciones_empresa"] as const,
 } as const;
 
 /** Dominios que admiten prefijo (p.ej. invalidar todos los hijos de un dominio). */

@@ -12,6 +12,9 @@ export interface Modelo {
   duracion_max_s: number | null;
   ratios: string[] | null;
   quote_creditos: number;
+  /** Precio de lista del proveedor en USD (por imagen o por segundo). */
+  precio_usd: number | null;
+  precio_unidad: "imagen" | "segundo" | null;
   status: "activo" | "inactivo" | "no_disponible";
   created_at: string;
 }

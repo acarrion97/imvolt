@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { App, Empty, Input, Select, Spin } from "antd";
 import {
+  CopyOutlined,
   PictureOutlined,
   RobotOutlined,
-  ThunderboltOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
 import { DataTable } from "@/presentation/components/common/DataTable";
@@ -18,18 +18,65 @@ import {
   useWallet,
 } from "@/presentation/hooks";
 import type { Generacion } from "@/domain/generacion";
+import type { Modelo } from "@/domain/modelo";
 import type { ColumnsType } from "antd/es/table";
 
 type Media = "image" | "video";
 type Modo = "facil" | "pro";
 
 /**
- * Estudio IA — UI Concept 01: columna izquierda con modo fácil/pro, campos y
- * prompt generado; columna derecha con la preview oscura y la cotización
- * §09 leída SIEMPRE del registro vivo de modelos.
+ * Estudio IA — UI Concept 01: réplica de la sección `#studio` del prototipo
+ * interactivo. Columna izquierda con modo fácil/pro, campos y acción; columna
+ * derecha con la vista previa y el prompt editable. La cotización §09 se lee
+ * SIEMPRE del registro vivo de modelos (nunca hardcodeada).
  */
+
+/** Etiquetas descriptivas de formato (prototipo: "9:16 · Reels / Stories"). */
+const RATIO_LABELS: Record<string, string> = {
+  "9:16": "9:16 · Reels / Stories",
+  "4:5": "4:5 · Feed",
+  "1:1": "1:1 · Cuadrado",
+  "16:9": "16:9 · Horizontal",
+  "4:3": "4:3 · Clásico",
+  "3:4": "3:4 · Retrato",
+  "2:3": "2:3 · Vertical",
+  "3:2": "3:2 · Paisaje",
+};
+
+/** Enfoques comerciales del prototipo (§06): alimentan el prompt. */
+const ENFOQUES = [
+  {
+    value: "estilo_vida",
+    label: "Estilo de vida",
+    texto: "Conectar con compradores mediante estilo de vida y beneficios reales",
+  },
+  {
+    value: "oferta_comercial",
+    label: "Oferta comercial",
+    texto: "Presentar precio, ubicación y formas de pago verificadas",
+  },
+  {
+    value: "ubicacion",
+    label: "Ubicación y acceso",
+    texto: "Destacar ubicación, accesibilidad y ventajas comprobadas",
+  },
+];
+
+/**
+ * Precio de lista del proveedor en el catálogo §09:
+ * imagen → USD por imagen, video → USD por segundo.
+ * `capabilities.precio_desde` marca los precios que Higgsfield publica como "from".
+ */
+function formatoPrecioModelo(modelo: Modelo | undefined): string | null {
+  if (!modelo || modelo.precio_usd == null) return null;
+  const unidad = modelo.precio_unidad === "segundo" ? "/ s" : "/ img";
+  const desde = modelo.capabilities?.precio_desde === true ? "desde " : "";
+  return `${desde}$${modelo.precio_usd.toFixed(3)} ${unidad}`;
+}
+
 export function EstudioPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { message } = App.useApp();
 
   const { data: plantillas, isLoading: loadingPlantillas } = usePlantillas();
@@ -47,6 +94,8 @@ export function EstudioPage() {
   const [modelId, setModelId] = useState<string | undefined>();
   const [duration, setDuration] = useState<number | undefined>();
   const [ratio, setRatio] = useState<string | undefined>();
+  const [enfoque, setEnfoque] = useState<string | undefined>(ENFOQUES[0].value);
+  const [referencia, setReferencia] = useState<string | undefined>();
   const [promptPro, setPromptPro] = useState("");
 
   const modelosFiltrados = useMemo(
@@ -83,7 +132,7 @@ export function EstudioPage() {
     ? modelo.capabilities.duration_options.filter(
         (value): value is number => typeof value === "number",
       )
-    : modelo?.duracion_min_s != null && modelo.duracion_max_s != null
+    : modelo?.duracion_min_s != null && modelo?.duracion_max_s != null
       ? Array.from(
           { length: modelo.duracion_max_s - modelo.duracion_min_s + 1 },
           (_, index) => modelo.duracion_min_s! + index,
@@ -100,8 +149,15 @@ export function EstudioPage() {
           propiedad.precio ? `, ${formatPrecio(propiedad.precio)}` : ""
         }.`
       : "";
-    return `${base}${contexto}`.trim();
-  }, [plantilla, propiedad]);
+    const enfoqueTexto = ENFOQUES.find((e) => e.value === enfoque);
+    const enfoqueParte = enfoqueTexto ? ` ENFOQUE COMERCIAL: ${enfoqueTexto.texto}.` : "";
+    const referenciaParte = referencia
+      ? ` REFERENCIA ADJUNTA LOCALMENTE: ${referencia} (no se envía a servidores).`
+      : "";
+    return `${base}${contexto}${enfoqueParte}${referenciaParte}`.trim();
+  }, [plantilla, propiedad, enfoque, referencia]);
+
+  const promptActual = (modo === "pro" ? promptPro : promptGenerado).trim();
 
   // §09: la cotización sale SIEMPRE del registro vivo de modelos (sin hardcodeo).
   const creditosCotizados = useMemo(() => {
@@ -119,13 +175,15 @@ export function EstudioPage() {
     (p) => p.estado === "activo",
   );
 
+  const formatoPreview = ratio ?? modelo?.ratios?.[0] ?? "Formato adaptable";
+  const duracionPreview = duration ?? modelo?.duracion_min_s ?? 5;
+
   const handleGenerar = async () => {
     if (!modelo) {
       message.error("Selecciona un modelo disponible para este medio.");
       return;
     }
-    const prompt = (modo === "pro" ? promptPro : promptGenerado).trim();
-    if (!prompt) {
+    if (!promptActual) {
       message.error("Escribe o genera un prompt antes de crear la generación.");
       return;
     }
@@ -144,7 +202,7 @@ export function EstudioPage() {
         template_id: templateId ?? null,
         model_id: modelo.model_id,
         modo,
-        prompt,
+        prompt: promptActual,
         parametros,
         status: "queued",
         credits_cost: creditosCotizados,
@@ -153,6 +211,25 @@ export function EstudioPage() {
     } catch (error) {
       message.error(error instanceof Error ? error.message : "No se pudo crear la generación.");
     }
+  };
+
+  const handleCopiarPrompt = async () => {
+    if (!promptActual) {
+      message.error("No hay prompt para copiar.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(promptActual);
+      message.success("Prompt copiado al portapapeles.");
+    } catch {
+      message.error("No se pudo copiar el prompt.");
+    }
+  };
+
+  const handleReferencia = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setReferencia(file?.name);
+    if (!file) event.target.value = "";
   };
 
   const historialOrdenado = useMemo(
@@ -192,22 +269,20 @@ export function EstudioPage() {
 
   return (
     <div>
+      {/* ── Encabezado ──────────────────────────────────────────────────────── */}
       <div className="header">
         <div>
-          <p className="eyebrow">Creative AI · Higgsfield</p>
+          <div className="eyebrow">Creative Studio</div>
           <h1>Crear contenido con IA</h1>
           <p className="sub">
-            Elige la propiedad, la plantilla y el modelo: la cotización se lee del catálogo vivo.
+            La plataforma redacta el prompt a partir de tu propiedad y la plantilla elegida.
           </p>
         </div>
         <div className="header-actions">
-          <span className="count-pill">Saldo: {saldo} créditos</span>
+          <button type="button" className="btn btn-outline" onClick={() => navigate("/plantillas")}>
+            Ver plantillas →
+          </button>
         </div>
-      </div>
-
-      <div className="notice">
-        <strong>Créditos simulados.</strong> La integración con Higgsfield corre en modo demo hasta
-        configurar las credenciales en la API.
       </div>
 
       <div className="studio-grid">
@@ -215,12 +290,8 @@ export function EstudioPage() {
         <div className="card card-pad">
           <div className="studio-mode">
             <div>
-              <strong>{modo === "facil" ? "Modo fácil" : "Modo pro"}</strong>
-              <small>
-                {modo === "facil"
-                  ? "IMVOLT arma el prompt con la plantilla y la propiedad."
-                  : "Edita el prompt y controla los parámetros avanzados."}
-              </small>
+              <strong>Experiencia de creación</strong>
+              <small>Escoge cuánta configuración quieres controlar.</small>
             </div>
             <div className="mode-switch">
               <button
@@ -228,7 +299,7 @@ export function EstudioPage() {
                 className={modo === "facil" ? "on" : ""}
                 onClick={() => setModo("facil")}
               >
-                FÁCIL
+                Fácil
               </button>
               <button
                 type="button"
@@ -238,69 +309,114 @@ export function EstudioPage() {
                   setModo("pro");
                 }}
               >
-                PRO
+                Pro
               </button>
             </div>
           </div>
 
-          <div className="form-grid">
+          <h2 style={{ marginBottom: 17 }}>Configura tu creativo</h2>
+
+          <div className="field">
+            <label>Propiedad</label>
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder="Selecciona una propiedad"
+              style={{ width: "100%" }}
+              value={propertyId}
+              onChange={setPropertyId}
+              options={(propiedades ?? []).map((p) => ({
+                value: p.propiedad_id,
+                label: `${p.nombre} (${p.ubicacion})`,
+              }))}
+            />
+          </div>
+
+          <div className="field">
+            <label>Tipo de contenido</label>
+            <div className="tabset">
+              <button
+                type="button"
+                className={`tab${media === "video" ? " active" : ""}`}
+                onClick={() => handleMediaChange("video")}
+              >
+                <VideoCameraOutlined /> Video
+              </button>
+              <button
+                type="button"
+                className={`tab${media === "image" ? " active" : ""}`}
+                onClick={() => handleMediaChange("image")}
+              >
+                <PictureOutlined /> Imagen
+              </button>
+            </div>
+          </div>
+
+          <div className="field">
+            <label>Plantilla inmobiliaria</label>
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder="Aplicar una plantilla"
+              style={{ width: "100%" }}
+              value={templateId}
+              onChange={setTemplateId}
+              loading={loadingPlantillas}
+              options={plantillasDeMedio.map((p) => ({
+                value: String(p.plantilla_id),
+                label: p.nombre,
+              }))}
+            />
+          </div>
+
+          <div className="field-row">
             <div className="field">
-              <span className="lbl">Propiedad</span>
+              <label>Formato</label>
               <Select
                 allowClear
-                showSearch
-                optionFilterProp="label"
-                placeholder="Selecciona una propiedad"
+                placeholder={modelo?.ratios?.length ? "Relación de aspecto" : "Sin formatos"}
                 style={{ width: "100%" }}
-                value={propertyId}
-                onChange={setPropertyId}
-                options={(propiedades ?? []).map((p) => ({
-                  value: p.propiedad_id,
-                  label: `${p.nombre} (${p.ubicacion})`,
+                value={ratio}
+                onChange={setRatio}
+                disabled={!modelo?.ratios?.length}
+                options={(modelo?.ratios ?? []).map((r) => ({
+                  value: r,
+                  label: RATIO_LABELS[r] ?? r,
                 }))}
               />
             </div>
 
             <div className="field">
-              <span className="lbl">Plantilla</span>
+              <label>Duración (video)</label>
               <Select
-                allowClear
-                showSearch
-                optionFilterProp="label"
-                placeholder="Aplicar una plantilla"
+                placeholder={`${modelo?.duracion_min_s ?? 5}–${modelo?.duracion_max_s ?? 12} s`}
                 style={{ width: "100%" }}
-                value={templateId}
-                onChange={setTemplateId}
-                loading={loadingPlantillas}
-                options={plantillasDeMedio.map((p) => ({
-                  value: String(p.plantilla_id),
-                  label: p.nombre,
+                value={duration}
+                onChange={setDuration}
+                disabled={media !== "video" || duracionesDisponibles.length === 0}
+                options={duracionesDisponibles.map((value) => ({
+                  value,
+                  label: `${value} segundos`,
                 }))}
               />
             </div>
+          </div>
 
-            <div className="field full">
-              <span className="lbl">Tipo de contenido</span>
-              <div className="tabs" style={{ marginBottom: 0 }}>
-                <button
-                  type="button"
-                  className={`tab${media === "video" ? " active" : ""}`}
-                  onClick={() => handleMediaChange("video")}
-                >
-                  <VideoCameraOutlined /> Video
-                </button>
-                <button
-                  type="button"
-                  className={`tab${media === "image" ? " active" : ""}`}
-                  onClick={() => handleMediaChange("image")}
-                >
-                  <PictureOutlined /> Imagen
-                </button>
-              </div>
-            </div>
+          <div className="field">
+            <label>Enfoque comercial</label>
+            <Select
+              style={{ width: "100%" }}
+              value={enfoque}
+              onChange={setEnfoque}
+              options={ENFOQUES.map((e) => ({ value: e.value, label: e.label }))}
+            />
+          </div>
 
+          {modo === "pro" && (
             <div className="field">
-              <span className="lbl">Modelo (§09 catálogo vivo)</span>
+              <label>Modelo de IA (catálogo vivo)</label>
               <Select
                 showSearch
                 optionFilterProp="label"
@@ -311,100 +427,116 @@ export function EstudioPage() {
                   setModelId(v);
                   setRatio(undefined);
                 }}
-                options={modelosFiltrados.map((m) => ({
-                  value: m.model_id,
-                  label: `${m.nombre} — ${m.quote_creditos} cr.`,
-                }))}
+                options={modelosFiltrados.map((m) => {
+                  const precio = formatoPrecioModelo(m);
+                  return {
+                    value: m.model_id,
+                    label: `${m.nombre} — ${m.quote_creditos} cr.${precio ? ` · ${precio}` : ""}`,
+                  };
+                })}
               />
             </div>
+          )}
 
-            <div className="field">
-              <span className="lbl">Formato</span>
-              <Select
-                allowClear
-                placeholder={modelo?.ratios?.length ? "Relación de aspecto" : "Sin formatos"}
-                style={{ width: "100%" }}
-                value={ratio}
-                onChange={setRatio}
-                disabled={!modelo?.ratios?.length}
-                options={(modelo?.ratios ?? []).map((r) => ({ value: r, label: r }))}
-              />
+          <div className="field">
+            <label>Imagen de referencia (opcional · solo en este dispositivo)</label>
+            <input
+              type="file"
+              accept="image/*"
+              className="file-input"
+              onChange={handleReferencia}
+            />
+            <small className="file-note">
+              {referencia
+                ? `${referencia} — adjunta al prompt, no se envía a servidores.`
+                : "Ningún archivo se envía a servidores en esta demo."}
+            </small>
+          </div>
+
+          <div className="notice warning">
+            En producción, el costo y las opciones se validarán con el modelo real de Higgsfield
+            antes de generar.
+          </div>
+
+          {!saldoSuficiente && (
+            <div className="notice warning" role="status" style={{ marginTop: 12 }}>
+              Saldo insuficiente: esta generación requiere {creditosCotizados} créditos y tienes{" "}
+              {saldo}.
             </div>
+          )}
 
-            {modelo?.media_type === "video" && (
-              <div className="field">
-                <span className="lbl">Duración (segundos)</span>
-                <Select
-                  placeholder={`${modelo.duracion_min_s ?? 5}–${modelo.duracion_max_s ?? 12} s`}
-                  style={{ width: "100%" }}
-                  value={duration}
-                  onChange={setDuration}
-                  options={duracionesDisponibles.map((value) => ({
-                      value,
-                      label: `${value} s`,
-                  }))}
-                />
+          <div style={{ display: "flex", gap: 8, marginTop: 15 }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ flex: 1 }}
+              onClick={handleGenerar}
+              disabled={!modelo || !saldoSuficiente || createGeneracion.isPending}
+            >
+              <RobotOutlined />
+              {createGeneracion.isPending ? "Encolando..." : "Generar propuesta"}
+            </button>
+            <button type="button" className="btn btn-outline" onClick={handleCopiarPrompt}>
+              <CopyOutlined /> Copiar prompt
+            </button>
+          </div>
+        </div>
+
+        {/* ── Columna derecha: vista previa + prompt ────────────────────────── */}
+        <div className="card card-pad">
+          <h2 style={{ marginBottom: 14 }}>Vista previa del concepto</h2>
+
+          <div className="studio-preview">
+            <span className="demo-stamp">
+              <span className="status-point" /> Vista conceptual — sin generación real
+            </span>
+            <div className="inner">
+              <div className="symbol">
+                {media === "video" ? <VideoCameraOutlined /> : <PictureOutlined />}
               </div>
-            )}
+              <strong>{plantilla?.nombre ?? "Una historia visual para tu inmueble"}</strong>
+              <p>
+                {propiedad?.nombre ?? "Selecciona una propiedad"} · {formatoPreview}
+                {media === "video" ? ` · ${duracionPreview} s` : " · imagen"}. Esto es solamente
+                la vista conceptual.
+              </p>
+            </div>
+          </div>
+
+          <div className="section-title badge-row">
+            <h3>Prompt inteligente editable</h3>
+            <span className="mini-badge grey">Previsualización</span>
           </div>
 
           {modo === "pro" ? (
-            <div className="field">
-              <span className="lbl">Prompt</span>
-              <Input.TextArea
-                rows={4}
-                maxLength={600}
-                showCount
-                value={promptPro}
-                onChange={(e) => setPromptPro(e.target.value)}
-                placeholder="Describe la escena: iluminación, ángulo, ambiente..."
-              />
-            </div>
+            <Input.TextArea
+              rows={5}
+              maxLength={600}
+              showCount
+              value={promptPro}
+              onChange={(e) => setPromptPro(e.target.value)}
+              placeholder="Describe la escena: iluminación, ángulo, ambiente..."
+              style={{
+                width: "100%",
+                background: "#f4f8f5",
+                border: "1px solid #e4eee7",
+                color: "#355848",
+                fontSize: 12.5,
+                lineHeight: 1.6,
+                minHeight: 108,
+                resize: "vertical",
+              }}
+            />
           ) : (
             <div className="promptbox">
               <div className="plabel">Prompt generado</div>
               {promptGenerado}
             </div>
           )}
-        </div>
 
-        {/* ── Columna derecha: preview + cotización ──────────────────────── */}
-        <div className="studio-preview">
-          <div>
-            <span className="demo-stamp">
-              <span className="status-point" /> Créditos simulados
-            </span>
-            <div className="symbol" style={{ marginTop: 22 }}>
-              <ThunderboltOutlined />
-            </div>
-            <h3>{propiedad?.nombre ?? "Vista previa creativa"}</h3>
-            <p>
-              {(modo === "pro" ? promptPro : promptGenerado).slice(0, 180) ||
-                "Selecciona una propiedad para contextualizar el creativo."}
-              …
-            </p>
-          </div>
-
-          <div>
-            <p style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7bd9a4" }}>
-              Cotización §09
-            </p>
-            <div className="cost">{creditosCotizados} créditos</div>
-            <p style={{ marginBottom: 15 }}>
-              {modelo ? `${modelo.nombre} · ${modelo.provider}` : "Sin modelo seleccionado"} · saldo{" "}
-              {saldo}
-              {!saldoSuficiente && " — insuficiente"}
-            </p>
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ width: "100%" }}
-              onClick={handleGenerar}
-              disabled={!modelo || !saldoSuficiente || createGeneracion.isPending}
-            >
-              <RobotOutlined />
-              {createGeneracion.isPending ? "Encolando..." : "Generar con IA"}
-            </button>
+          <div className="notice" style={{ marginTop: 14, marginBottom: 0 }}>
+            La demo solamente construye prompts. No produce fotografías ni videos reales ni efectúa
+            cargos: los precios mostrados son los de lista de Higgsfield (§09).
           </div>
         </div>
       </div>

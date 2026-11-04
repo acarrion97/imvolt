@@ -4,7 +4,14 @@ import { getContainer } from "@/infrastructure/container";
 import { createCrudHooks } from "./createCrudHooks";
 import { domainKey, queryKeys } from "@/infrastructure/cache/queryKeys";
 import type { FilterParams } from "@/domain/core/repositories/CrudRepository";
-import type { EmpresaUpdate, InvitacionMiembro } from "@/domain/identity";
+import type {
+  EmpresaIntegracionConfig,
+  EmpresaUpdate,
+  GuardarIntegracionInput,
+  IntegracionCatalogo,
+  InvitacionMiembro,
+} from "@/domain/identity";
+import { http } from "@/infrastructure/http/httpClient";
 
 // ── Proyectos ────────────────────────────────────────────────────────────────
 const proyectosHooks = createCrudHooks(getContainer().proyectos, "proyectos");
@@ -423,6 +430,108 @@ export function useActualizarEmpresa() {
       queryClient.invalidateQueries({ queryKey: queryKeys.empresa() });
       queryClient.invalidateQueries({ queryKey: domainKey("auditoria") });
     },
+  });
+}
+
+export function useIntegracionesEmpresa(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.integracionesEmpresa(),
+    queryFn: async () => {
+      const [catalogo, conexiones] = await Promise.all([
+        http.get<IntegracionCatalogo[]>("/integraciones"),
+        http.get<EmpresaIntegracionConfig[]>("/empresas-integraciones"),
+      ]);
+      return { catalogo, conexiones };
+    },
+    enabled,
+  });
+}
+
+export function useGuardarIntegracionEmpresa() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: GuardarIntegracionInput) => {
+      const existente = input.existente;
+      const configuracionExistente = existente?.configuracion_integracion;
+      const payload = {
+        url_base: input.url_base,
+        entorno: input.entorno,
+        ...(input.api_key ? { api_key: input.api_key } : {}),
+        ...(input.api_id ? { api_id: input.api_id } : {}),
+        ...(input.app_secret ? { app_secret: input.app_secret } : {}),
+        ...(input.access_token ? { access_token: input.access_token } : {}),
+      };
+
+      if (existente?.estado === "activo" && configuracionExistente) {
+        await http.patch(
+          `/configuraciones-integraciones/${configuracionExistente.configuracion_integracion_id}`,
+          payload,
+        );
+        return;
+      }
+
+      const nuevaConfiguracion = await http.post<{
+        configuracion_integracion_id: number;
+        empresa_id: number | null;
+      }>("/configuraciones-integraciones", payload);
+
+      try {
+        if (existente) {
+          await http.del(`/empresas-integraciones/${existente.empresa_integracion_id}`);
+        }
+
+        if (!nuevaConfiguracion.empresa_id) {
+          throw new Error("La API no devolvió la empresa propietaria de la configuración.");
+        }
+
+        await http.post("/empresas-integraciones", {
+          empresa_id: nuevaConfiguracion.empresa_id,
+          integracion_id: input.integracion.integracion_id,
+          configuracion_integracion_id: nuevaConfiguracion.configuracion_integracion_id,
+          referencia_credencial: input.referencia,
+        });
+      } catch (error) {
+        try {
+          await http.del(
+            `/configuraciones-integraciones/${nuevaConfiguracion.configuracion_integracion_id}`,
+          );
+        } catch (cleanupError) {
+          throw new Error(
+            `${error instanceof Error ? error.message : "No se pudo vincular la integración."} ` +
+              `También falló la limpieza de la configuración nueva: ${
+                cleanupError instanceof Error ? cleanupError.message : "error desconocido"
+              }`,
+          );
+        }
+        throw error;
+      }
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.integracionesEmpresa() }),
+  });
+}
+
+export function useDesconectarIntegracionEmpresa() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (integration: EmpresaIntegracionConfig) => {
+      await http.del(`/empresas-integraciones/${integration.empresa_integracion_id}`);
+      if (integration.configuracion_integracion) {
+        try {
+          await http.del(
+            `/configuraciones-integraciones/${integration.configuracion_integracion.configuracion_integracion_id}`,
+          );
+        } catch (error) {
+          throw new Error(
+            `La conexión quedó desvinculada, pero no se pudo eliminar su configuración: ${
+              error instanceof Error ? error.message : "error desconocido"
+            }`,
+          );
+        }
+      }
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.integracionesEmpresa() }),
   });
 }
 
