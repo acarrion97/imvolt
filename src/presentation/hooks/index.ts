@@ -470,12 +470,43 @@ export function useGuardarIntegracionEmpresa() {
         return;
       }
 
+      if (existente?.estado === "inactivo" && configuracionExistente) {
+        await http.patch(
+          `/configuraciones-integraciones/${configuracionExistente.configuracion_integracion_id}`,
+          payload,
+        );
+        await http.del(`/empresas-integraciones/${existente.empresa_integracion_id}`);
+        try {
+          await http.post("/empresas-integraciones", {
+            empresa_id: existente.empresa_id,
+            integracion_id: input.integracion.integracion_id,
+            configuracion_integracion_id: configuracionExistente.configuracion_integracion_id,
+            referencia_credencial: input.referencia,
+          });
+        } catch (error) {
+          throw new Error(
+            `La configuración se guardó, pero no se pudo volver a vincular: ${
+              error instanceof Error ? error.message : "error desconocido"
+            }`,
+            { cause: error },
+          );
+        }
+        return;
+      }
+
       const nuevaConfiguracion = await http.post<{
         configuracion_integracion_id: number;
         empresa_id: number | null;
       }>("/configuraciones-integraciones", payload);
 
       try {
+        if (existente?.estado === "activo") {
+          await http.patch(`/empresas-integraciones/${existente.empresa_integracion_id}`, {
+            configuracion_integracion_id: nuevaConfiguracion.configuracion_integracion_id,
+            referencia_credencial: input.referencia,
+          });
+          return;
+        }
         if (existente) {
           await http.del(`/empresas-integraciones/${existente.empresa_integracion_id}`);
         }
@@ -501,13 +532,13 @@ export function useGuardarIntegracionEmpresa() {
               `También falló la limpieza de la configuración nueva: ${
                 cleanupError instanceof Error ? cleanupError.message : "error desconocido"
               }`,
-            { cause: error },
+            { cause: cleanupError },
           );
         }
         throw error;
       }
     },
-    onSuccess: () =>
+    onSettled: () =>
       queryClient.invalidateQueries({ queryKey: queryKeys.integracionesEmpresa() }),
   });
 }
@@ -532,7 +563,7 @@ export function useDesconectarIntegracionEmpresa() {
         }
       }
     },
-    onSuccess: () =>
+    onSettled: () =>
       queryClient.invalidateQueries({ queryKey: queryKeys.integracionesEmpresa() }),
   });
 }

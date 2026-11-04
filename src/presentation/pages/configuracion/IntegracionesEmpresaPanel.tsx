@@ -1,5 +1,17 @@
 import { useMemo, useState } from "react";
-import { Alert, App, Button, Drawer, Form, Input, Popconfirm, Select, Space, Spin, Tag } from "antd";
+import {
+  Alert,
+  App,
+  Button,
+  Drawer,
+  Form,
+  Input,
+  Popconfirm,
+  Select,
+  Space,
+  Spin,
+  Tag,
+} from "antd";
 import { ApiOutlined, CloudServerOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import {
   useDesconectarIntegracionEmpresa,
@@ -22,7 +34,10 @@ interface IntegracionFormValues {
   access_token?: string;
 }
 
-const ES_REST = String(import.meta.env.VITE_DATA_PROVIDER ?? "mock").trim().toLowerCase() === "rest";
+const ES_REST =
+  String(import.meta.env.VITE_DATA_PROVIDER ?? "mock")
+    .trim()
+    .toLowerCase() === "rest";
 
 export function IntegracionesEmpresaPanel() {
   const { message } = App.useApp();
@@ -42,13 +57,17 @@ export function IntegracionesEmpresaPanel() {
   } | null>(null);
 
   const proveedores = useMemo(
-    () => (data?.catalogo ?? []).filter((item) => ["Higgsfield", "Meta Ads"].includes(item.nombre)),
+    () =>
+      (data?.catalogo ?? []).filter(
+        (item) =>
+          item.activa &&
+          item.estado === "activo" &&
+          ["Higgsfield", "Meta Ads"].includes(item.nombre),
+      ),
     [data?.catalogo],
   );
   const conexionDe = (integracionId: number) =>
-    data?.conexiones.find(
-      (item) => item.integracion_id === integracionId && item.estado === "activo",
-    );
+    data?.conexiones.find((item) => item.integracion_id === integracionId);
 
   const configurar = (integracion: IntegracionCatalogo, existente?: EmpresaIntegracionConfig) => {
     setSeleccion({ integracion, existente });
@@ -81,7 +100,11 @@ export function IntegracionesEmpresaPanel() {
       entorno: values.entorno,
       api_key: values.api_key.trim() || undefined,
       ...(integracion.nombre === "Meta Ads"
-        ? { api_id: values.api_id?.trim() ? `act_${values.api_id.trim().replace(/^act_/, "")}` : undefined }
+        ? {
+            api_id: values.api_id?.trim()
+              ? `act_${values.api_id.trim().replace(/^act_/, "")}`
+              : undefined,
+          }
         : {}),
       app_secret: values.app_secret?.trim() || undefined,
       access_token: values.access_token?.trim() || undefined,
@@ -92,7 +115,9 @@ export function IntegracionesEmpresaPanel() {
       message.success(`${integracion.nombre} quedó configurado para esta empresa.`);
       setOpen(false);
     } catch (saveError) {
-      message.error(saveError instanceof Error ? saveError.message : "No se pudo guardar la integración.");
+      message.error(
+        saveError instanceof Error ? saveError.message : "No se pudo guardar la integración.",
+      );
     }
   };
 
@@ -138,12 +163,18 @@ export function IntegracionesEmpresaPanel() {
           description="La configuración está disponible para propietarios y administradores con permiso gestionar_integraciones."
         />
       ) : error ? (
-        <Alert type="error" showIcon message="No se pudieron cargar las integraciones" description={error.message} />
+        <Alert
+          type="error"
+          showIcon
+          message="No se pudieron cargar las integraciones"
+          description={error.message}
+        />
       ) : (
         <Spin spinning={isLoading}>
           <div style={{ display: "grid", gap: 12 }}>
             {proveedores.map((integracion) => {
-              const conexion = conexionDe(integracion.integracion_id);
+              const relacion = conexionDe(integracion.integracion_id);
+              const conexion = relacion?.estado === "activo" ? relacion : undefined;
               const configuracion = conexion?.configuracion_integracion;
               const higgsfield = integracion.nombre === "Higgsfield";
 
@@ -159,7 +190,9 @@ export function IntegracionesEmpresaPanel() {
                         ? `${conexion.referencia_credencial} · ${
                             configuracion?.entorno === "produccion" ? "Producción" : "Sandbox"
                           }`
-                        : integracion.descripcion ?? "Sin conectar"}
+                        : relacion
+                          ? "Conexión desconectada"
+                          : (integracion.descripcion ?? "Sin conectar")}
                     </span>
                     {conexion && (
                       <span>
@@ -168,16 +201,16 @@ export function IntegracionesEmpresaPanel() {
                           configuracion?.api_key,
                           configuracion?.app_secret,
                           configuracion?.access_token,
-                        ]
-                          .filter(Boolean)
-                          .length || 0}
+                        ].filter(Boolean).length || 0}
                       </span>
                     )}
                   </span>
                   {conexion ? (
                     <Tag color={configuracion?.entorno === "produccion" ? "green" : "gold"}>
-                      {configuracion?.entorno === "produccion" ? "Conectado" : "Sandbox"}
+                      {configuracion?.entorno === "produccion" ? "Configurado" : "Sandbox"}
                     </Tag>
+                  ) : relacion ? (
+                    <Tag>Desconectado</Tag>
                   ) : (
                     <Tag>Sin configurar</Tag>
                   )}
@@ -185,7 +218,7 @@ export function IntegracionesEmpresaPanel() {
                     <Button
                       type="primary"
                       icon={conexion ? undefined : <PlusOutlined />}
-                      onClick={() => configurar(integracion, conexion)}
+                      onClick={() => configurar(integracion, relacion)}
                     >
                       {conexion ? "Actualizar" : "Configurar"}
                     </Button>
@@ -222,11 +255,7 @@ export function IntegracionesEmpresaPanel() {
         onClose={() => setOpen(false)}
         width={480}
         extra={
-          <Button
-            type="primary"
-            loading={guardar.isPending}
-            onClick={() => void form.submit()}
-          >
+          <Button type="primary" loading={guardar.isPending} onClick={() => void form.submit()}>
             Guardar conexión
           </Button>
         }
@@ -255,7 +284,11 @@ export function IntegracionesEmpresaPanel() {
               label="Nombre de la conexión"
               rules={[{ required: true, whitespace: true, message: "Escribe un nombre." }]}
             >
-              <Input maxLength={500} placeholder={seleccion.integracion.nombre} />
+              <Input
+                maxLength={500}
+                placeholder={seleccion.integracion.nombre}
+                disabled={seleccion.existente?.estado === "activo"}
+              />
             </Form.Item>
 
             <Form.Item name="entorno" label="Entorno" rules={[{ required: true }]}>
@@ -272,7 +305,13 @@ export function IntegracionesEmpresaPanel() {
                 <Form.Item
                   name="api_key"
                   label="Higgsfield API Key ID"
-                  rules={[{ required: esNueva, whitespace: true, message: "Ingresa el API Key ID." }]}
+                  rules={[
+                    {
+                      required: !configuracionActual?.api_key,
+                      whitespace: true,
+                      message: "Ingresa el API Key ID.",
+                    },
+                  ]}
                   extra={configuracionActual?.api_key ? "Ya hay una clave guardada." : undefined}
                 >
                   <Input.Password autoComplete="new-password" />
@@ -282,12 +321,14 @@ export function IntegracionesEmpresaPanel() {
                   label="Higgsfield API Key Secret"
                   rules={[
                     {
-                      required: esNueva,
+                      required: !configuracionActual?.app_secret,
                       whitespace: true,
                       message: "Ingresa el API Key Secret.",
                     },
                   ]}
-                  extra={configuracionActual?.app_secret ? "Ya hay un secreto guardado." : undefined}
+                  extra={
+                    configuracionActual?.app_secret ? "Ya hay un secreto guardado." : undefined
+                  }
                 >
                   <Input.Password autoComplete="new-password" />
                 </Form.Item>
@@ -297,7 +338,13 @@ export function IntegracionesEmpresaPanel() {
                 <Form.Item
                   name="api_key"
                   label="Meta App ID"
-                  rules={[{ required: esNueva, whitespace: true, message: "Ingresa el App ID." }]}
+                  rules={[
+                    {
+                      required: !configuracionActual?.api_key,
+                      whitespace: true,
+                      message: "Ingresa el App ID.",
+                    },
+                  ]}
                   extra={configuracionActual?.api_key ? "Ya hay un App ID guardado." : undefined}
                 >
                   <Input.Password autoComplete="new-password" />
@@ -305,7 +352,9 @@ export function IntegracionesEmpresaPanel() {
                 <Form.Item
                   name="api_id"
                   label="ID de cuenta publicitaria"
-                  rules={[{ required: true, whitespace: true, message: "Ingresa el ID de cuenta." }]}
+                  rules={[
+                    { required: true, whitespace: true, message: "Ingresa el ID de cuenta." },
+                  ]}
                   extra="Puedes copiarlo con o sin el prefijo act_."
                 >
                   <Input placeholder="123456789" />
@@ -315,12 +364,14 @@ export function IntegracionesEmpresaPanel() {
                   label="Token de acceso de Meta"
                   rules={[
                     {
-                      required: esNueva,
+                      required: !configuracionActual?.access_token,
                       whitespace: true,
                       message: "Ingresa el token de acceso.",
                     },
                   ]}
-                  extra={configuracionActual?.access_token ? "Ya hay un token guardado." : undefined}
+                  extra={
+                    configuracionActual?.access_token ? "Ya hay un token guardado." : undefined
+                  }
                 >
                   <Input.Password autoComplete="new-password" />
                 </Form.Item>
