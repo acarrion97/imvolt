@@ -501,6 +501,7 @@ export function useGuardarIntegracionEmpresa() {
               `También falló la limpieza de la configuración nueva: ${
                 cleanupError instanceof Error ? cleanupError.message : "error desconocido"
               }`,
+            { cause: error },
           );
         }
         throw error;
@@ -526,6 +527,7 @@ export function useDesconectarIntegracionEmpresa() {
             `La conexión quedó desvinculada, pero no se pudo eliminar su configuración: ${
               error instanceof Error ? error.message : "error desconocido"
             }`,
+            { cause: error },
           );
         }
       }

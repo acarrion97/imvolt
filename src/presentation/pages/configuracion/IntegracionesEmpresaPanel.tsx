@@ -26,8 +26,11 @@ const ES_REST = String(import.meta.env.VITE_DATA_PROVIDER ?? "mock").trim().toLo
 
 export function IntegracionesEmpresaPanel() {
   const { message } = App.useApp();
-  const { tienePermiso } = useAuth();
-  const puedeGestionar = tienePermiso("gestionar_integraciones");
+  const { tienePermiso, perfil } = useAuth();
+  const esAdministradorEmpresa = perfil?.roles.some((rol) =>
+    ["propietario", "administrador"].includes(rol.nombre),
+  );
+  const puedeGestionar = tienePermiso("gestionar_integraciones") && Boolean(esAdministradorEmpresa);
   const { data, isLoading, error } = useIntegracionesEmpresa(ES_REST && puedeGestionar);
   const guardar = useGuardarIntegracionEmpresa();
   const desconectar = useDesconectarIntegracionEmpresa();
@@ -132,7 +135,7 @@ export function IntegracionesEmpresaPanel() {
           type="warning"
           showIcon
           message="No tienes permiso para gestionar integraciones"
-          description="Solicita el permiso gestionar_integraciones al administrador de tu empresa."
+          description="La configuración está disponible para propietarios y administradores con permiso gestionar_integraciones."
         />
       ) : error ? (
         <Alert type="error" showIcon message="No se pudieron cargar las integraciones" description={error.message} />
@@ -244,7 +247,7 @@ export function IntegracionesEmpresaPanel() {
                   ? "Ingresa las credenciales del proveedor."
                   : "Deja un campo secreto vacío para conservar la credencial actual."
               }
-              description="Las credenciales se envían únicamente al API y aparecen enmascaradas en la base de datos y en las respuestas."
+              description="Las credenciales se envían al API y se enmascaran en sus respuestas. La tabla las almacena sin cifrado de aplicación; limita el acceso a la base de datos."
             />
 
             <Form.Item

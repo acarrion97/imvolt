@@ -83,12 +83,6 @@ export function ConfiguracionPage() {
       note: "20+ tablas con RLS, índices y seeds",
     },
     {
-      label: "Configurar publicación de Meta",
-      ok: false,
-      note: "Credenciales en la integración Meta Ads de la empresa",
-    },
-    { label: "Configurar credenciales de Higgsfield", ok: false, note: "Integración de la empresa" },
-    {
       label: "Invitar al equipo de marketing",
       ok: (miembros ?? []).length > 1,
       note: "Roles §13",
