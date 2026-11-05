@@ -50,6 +50,12 @@ las variables OAuth descritas en el README de la API. Para una prueba local sin
 OAuth ni conexión importada, la API puede usar `META_ACCESS_TOKEN` y
 `META_AD_ACCOUNT_ID` del `.env` del backend.
 
+## Landing pública
+
+`/` sirve la landing de marca (`src/presentation/pages/landing/`), con GSAP + ScrollTrigger y Lenis, en
+su propio chunk. El video hero se activa solo al agregar los archivos descritos en
+`public/media/README.md` (prompt y comandos ffmpeg incluidos); sin ellos se muestra el fondo animado.
+
 ## Autenticación
 
 Con `VITE_DATA_PROVIDER=rest` la app exige sesión:
