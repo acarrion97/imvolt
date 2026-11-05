@@ -31,9 +31,11 @@ VITE_API_URL=https://imvolt-api.onrender.com/api
 ```
 
 En desarrollo local, usa `VITE_API_URL=http://localhost:3000/api`.
-La conexión Meta se inicia desde Configuración y vuelve a
-`https://imvolt.vercel.app/configuracion` después de autorizar o cancelar.
-El callback OAuth se sirve desde la API de Render, no desde Vercel.
+Configura además `VITE_META_APP_ID` con el ID público de tu app Meta y
+`VITE_META_LOGIN_CONFIG_ID` con el ID de la configuración de Facebook Login for
+Business creada en Meta. `VITE_META_GRAPH_API_VERSION` debe coincidir con la
+versión configurada en el API. El botón de Facebook inicia la autorización y el
+API valida la respuesta y guarda el token cifrado, asociado a la empresa.
 
 El backend publica estos contratos REST sobre el esquema IMVOLT: campañas y
 leads se traducen sobre las tablas existentes; el catálogo de modelos, los jobs
@@ -43,8 +45,9 @@ en orden `imvolt-api/database/migrations/2026-10-27_01_ai_connections.sql`,
 `2026-10-27_02_campaign_lead_contract.sql` y
 `2026-10-27_03_credit_ledger.sql`; ejecuta también
 `2026-10-27_04_campaign_tenant_backfill.sql` para reparar campañas anteriores
-que quedaron sin empresa asociada. Para conectar cuentas Meta por OAuth,
-ejecuta además `imvolt-api/database/migrations/2026-10-27_05_meta_oauth_tokens.sql`
+que quedaron sin empresa asociada. Para conectar cuentas Meta con Facebook
+Login SDK, ejecuta además
+`imvolt-api/database/migrations/2026-10-27_05_meta_oauth_tokens.sql`
 y `imvolt-api/database/migrations/2026-11-05_meta_oauth_state.sql`, y configura
 las variables OAuth descritas en el README de la API. Para una prueba local sin
 OAuth ni conexión importada, la API puede usar `META_ACCESS_TOKEN` y

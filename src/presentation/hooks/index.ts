@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getContainer } from "@/infrastructure/container";
@@ -434,9 +435,62 @@ export function useActualizarEmpresa() {
 }
 
 export function useIniciarOAuthMeta() {
+  const [oauthState, setOauthState] = useState<{
+    state: string;
+    expires_at: string;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const state = await http.post<{ state: string; expires_at: string }>(
+        "/v1/conexiones/meta/oauth/start",
+        {},
+      );
+      setOauthState(state);
+      return state;
+    } catch (requestError) {
+      const normalized =
+        requestError instanceof Error ? requestError : new Error("No se pudo preparar Meta OAuth.");
+      setOauthState(null);
+      setError(normalized);
+      throw normalized;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!oauthState) return;
+    const expiresAt = Date.parse(oauthState.expires_at);
+    if (!Number.isFinite(expiresAt)) return;
+    const timer = window.setTimeout(
+      () => void refresh().catch(() => undefined),
+      Math.max(expiresAt - Date.now() - 60_000, 0),
+    );
+    return () => window.clearTimeout(timer);
+  }, [oauthState, refresh]);
+
+  return {
+    state: oauthState?.state ?? null,
+    isLoading,
+    error,
+    refresh,
+  };
+}
+
+export function useCompletarOAuthMeta() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () =>
-      http.post<{ authorization_url: string }>("/v1/conexiones/meta/oauth/start", {}),
+    mutationFn: (input: { state: string; access_token: string }) =>
+      http.post<{ connected: boolean; accounts_connected: number }>(
+        "/v1/conexiones/meta/oauth/complete",
+        input,
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.conexiones() }),
   });
 }
 

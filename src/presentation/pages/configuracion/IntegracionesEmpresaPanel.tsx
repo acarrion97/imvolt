@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   App,
@@ -12,8 +12,14 @@ import {
   Spin,
   Tag,
 } from "antd";
-import { ApiOutlined, CloudServerOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import {
+  ApiOutlined,
+  CloudServerOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
+import {
+  useCompletarOAuthMeta,
   useConexiones,
   useDeleteConexion,
   useDesconectarIntegracionEmpresa,
@@ -41,6 +47,46 @@ const ES_REST =
     .trim()
     .toLowerCase() === "rest";
 
+let facebookSdkPromise: Promise<void> | null = null;
+
+function loadFacebookSdk(): Promise<void> {
+  const appId = import.meta.env.VITE_META_APP_ID?.trim();
+  const version = import.meta.env.VITE_META_GRAPH_API_VERSION?.trim() || "v24.0";
+  if (!appId) return Promise.reject(new Error("Configura VITE_META_APP_ID en frontend/.env."));
+
+  const initialize = () => {
+    if (!window.FB) throw new Error("El SDK de Facebook no quedó disponible.");
+    window.FB.init({ appId, cookie: true, xfbml: true, version });
+  };
+  if (window.FB) {
+    initialize();
+    return Promise.resolve();
+  }
+  if (facebookSdkPromise) return facebookSdkPromise;
+
+  facebookSdkPromise = new Promise<void>((resolve, reject) => {
+    const script = document.createElement("script");
+    script.id = "facebook-jssdk";
+    script.async = true;
+    script.src = "https://connect.facebook.net/en_US/sdk.js";
+    script.onerror = () => {
+      facebookSdkPromise = null;
+      reject(new Error("No se pudo cargar el SDK de Facebook."));
+    };
+    window.fbAsyncInit = () => {
+      try {
+        initialize();
+        resolve();
+      } catch (error) {
+        facebookSdkPromise = null;
+        reject(error);
+      }
+    };
+    document.head.appendChild(script);
+  });
+  return facebookSdkPromise;
+}
+
 export function IntegracionesEmpresaPanel() {
   const { message } = App.useApp();
   const { tienePermiso, perfil } = useAuth();
@@ -56,10 +102,19 @@ export function IntegracionesEmpresaPanel() {
   } = useConexiones();
   const guardar = useGuardarIntegracionEmpresa();
   const desconectar = useDesconectarIntegracionEmpresa();
-  const iniciarOAuth = useIniciarOAuthMeta();
+  const metaOAuth = useIniciarOAuthMeta();
+  const refreshMetaOAuth = metaOAuth.refresh;
+  const completarOAuth = useCompletarOAuthMeta();
   const eliminarConexion = useDeleteConexion();
+  const facebookLoginButtonRef = useRef<HTMLDivElement>(null);
+  const metaLoginResponseHandler = useRef<(response: MetaLoginResponse) => void>(() => undefined);
   const [form] = Form.useForm<IntegracionFormValues>();
   const [open, setOpen] = useState(false);
+  const [facebookSdkReady, setFacebookSdkReady] = useState(false);
+  const [facebookLoginStatus, setFacebookLoginStatus] = useState<
+    "checking" | "connected" | "not_authorized" | "unknown"
+  >("checking");
+  const [facebookSdkError, setFacebookSdkError] = useState<string | null>(null);
   const [seleccion, setSeleccion] = useState<{
     integracion: IntegracionCatalogo;
     existente?: EmpresaIntegracionConfig;
@@ -76,6 +131,7 @@ export function IntegracionesEmpresaPanel() {
     [data?.catalogo],
   );
   const cuentasMeta = (conexiones ?? []).filter((item) => item.estado === "conectada");
+  const metaLoginConfigId = import.meta.env.VITE_META_LOGIN_CONFIG_ID?.trim();
   const conexionDe = (integracionId: number) =>
     data?.conexiones.find((item) => item.integracion_id === integracionId);
 
@@ -96,6 +152,58 @@ export function IntegracionesEmpresaPanel() {
     url.searchParams.delete("meta");
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
   }, [message]);
+
+  useEffect(() => {
+    if (!ES_REST || !puedeGestionar) return;
+    void refreshMetaOAuth().catch(() => undefined);
+  }, [puedeGestionar, refreshMetaOAuth]);
+
+  useEffect(() => {
+    if (!ES_REST || !puedeGestionar) return;
+    let active = true;
+    void loadFacebookSdk()
+      .then(() => {
+        if (!active || !window.FB) return;
+        setFacebookSdkReady(true);
+        window.FB.getLoginStatus((response) => {
+          if (active) setFacebookLoginStatus(response.status);
+        });
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setFacebookSdkError(
+            error instanceof Error ? error.message : "No se pudo inicializar Facebook Login.",
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [puedeGestionar]);
+
+  useEffect(() => {
+    const container = facebookLoginButtonRef.current;
+    if (!facebookSdkReady || !metaOAuth.state || !metaLoginConfigId || !container || !window.FB) {
+      return;
+    }
+
+    const checkLoginState = () => {
+      window.FB?.getLoginStatus((response) => metaLoginResponseHandler.current(response));
+    };
+    window.checkLoginState = checkLoginState;
+    const button = document.createElement("fb:login-button");
+    button.setAttribute("config_id", metaLoginConfigId);
+    button.setAttribute("onlogin", "checkLoginState();");
+    container.replaceChildren(button);
+    window.FB.XFBML.parse(container);
+
+    return () => {
+      if (window.checkLoginState === checkLoginState) {
+        delete window.checkLoginState;
+      }
+      container.replaceChildren();
+    };
+  }, [facebookSdkReady, metaLoginConfigId, metaOAuth.state]);
 
   const configurar = (integracion: IntegracionCatalogo, existente?: EmpresaIntegracionConfig) => {
     setSeleccion({ integracion, existente });
@@ -151,16 +259,44 @@ export function IntegracionesEmpresaPanel() {
   const configuracionActual = seleccion?.existente?.configuracion_integracion;
   const esNueva = !configuracionActual;
 
-  const conectarMeta = async () => {
-    try {
-      const { authorization_url } = await iniciarOAuth.mutateAsync();
-      window.location.assign(authorization_url);
-    } catch (connectError) {
-      message.error(
-        connectError instanceof Error ? connectError.message : "No se pudo iniciar la conexión con Meta.",
-      );
+  const handleMetaLoginResponse = useCallback((response: MetaLoginResponse) => {
+    const state = metaOAuth.state;
+    const accessToken = response.authResponse?.accessToken;
+    if (response.status !== "connected" || !accessToken) {
+      setFacebookLoginStatus(response.status);
+      message.warning("No se autorizó el acceso a Meta.");
+      void refreshMetaOAuth().catch(() => undefined);
+      return;
     }
-  };
+    if (!state) {
+      message.error("La autorización expiró. Inténtalo de nuevo.");
+      void refreshMetaOAuth().catch(() => undefined);
+      return;
+    }
+
+    setFacebookLoginStatus("connected");
+    void completarOAuth
+      .mutateAsync({ state, access_token: accessToken })
+      .then((result) => {
+        message.success(
+          `Se conectaron ${result.accounts_connected} cuenta${result.accounts_connected === 1 ? "" : "s"} publicitaria${result.accounts_connected === 1 ? "" : "s"}.`,
+        );
+      })
+      .catch((connectError: unknown) => {
+        message.error(
+          connectError instanceof Error
+            ? connectError.message
+            : "No se pudo completar la conexión con Meta.",
+        );
+      })
+      .finally(() => {
+        void refreshMetaOAuth().catch(() => undefined);
+      });
+  }, [completarOAuth, message, metaOAuth.state, refreshMetaOAuth]);
+
+  useEffect(() => {
+    metaLoginResponseHandler.current = handleMetaLoginResponse;
+  }, [handleMetaLoginResponse]);
 
   const desconectarMeta = async (conexion: Conexion) => {
     try {
@@ -179,8 +315,8 @@ export function IntegracionesEmpresaPanel() {
         <h2 style={{ fontSize: 17 }}>Conexiones de esta empresa</h2>
       </div>
       <p className="sub" style={{ marginBottom: 16 }}>
-        Guarda aquí las credenciales privadas de tus proveedores. No se mostrarán de nuevo después
-        de guardarlas.
+        Conecta cuentas de Meta desde Facebook Login y configura las credenciales privadas de
+        Higgsfield.
       </p>
 
       {!ES_REST ? (
@@ -225,12 +361,40 @@ export function IntegracionesEmpresaPanel() {
                     ? `${cuentasMeta.length} cuenta${cuentasMeta.length === 1 ? "" : "s"} conectada${cuentasMeta.length === 1 ? "" : "s"}`
                     : "Autoriza tu cuenta de Facebook para elegir una cuenta publicitaria."}
                 </span>
-                <span>La autorización se realiza en Meta. IMVOLT nunca solicita tu contraseña.</span>
+                <span>El SDK comprueba tu sesión de Facebook. IMVOLT nunca solicita tu contraseña.</span>
               </span>
-              <Button type="primary" loading={iniciarOAuth.isPending} onClick={() => void conectarMeta()}>
-                {cuentasMeta.length ? "Conectar otra cuenta" : "Conectar con Facebook"}
-              </Button>
+              <div ref={facebookLoginButtonRef} aria-busy={metaOAuth.isLoading || completarOAuth.isPending} />
             </div>
+            {!import.meta.env.VITE_META_APP_ID && (
+              <Alert
+                type="warning"
+                showIcon
+                message="Configura VITE_META_APP_ID"
+                description="Agrega el ID público de la app de Meta en frontend/.env y reinicia Vite."
+              />
+            )}
+            {!metaLoginConfigId && (
+              <Alert
+                type="warning"
+                showIcon
+                message="Configura VITE_META_LOGIN_CONFIG_ID"
+                description="Agrega el ID de la configuración de Facebook Login for Business en frontend/.env y reinicia Vite."
+              />
+            )}
+            {facebookSdkError && (
+              <Alert type="error" showIcon message="Facebook Login no está disponible" description={facebookSdkError} />
+            )}
+            {metaOAuth.error && (
+              <Alert type="error" showIcon message="No se pudo preparar la autorización" description={metaOAuth.error.message} />
+            )}
+            {facebookSdkReady && facebookLoginStatus === "connected" && (
+              <Alert
+                type="info"
+                showIcon
+                message="Sesión de Facebook detectada"
+                description="Usa el botón de Facebook para autorizar explícitamente las cuentas publicitarias de esta empresa."
+              />
+            )}
             {cuentasMeta.map((conexion) => (
               <div className="integration" key={conexion.connection_id}>
                 <span className="connect-logo">
