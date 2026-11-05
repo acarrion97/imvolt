@@ -78,6 +78,44 @@ export const {
   useDelete: useDeleteGeneracion,
 } = generacionesHooks;
 
+export interface MetaPage {
+  id: string;
+  name: string;
+}
+
+export interface MetaAdLocation {
+  key: string;
+  name: string;
+  region?: string;
+  country_name?: string;
+  country_code?: string;
+}
+
+export function useMetaPages(connectionId?: string) {
+  return useQuery({
+    queryKey: queryKeys.metaPages(connectionId ?? ""),
+    queryFn: () =>
+      http.get<MetaPage[]>(
+        `/v1/conexiones/meta/pages?connection_id=${encodeURIComponent(connectionId ?? "")}`,
+      ),
+    enabled: Boolean(connectionId),
+    retry: false,
+  });
+}
+
+export function useMetaAdLocations(connectionId: string | undefined, query: string) {
+  return useQuery({
+    queryKey: queryKeys.metaAdLocations(connectionId ?? "", query),
+    queryFn: () =>
+      http.get<MetaAdLocation[]>(
+        `/v1/conexiones/meta/locations?connection_id=${encodeURIComponent(connectionId ?? "")}&q=${encodeURIComponent(query)}`,
+      ),
+    enabled: Boolean(connectionId) && query.trim().length >= 2,
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
 export function useGeneracionesByPropiedad(propertyId: string | undefined) {
   const { generaciones } = getContainer();
   return useQuery({

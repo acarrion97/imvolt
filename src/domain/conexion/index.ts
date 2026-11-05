@@ -8,6 +8,7 @@ export interface Conexion {
   organization_id: string;
   cuenta_publicitaria_id: string;
   nombre_cuenta: string;
+  account_currency?: string | null;
   estado: ConexionEstado;
   permisos: Record<string, unknown> | null;
   autenticada: boolean;

@@ -37,6 +37,13 @@ export interface Campana {
   titulo: string | null;
   cta: string | null;
   creative_url: string | null;
+  meta_page_id?: string | null;
+  meta_page_name?: string | null;
+  target_location_key?: string | null;
+  target_location_name?: string | null;
+  target_location_country_code?: string | null;
+  privacy_policy_url?: string | null;
+  media_type?: "image" | "video" | null;
   meta_campaign_id: string | null;
   created_at: string;
   updated_at: string;

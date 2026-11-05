@@ -20,6 +20,7 @@ import {
 import type { Generacion } from "@/domain/generacion";
 import type { Modelo } from "@/domain/modelo";
 import type { ColumnsType } from "antd/es/table";
+import { CrearAnuncioMetaModal } from "./CrearAnuncioMetaModal";
 
 type Media = "image" | "video";
 type Modo = "facil" | "pro";
@@ -97,6 +98,7 @@ export function EstudioPage() {
   const [enfoque, setEnfoque] = useState<string | undefined>(ENFOQUES[0].value);
   const [referencia, setReferencia] = useState<string | undefined>();
   const [promptPro, setPromptPro] = useState("");
+  const [generacionParaAnuncio, setGeneracionParaAnuncio] = useState<Generacion | null>(null);
 
   const modelosFiltrados = useMemo(
     () =>
@@ -264,6 +266,21 @@ export function EstudioPage() {
       key: "status",
       width: 150,
       render: (status: Generacion["status"]) => <EstadoGeneracionTag status={status} />,
+    },
+    {
+      title: "Anuncio",
+      key: "meta_ad",
+      width: 170,
+      render: (_: unknown, row) =>
+        row.provider_request_id && !["failed", "canceled"].includes(row.status) ? (
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => setGeneracionParaAnuncio(row)}
+          >
+            Crear anuncio Meta
+          </button>
+        ) : null,
     },
   ];
 
@@ -568,6 +585,11 @@ export function EstudioPage() {
           )}
         </div>
       </Spin>
+      <CrearAnuncioMetaModal
+        key={generacionParaAnuncio?.generation_id ?? "closed"}
+        generation={generacionParaAnuncio}
+        onClose={() => setGeneracionParaAnuncio(null)}
+      />
     </div>
   );
 }

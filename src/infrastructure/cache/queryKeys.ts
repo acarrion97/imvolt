@@ -30,6 +30,9 @@ export const queryKeys = {
 
   conexiones: () => ["conexiones"] as const,
   conexion: (id: string) => ["conexiones", id] as const,
+  metaPages: (connectionId: string) => ["meta_pages", connectionId] as const,
+  metaAdLocations: (connectionId: string, query: string) =>
+    ["meta_ad_locations", connectionId, query] as const,
 
   campanas: () => ["campanas"] as const,
   campana: (id: string) => ["campanas", id] as const,

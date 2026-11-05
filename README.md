@@ -51,8 +51,9 @@ que quedaron sin empresa asociada. Para conectar cuentas Meta con Facebook
 Login SDK, ejecuta además
 `imvolt-api/database/migrations/2026-10-27_05_meta_oauth_tokens.sql`
 y `imvolt-api/database/migrations/2026-11-05_meta_oauth_state.sql`, y configura
-las variables OAuth descritas en el README de la API. Para una prueba local sin
-OAuth ni conexión importada, la API puede usar `META_ACCESS_TOKEN` y
+`imvolt-api/database/migrations/2026-11-05_06_meta_lead_ads.sql`. Configura los
+permisos y variables OAuth descritos en el README de la API. Para una prueba
+local sin OAuth ni conexión importada, la API puede usar `META_ACCESS_TOKEN` y
 `META_AD_ACCOUNT_ID` del `.env` del backend.
 
 ## Autenticación
