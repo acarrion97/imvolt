@@ -50,6 +50,8 @@ export interface Perfil {
    * puertear la UI sin replicar reglas de negocio.
    */
   permisos: string[];
+   /** Admin de plataforma configurado en la API, independiente del rol empresarial. */
+   es_super_admin?: boolean;
 }
 
 export interface LoginInput {

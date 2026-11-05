@@ -26,6 +26,7 @@ import {
   useUpdatePlantilla,
 } from "@/presentation/hooks";
 import { plantillaSchema } from "@/presentation/validations";
+import { useAuth } from "@/presentation/auth/AuthProvider";
 
 interface FormValues {
   nombre: string;
@@ -36,6 +37,8 @@ interface FormValues {
 
 export function PlantillasPage() {
   const { message } = App.useApp();
+  const { perfil } = useAuth();
+  const puedeAdministrar = perfil?.es_super_admin === true;
   const navigate = useNavigate();
   const [tipoFiltro, setTipoFiltro] = useState<string>("todas");
   const { data: tiposPlantilla } = useTiposPlantilla();
@@ -154,11 +157,19 @@ export function PlantillasPage() {
           </p>
         </div>
         <div className="header-actions">
-          <button type="button" className="btn btn-primary" onClick={openCreate}>
-            <PlusOutlined /> Nueva plantilla
-          </button>
+          {puedeAdministrar && (
+            <button type="button" className="btn btn-primary" onClick={openCreate}>
+              <PlusOutlined /> Nueva plantilla
+            </button>
+          )}
         </div>
       </div>
+      {!puedeAdministrar && (
+        <div className="notice" style={{ marginBottom: 18 }}>
+          Catálogo global de plantillas. Solo el superadministrador de la plataforma puede crearlas,
+          editarlas o eliminarlas.
+        </div>
+      )}
 
       <div className="tabs">
         <button
@@ -221,24 +232,28 @@ export function PlantillasPage() {
               <div className="foot">
                 <span className="credits">{plantilla.url_logo ? "Logo configurado" : "Sin logo"}</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    type="button"
-                    style={iconBtn}
-                    onClick={() => openEdit(plantilla)}
-                    title="Editar"
-                  >
-                    <EditOutlined />
-                  </button>
-                  <Popconfirm
-                    title="¿Eliminar esta plantilla?"
-                    okText="Eliminar"
-                    cancelText="Cancelar"
-                    onConfirm={() => handleDelete(plantilla.plantilla_id)}
-                  >
-                    <button type="button" style={iconBtn} title="Eliminar">
-                      <DeleteOutlined />
-                    </button>
-                  </Popconfirm>
+                  {puedeAdministrar && (
+                    <>
+                      <button
+                        type="button"
+                        style={iconBtn}
+                        onClick={() => openEdit(plantilla)}
+                        title="Editar"
+                      >
+                        <EditOutlined />
+                      </button>
+                      <Popconfirm
+                        title="¿Eliminar esta plantilla?"
+                        okText="Eliminar"
+                        cancelText="Cancelar"
+                        onConfirm={() => handleDelete(plantilla.plantilla_id)}
+                      >
+                        <button type="button" style={iconBtn} title="Eliminar">
+                          <DeleteOutlined />
+                        </button>
+                      </Popconfirm>
+                    </>
+                  )}
                   <button
                     type="button"
                     className="btn btn-outline"
@@ -259,11 +274,13 @@ export function PlantillasPage() {
           {filtered.length === 0 && !isLoading && (
             <div className="card card-pad" style={{ gridColumn: "1 / -1", textAlign: "center" }}>
               <p className="sub">No hay plantillas para mostrar.</p>
-              <div style={{ marginTop: 14 }}>
-                <button type="button" className="btn btn-primary" onClick={openCreate}>
-                  <PlusOutlined /> Nueva plantilla
-                </button>
-              </div>
+              {puedeAdministrar && (
+                <div style={{ marginTop: 14 }}>
+                  <button type="button" className="btn btn-primary" onClick={openCreate}>
+                    <PlusOutlined /> Nueva plantilla
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
