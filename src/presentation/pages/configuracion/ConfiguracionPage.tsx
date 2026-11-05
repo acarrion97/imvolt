@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { App } from "antd";
 import {
-  CheckCircleOutlined,
   MessageOutlined,
   ReloadOutlined,
   WalletOutlined,
@@ -9,7 +8,6 @@ import {
 import {
   useActualizarEmpresa,
   useEmpresa,
-  useMiembros,
   usePermisos,
   useRecargarCreditos,
   useTransacciones,
@@ -23,8 +21,7 @@ const RECARGAS = [10, 50, 100];
 
 /**
  * Configuración — UI Concept 01: integraciones (Higgsfield / Meta /
- * Lotes al Mando), billetera de créditos, perfil de trabajo y los hitos
- * pendientes antes del lanzamiento.
+ * Lotes al Mando), billetera de créditos y perfil de trabajo.
  */
 export function ConfiguracionPage() {
   const { message } = App.useApp();
@@ -32,9 +29,7 @@ export function ConfiguracionPage() {
   const { data: transacciones } = useTransacciones();
   const recargar = useRecargarCreditos();
   const [recargando, setRecargando] = useState<number | null>(null);
-
   const { data: empresa } = useEmpresa();
-  const { data: miembros } = useMiembros();
   const actualizarEmpresa = useActualizarEmpresa();
   const { puedeEditarEmpresa } = usePermisos();
   // Borradores del formulario: `null` = sin editar (se muestra el valor guardado).
@@ -76,19 +71,6 @@ export function ConfiguracionPage() {
     }
   };
 
-  const hitos = [
-    {
-      label: "Ejecutar database/schema.sql en Supabase",
-      ok: false,
-      note: "20+ tablas con RLS, índices y seeds",
-    },
-    {
-      label: "Invitar al equipo de marketing",
-      ok: (miembros ?? []).length > 1,
-      note: "Roles §13",
-    },
-  ];
-
   return (
     <div>
       <div className="header">
@@ -104,49 +86,8 @@ export function ConfiguracionPage() {
         </div>
       </div>
 
-      <IntegracionesEmpresaPanel />
-
-      <div className="grid cols2" style={{ alignItems: "start" }}>
-        {/* ── Integraciones ──────────────────────────────────────────────── */}
+      <div className="grid cols2">
         <div className="card card-pad">
-          <h2 style={{ fontSize: 17, marginBottom: 14 }}>Otras integraciones</h2>
-
-          <div className="integration">
-            <span className="connect-logo">
-              <MessageOutlined />
-            </span>
-            <span className="info">
-              <b>Lotes al Mando</b>
-              <span>Captación de leads por mensajería (§11).</span>
-            </span>
-            <span className="mini-badge grey">Próximamente</span>
-          </div>
-
-          <div className="section-title" style={{ marginTop: 26 }}>
-            <h2 style={{ fontSize: 16 }}>Hitos antes del lanzamiento</h2>
-          </div>
-          {hitos.map((h) => (
-            <div key={h.label} className="list-row">
-              <span className="who">
-                <span className={`list-dot${h.ok ? "" : " grey"}`} />
-                {h.label}
-              </span>
-              <span className="right">
-                {h.ok ? (
-                  <span className="mini-badge">
-                    <CheckCircleOutlined /> Listo
-                  </span>
-                ) : (
-                  <span className="mini-badge grey">{h.note}</span>
-                )}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* ── Créditos + perfil ──────────────────────────────────────────── */}
-        <div style={{ display: "grid", gap: 20 }}>
-          <div className="card card-pad">
             <h2 style={{ fontSize: 17, marginBottom: 4 }}>Créditos de generación</h2>
             <p className="sub" style={{ marginBottom: 16 }}>
               Billetera de la organización. En la demo la pasarela confirma al instante.
@@ -197,9 +138,9 @@ export function ConfiguracionPage() {
                 </span>
               </div>
             ))}
-          </div>
+        </div>
 
-          <div className="card card-pad">
+        <div className="card card-pad">
             <h2 style={{ fontSize: 17, marginBottom: 14 }}>Perfil de trabajo</h2>
             <div className="form-grid">
               <div className="field">
@@ -245,9 +186,26 @@ export function ConfiguracionPage() {
                 Solo propietarios y administradores pueden editar la organización.
               </p>
             )}
-          </div>
         </div>
       </div>
+      <div className="grid cols2">
+         <div className="card card-pad" style={{ marginTop: 20 }}>
+          <h2 style={{ fontSize: 17, marginBottom: 14 }}>Otras integraciones</h2>
+          <div className="integration">
+            <span className="connect-logo">
+              <MessageOutlined />
+            </span>
+            <span className="info">
+              <b>Lotes al Mando</b>
+              <span>Captación de leads por mensajería (§11).</span>
+            </span>
+            <span className="mini-badge grey">Próximamente</span>
+            </div>
+          </div>
+          <div className="card card-pad" style={{ marginTop: 20 }}>
+            <IntegracionesEmpresaPanel/>
+          </div>
+      </div>   
     </div>
   );
 }

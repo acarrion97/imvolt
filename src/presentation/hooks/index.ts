@@ -438,8 +438,8 @@ export function useIntegracionesEmpresa(enabled = true) {
     queryKey: queryKeys.integracionesEmpresa(),
     queryFn: async () => {
       const [catalogo, conexiones] = await Promise.all([
-        http.get<IntegracionCatalogo[]>("/integraciones"),
-        http.get<EmpresaIntegracionConfig[]>("/empresas-integraciones"),
+        http.get<IntegracionCatalogo[]>("/v1/integraciones"),
+        http.get<EmpresaIntegracionConfig[]>("/v1/empresas-integraciones"),
       ]);
       return { catalogo, conexiones };
     },
@@ -464,7 +464,7 @@ export function useGuardarIntegracionEmpresa() {
 
       if (existente?.estado === "activo" && configuracionExistente) {
         await http.patch(
-          `/configuraciones-integraciones/${configuracionExistente.configuracion_integracion_id}`,
+          `/v1/configuraciones-integraciones/${configuracionExistente.configuracion_integracion_id}`,
           payload,
         );
         return;
@@ -472,12 +472,12 @@ export function useGuardarIntegracionEmpresa() {
 
       if (existente?.estado === "inactivo" && configuracionExistente) {
         await http.patch(
-          `/configuraciones-integraciones/${configuracionExistente.configuracion_integracion_id}`,
+          `/v1/configuraciones-integraciones/${configuracionExistente.configuracion_integracion_id}`,
           payload,
         );
-        await http.del(`/empresas-integraciones/${existente.empresa_integracion_id}`);
+        await http.del(`/v1/empresas-integraciones/${existente.empresa_integracion_id}`);
         try {
-          await http.post("/empresas-integraciones", {
+          await http.post("/v1/empresas-integraciones", {
             empresa_id: existente.empresa_id,
             integracion_id: input.integracion.integracion_id,
             configuracion_integracion_id: configuracionExistente.configuracion_integracion_id,
@@ -497,25 +497,25 @@ export function useGuardarIntegracionEmpresa() {
       const nuevaConfiguracion = await http.post<{
         configuracion_integracion_id: number;
         empresa_id: number | null;
-      }>("/configuraciones-integraciones", payload);
+      }>("/v1/configuraciones-integraciones", payload);
 
       try {
         if (existente?.estado === "activo") {
-          await http.patch(`/empresas-integraciones/${existente.empresa_integracion_id}`, {
+          await http.patch(`/v1/empresas-integraciones/${existente.empresa_integracion_id}`, {
             configuracion_integracion_id: nuevaConfiguracion.configuracion_integracion_id,
             referencia_credencial: input.referencia,
           });
           return;
         }
         if (existente) {
-          await http.del(`/empresas-integraciones/${existente.empresa_integracion_id}`);
+          await http.del(`/v1/empresas-integraciones/${existente.empresa_integracion_id}`);
         }
 
         if (!nuevaConfiguracion.empresa_id) {
           throw new Error("La API no devolvió la empresa propietaria de la configuración.");
         }
 
-        await http.post("/empresas-integraciones", {
+        await http.post("/v1/empresas-integraciones", {
           empresa_id: nuevaConfiguracion.empresa_id,
           integracion_id: input.integracion.integracion_id,
           configuracion_integracion_id: nuevaConfiguracion.configuracion_integracion_id,
@@ -524,7 +524,7 @@ export function useGuardarIntegracionEmpresa() {
       } catch (error) {
         try {
           await http.del(
-            `/configuraciones-integraciones/${nuevaConfiguracion.configuracion_integracion_id}`,
+            `/v1/configuraciones-integraciones/${nuevaConfiguracion.configuracion_integracion_id}`,
           );
         } catch (cleanupError) {
           throw new Error(
@@ -547,11 +547,11 @@ export function useDesconectarIntegracionEmpresa() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (integration: EmpresaIntegracionConfig) => {
-      await http.del(`/empresas-integraciones/${integration.empresa_integracion_id}`);
+      await http.del(`/v1/empresas-integraciones/${integration.empresa_integracion_id}`);
       if (integration.configuracion_integracion) {
         try {
           await http.del(
-            `/configuraciones-integraciones/${integration.configuracion_integracion.configuracion_integracion_id}`,
+            `/v1/configuraciones-integraciones/${integration.configuracion_integracion.configuracion_integracion_id}`,
           );
         } catch (error) {
           throw new Error(
