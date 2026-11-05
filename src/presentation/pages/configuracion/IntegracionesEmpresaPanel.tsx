@@ -50,9 +50,9 @@ const ES_REST =
 let facebookSdkPromise: Promise<void> | null = null;
 
 function loadFacebookSdk(): Promise<void> {
-  const appId = import.meta.env.VITE_META_APP_ID?.trim();
-  const version = import.meta.env.VITE_META_GRAPH_API_VERSION?.trim() || "v24.0";
-  if (!appId) return Promise.reject(new Error("Configura VITE_META_APP_ID en frontend/.env."));
+  const appId = import.meta.env.META_APP_ID?.trim();
+  const version = import.meta.env.META_GRAPH_API_VERSION?.trim() || "v24.0";
+  if (!appId) return Promise.reject(new Error("Configura META_APP_ID en frontend/.env."));
 
   const initialize = () => {
     if (!window.FB) throw new Error("El SDK de Facebook no quedó disponible.");
@@ -131,7 +131,7 @@ export function IntegracionesEmpresaPanel() {
     [data?.catalogo],
   );
   const cuentasMeta = (conexiones ?? []).filter((item) => item.estado === "conectada");
-  const metaLoginConfigId = import.meta.env.VITE_META_LOGIN_CONFIG_ID?.trim();
+  const metaLoginConfigId = import.meta.env.META_LOGIN_CONFIG_ID?.trim();
   const conexionDe = (integracionId: number) =>
     data?.conexiones.find((item) => item.integracion_id === integracionId);
 
@@ -365,11 +365,11 @@ export function IntegracionesEmpresaPanel() {
               </span>
               <div ref={facebookLoginButtonRef} aria-busy={metaOAuth.isLoading || completarOAuth.isPending} />
             </div>
-            {!import.meta.env.VITE_META_APP_ID && (
+            {!import.meta.env.META_APP_ID && (
               <Alert
                 type="warning"
                 showIcon
-                message="Configura VITE_META_APP_ID"
+                message="Configura META_APP_ID"
                 description="Agrega el ID público de la app de Meta en frontend/.env y reinicia Vite."
               />
             )}
@@ -377,7 +377,7 @@ export function IntegracionesEmpresaPanel() {
               <Alert
                 type="warning"
                 showIcon
-                message="Configura VITE_META_LOGIN_CONFIG_ID"
+                message="Configura META_LOGIN_CONFIG_ID"
                 description="Agrega el ID de la configuración de Facebook Login for Business en frontend/.env y reinicia Vite."
               />
             )}

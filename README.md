@@ -31,11 +31,13 @@ VITE_API_URL=https://imvolt-api.onrender.com/api
 ```
 
 En desarrollo local, usa `VITE_API_URL=http://localhost:3000/api`.
-Configura además `VITE_META_APP_ID` con el ID público de tu app Meta y
-`VITE_META_LOGIN_CONFIG_ID` con el ID de la configuración de Facebook Login for
-Business creada en Meta. `VITE_META_GRAPH_API_VERSION` debe coincidir con la
+Configura además `META_APP_ID` con el ID público de tu app Meta y
+`META_LOGIN_CONFIG_ID` con el ID de la configuración de Facebook Login for
+Business creada en Meta. `META_GRAPH_API_VERSION` debe coincidir con la
 versión configurada en el API. El botón de Facebook inicia la autorización y el
 API valida la respuesta y guarda el token cifrado, asociado a la empresa.
+Vite expone al frontend únicamente esos tres valores `META_*`; no incluyas
+secretos en el `.env` del frontend.
 
 El backend publica estos contratos REST sobre el esquema IMVOLT: campañas y
 leads se traducen sobre las tablas existentes; el catálogo de modelos, los jobs

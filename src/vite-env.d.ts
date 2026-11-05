@@ -5,12 +5,12 @@ interface ImportMetaEnv {
   readonly VITE_DATA_PROVIDER?: string;
   /** URL base de la API REST (https:// en producción). Requerida con el proveedor "rest". */
   readonly VITE_API_URL?: string;
-  /** Public Meta App ID (safe to include in the browser bundle). */
-  readonly VITE_META_APP_ID?: string;
+  /** Public Meta values explicitly exposed by vite.config.ts. */
+  readonly META_APP_ID?: string;
   /** Facebook Login for Business configuration ID. */
-  readonly VITE_META_LOGIN_CONFIG_ID?: string;
+  readonly META_LOGIN_CONFIG_ID?: string;
   /** Meta Graph API version, e.g. v24.0. */
-  readonly VITE_META_GRAPH_API_VERSION?: string;
+  readonly META_GRAPH_API_VERSION?: string;
   /**
    * Token Bearer SOLO para desarrollo local (se ignora en builds de producción).
    * Nunca pongas secretos en variables VITE_*: terminan en el bundle público.
