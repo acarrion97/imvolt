@@ -433,6 +433,13 @@ export function useActualizarEmpresa() {
   });
 }
 
+export function useIniciarOAuthMeta() {
+  return useMutation({
+    mutationFn: () =>
+      http.post<{ authorization_url: string }>("/v1/conexiones/meta/oauth/start", {}),
+  });
+}
+
 export function useIntegracionesEmpresa(enabled = true) {
   return useQuery({
     queryKey: queryKeys.integracionesEmpresa(),

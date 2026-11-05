@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   App,
@@ -14,11 +14,15 @@ import {
 } from "antd";
 import { ApiOutlined, CloudServerOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import {
+  useConexiones,
+  useDeleteConexion,
   useDesconectarIntegracionEmpresa,
   useGuardarIntegracionEmpresa,
+  useIniciarOAuthMeta,
   useIntegracionesEmpresa,
 } from "@/presentation/hooks";
 import { useAuth } from "@/presentation/auth/AuthProvider";
+import type { Conexion } from "@/domain/conexion";
 import type {
   EmpresaIntegracionConfig,
   GuardarIntegracionInput,
@@ -29,9 +33,7 @@ interface IntegracionFormValues {
   referencia: string;
   entorno: "sandbox" | "produccion";
   api_key: string;
-  api_id?: string;
   app_secret?: string;
-  access_token?: string;
 }
 
 const ES_REST =
@@ -47,8 +49,15 @@ export function IntegracionesEmpresaPanel() {
   );
   const puedeGestionar = tienePermiso("gestionar_integraciones") && Boolean(esAdministradorEmpresa);
   const { data, isLoading, error } = useIntegracionesEmpresa(ES_REST && puedeGestionar);
+  const {
+    data: conexiones,
+    isLoading: conexionesLoading,
+    error: conexionesError,
+  } = useConexiones();
   const guardar = useGuardarIntegracionEmpresa();
   const desconectar = useDesconectarIntegracionEmpresa();
+  const iniciarOAuth = useIniciarOAuthMeta();
+  const eliminarConexion = useDeleteConexion();
   const [form] = Form.useForm<IntegracionFormValues>();
   const [open, setOpen] = useState(false);
   const [seleccion, setSeleccion] = useState<{
@@ -62,12 +71,31 @@ export function IntegracionesEmpresaPanel() {
         (item) =>
           item.activa &&
           item.estado === "activo" &&
-          ["Higgsfield", "Meta Ads"].includes(item.nombre),
+          item.nombre === "Higgsfield",
       ),
     [data?.catalogo],
   );
+  const cuentasMeta = (conexiones ?? []).filter((item) => item.estado === "conectada");
   const conexionDe = (integracionId: number) =>
     data?.conexiones.find((item) => item.integracion_id === integracionId);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const resultado = url.searchParams.get("meta");
+    if (!resultado) return;
+
+    const mensajes: Record<string, [string, "success" | "warning" | "error"]> = {
+      connected: ["Cuenta(s) de Meta conectada(s).", "success"],
+      cancelled: ["Cancelaste la conexión con Meta.", "warning"],
+      no_accounts: ["Meta autorizó el acceso, pero no encontramos cuentas publicitarias activas.", "warning"],
+      error: ["No se pudo completar la conexión con Meta. Inténtalo otra vez.", "error"],
+    };
+    const resultadoConocido = mensajes[resultado];
+    if (resultadoConocido) message[resultadoConocido[1]](resultadoConocido[0]);
+
+    url.searchParams.delete("meta");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [message]);
 
   const configurar = (integracion: IntegracionCatalogo, existente?: EmpresaIntegracionConfig) => {
     setSeleccion({ integracion, existente });
@@ -78,10 +106,6 @@ export function IntegracionesEmpresaPanel() {
         existente?.configuracion_integracion?.entorno.toLowerCase() === "produccion"
           ? "produccion"
           : "sandbox",
-      api_id:
-        integracion.nombre === "Meta Ads"
-          ? (existente?.configuracion_integracion?.api_id ?? "")?.replace(/^act_/, "")
-          : undefined,
     });
     setOpen(true);
   };
@@ -94,20 +118,10 @@ export function IntegracionesEmpresaPanel() {
       existente: seleccion.existente,
       referencia: values.referencia.trim(),
       url_base:
-        integracion.nombre === "Higgsfield"
-          ? "https://api.higgsfield.ai"
-          : "https://graph.facebook.com",
+        "https://api.higgsfield.ai",
       entorno: values.entorno,
       api_key: values.api_key.trim() || undefined,
-      ...(integracion.nombre === "Meta Ads"
-        ? {
-            api_id: values.api_id?.trim()
-              ? `act_${values.api_id.trim().replace(/^act_/, "")}`
-              : undefined,
-          }
-        : {}),
       app_secret: values.app_secret?.trim() || undefined,
-      access_token: values.access_token?.trim() || undefined,
     };
 
     try {
@@ -136,7 +150,28 @@ export function IntegracionesEmpresaPanel() {
 
   const configuracionActual = seleccion?.existente?.configuracion_integracion;
   const esNueva = !configuracionActual;
-  const esHiggsfield = seleccion?.integracion.nombre === "Higgsfield";
+
+  const conectarMeta = async () => {
+    try {
+      const { authorization_url } = await iniciarOAuth.mutateAsync();
+      window.location.assign(authorization_url);
+    } catch (connectError) {
+      message.error(
+        connectError instanceof Error ? connectError.message : "No se pudo iniciar la conexión con Meta.",
+      );
+    }
+  };
+
+  const desconectarMeta = async (conexion: Conexion) => {
+    try {
+      await eliminarConexion.mutateAsync(conexion.connection_id);
+      message.success(`Cuenta ${conexion.nombre_cuenta} desconectada.`);
+    } catch (disconnectError) {
+      message.error(
+        disconnectError instanceof Error ? disconnectError.message : "No se pudo desconectar la cuenta.",
+      );
+    }
+  };
 
   return (
     <div className="card card-pad" style={{ marginBottom: 20 }}>
@@ -169,20 +204,69 @@ export function IntegracionesEmpresaPanel() {
           message="No se pudieron cargar las integraciones"
           description={error.message}
         />
+      ) : conexionesError ? (
+        <Alert
+          type="error"
+          showIcon
+          message="No se pudieron cargar las cuentas de Meta"
+          description={conexionesError.message}
+        />
       ) : (
-        <Spin spinning={isLoading}>
+        <Spin spinning={isLoading || conexionesLoading}>
           <div style={{ display: "grid", gap: 12 }}>
+            <div className="integration">
+              <span className="connect-logo">
+                <ApiOutlined />
+              </span>
+              <span className="info">
+                <b>Meta Ads</b>
+                <span>
+                  {cuentasMeta.length
+                    ? `${cuentasMeta.length} cuenta${cuentasMeta.length === 1 ? "" : "s"} conectada${cuentasMeta.length === 1 ? "" : "s"}`
+                    : "Autoriza tu cuenta de Facebook para elegir una cuenta publicitaria."}
+                </span>
+                <span>La autorización se realiza en Meta. IMVOLT nunca solicita tu contraseña.</span>
+              </span>
+              <Button type="primary" loading={iniciarOAuth.isPending} onClick={() => void conectarMeta()}>
+                {cuentasMeta.length ? "Conectar otra cuenta" : "Conectar con Facebook"}
+              </Button>
+            </div>
+            {cuentasMeta.map((conexion) => (
+              <div className="integration" key={conexion.connection_id}>
+                <span className="connect-logo">
+                  <ApiOutlined />
+                </span>
+                <span className="info">
+                  <b>{conexion.nombre_cuenta}</b>
+                  <span>ID de cuenta: {conexion.cuenta_publicitaria_id}</span>
+                </span>
+                <Tag color={conexion.autenticada ? "green" : "orange"}>
+                  {conexion.autenticada ? "Conectada" : "Requiere reconexión"}
+                </Tag>
+                <Popconfirm
+                  title={`¿Desconectar ${conexion.nombre_cuenta}?`}
+                  description="Se eliminará el token guardado para esta cuenta."
+                  okText="Desconectar"
+                  cancelText="Cancelar"
+                  onConfirm={() => void desconectarMeta(conexion)}
+                >
+                  <Button
+                    danger
+                    icon={<DeleteOutlined />}
+                    loading={eliminarConexion.isPending}
+                  />
+                </Popconfirm>
+              </div>
+            ))}
+
             {proveedores.map((integracion) => {
               const relacion = conexionDe(integracion.integracion_id);
               const conexion = relacion?.estado === "activo" ? relacion : undefined;
               const configuracion = conexion?.configuracion_integracion;
-              const higgsfield = integracion.nombre === "Higgsfield";
 
               return (
                 <div className="integration" key={integracion.integracion_id}>
-                  <span className="connect-logo">
-                    {higgsfield ? <CloudServerOutlined /> : <ApiOutlined />}
-                  </span>
+                  <span className="connect-logo"><CloudServerOutlined /></span>
                   <span className="info">
                     <b>{integracion.nombre}</b>
                     <span>
@@ -300,8 +384,7 @@ export function IntegracionesEmpresaPanel() {
               />
             </Form.Item>
 
-            {esHiggsfield ? (
-              <>
+            <>
                 <Form.Item
                   name="api_key"
                   label="Higgsfield API Key ID"
@@ -332,51 +415,7 @@ export function IntegracionesEmpresaPanel() {
                 >
                   <Input.Password autoComplete="new-password" />
                 </Form.Item>
-              </>
-            ) : (
-              <>
-                <Form.Item
-                  name="api_key"
-                  label="Meta App ID"
-                  rules={[
-                    {
-                      required: !configuracionActual?.api_key,
-                      whitespace: true,
-                      message: "Ingresa el App ID.",
-                    },
-                  ]}
-                  extra={configuracionActual?.api_key ? "Ya hay un App ID guardado." : undefined}
-                >
-                  <Input.Password autoComplete="new-password" />
-                </Form.Item>
-                <Form.Item
-                  name="api_id"
-                  label="ID de cuenta publicitaria"
-                  rules={[
-                    { required: true, whitespace: true, message: "Ingresa el ID de cuenta." },
-                  ]}
-                  extra="Puedes copiarlo con o sin el prefijo act_."
-                >
-                  <Input placeholder="123456789" />
-                </Form.Item>
-                <Form.Item
-                  name="access_token"
-                  label="Token de acceso de Meta"
-                  rules={[
-                    {
-                      required: !configuracionActual?.access_token,
-                      whitespace: true,
-                      message: "Ingresa el token de acceso.",
-                    },
-                  ]}
-                  extra={
-                    configuracionActual?.access_token ? "Ya hay un token guardado." : undefined
-                  }
-                >
-                  <Input.Password autoComplete="new-password" />
-                </Form.Item>
-              </>
-            )}
+            </>
           </Form>
         )}
       </Drawer>

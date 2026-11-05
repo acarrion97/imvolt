@@ -27,8 +27,13 @@ Por defecto `VITE_DATA_PROVIDER=mock`: arranca con **semillas IMVOLT** en memori
 
 ```bash
 VITE_DATA_PROVIDER=rest
-VITE_API_URL=http://localhost:3000/api
+VITE_API_URL=https://imvolt-api.onrender.com/api
 ```
+
+En desarrollo local, usa `VITE_API_URL=http://localhost:3000/api`.
+La conexión Meta se inicia desde Configuración y vuelve a
+`https://imvolt.vercel.app/configuracion` después de autorizar o cancelar.
+El callback OAuth se sirve desde la API de Render, no desde Vercel.
 
 El backend publica estos contratos REST sobre el esquema IMVOLT: campañas y
 leads se traducen sobre las tablas existentes; el catálogo de modelos, los jobs
@@ -40,9 +45,10 @@ en orden `imvolt-api/database/migrations/2026-10-27_01_ai_connections.sql`,
 `2026-10-27_04_campaign_tenant_backfill.sql` para reparar campañas anteriores
 que quedaron sin empresa asociada. Para conectar cuentas Meta por OAuth,
 ejecuta además `imvolt-api/database/migrations/2026-10-27_05_meta_oauth_tokens.sql`
-y configura las variables OAuth descritas en el README de la API. Para una
-prueba local sin OAuth ni conexión importada, la API puede usar
-`META_ACCESS_TOKEN` y `META_AD_ACCOUNT_ID` del `.env` del backend.
+y `imvolt-api/database/migrations/2026-11-05_meta_oauth_state.sql`, y configura
+las variables OAuth descritas en el README de la API. Para una prueba local sin
+OAuth ni conexión importada, la API puede usar `META_ACCESS_TOKEN` y
+`META_AD_ACCOUNT_ID` del `.env` del backend.
 
 ## Autenticación
 

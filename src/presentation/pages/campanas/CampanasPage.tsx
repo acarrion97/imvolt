@@ -13,6 +13,7 @@ import { DataTable } from "@/presentation/components/common/DataTable";
 import { EstadoCampanaTag, formatFecha, formatPrecio } from "@/presentation/components/common/status";
 import {
   useCampanas,
+  useConexiones,
   useCreateCampana,
   useDeleteCampana,
   usePropiedades,
@@ -42,6 +43,7 @@ const DESTINO_LABELS: Record<CampanaDestino, string> = {
 interface FormValues {
   nombre: string;
   property_id?: string | null;
+  connection_id?: string | null;
   objetivo: CampanaObjetivo;
   destino: CampanaDestino;
   presupuesto_maximo: number;
@@ -63,6 +65,10 @@ export function CampanasPage() {
 
   const { data: campanas, isLoading } = useCampanas();
   const { data: propiedades } = usePropiedades();
+  const { data: conexiones } = useConexiones();
+  const cuentasMeta = (conexiones ?? []).filter(
+    (conexion) => conexion.estado === "conectada" && conexion.autenticada,
+  );
   const createCampana = useCreateCampana();
   const updateCampana = useUpdateCampana();
   const deleteCampana = useDeleteCampana();
@@ -103,7 +109,11 @@ export function CampanasPage() {
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
-    form.setFieldsValue({ objetivo: "mensajes", destino: "whatsapp" });
+    form.setFieldsValue({
+      objetivo: "mensajes",
+      destino: "whatsapp",
+      connection_id: cuentasMeta[0]?.connection_id ?? null,
+    });
   };
 
   const openEdit = (row: Campana) => {
@@ -111,6 +121,7 @@ export function CampanasPage() {
     form.setFieldsValue({
       nombre: row.nombre,
       property_id: row.property_id,
+      connection_id: row.connection_id,
       objetivo: row.objetivo,
       destino: row.destino,
       presupuesto_maximo: row.presupuesto_maximo,
@@ -150,7 +161,7 @@ export function CampanasPage() {
     const payload = {
       ...parsed.data,
       property_id: parsed.data.property_id ?? null,
-      connection_id: null,
+      connection_id: values.connection_id ?? null,
       titulo: parsed.data.titulo ?? null,
       cta: parsed.data.cta ?? null,
       presupuesto_maximo: parsed.data.presupuesto_maximo,
@@ -381,6 +392,24 @@ export function CampanasPage() {
             </div>
 
             <div className="form-grid">
+              <div className="field full">
+                <span className="lbl">Cuenta publicitaria de Meta</span>
+                <Form.Item name="connection_id" noStyle>
+                  <Select
+                    allowClear
+                    placeholder={
+                      cuentasMeta.length
+                        ? "Selecciona la cuenta publicitaria"
+                        : "Conecta una cuenta desde Configuración"
+                    }
+                    options={cuentasMeta.map((conexion) => ({
+                      value: conexion.connection_id,
+                      label: `${conexion.nombre_cuenta} · ${conexion.cuenta_publicitaria_id}`,
+                    }))}
+                  />
+                </Form.Item>
+              </div>
+
               <div className="field">
                 <span className="lbl">Propiedad</span>
                 <Form.Item
