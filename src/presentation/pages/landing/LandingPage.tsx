@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -214,6 +214,275 @@ const SCATTER_MOBILE: Array<[number, number]> = [
   [0.73, 0.68],
   [0.5, 0.84],
 ];
+
+// ── "Cómo funciona": recorrido interactivo de 5 pasos ───────────────────────
+const HOW_AUTO_MS = 6500;
+
+function HowWindow({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="lp-win">
+      <div className="lp-win__bar" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+        <span>{title}</span>
+      </div>
+      <div className="lp-win__body">{children}</div>
+    </div>
+  );
+}
+
+/** Vistas previas de ejemplo (ilustrativas): no muestran cifras ni resultados reales. */
+function HowPanel({ i }: { i: number }) {
+  switch (i) {
+    case 0:
+      return (
+        <HowWindow title="Nueva propiedad">
+          <div className="lp-fields">
+            <div className="lp-field">
+              <span>Nombre</span>
+              <b>Torre Horizonte</b>
+            </div>
+            <div className="lp-field">
+              <span>Tipo</span>
+              <b>Departamento</b>
+            </div>
+            <div className="lp-field">
+              <span>Ubicación</span>
+              <b>Quito, Ecuador</b>
+            </div>
+          </div>
+          <div className="lp-field-label">Fotografías</div>
+          <div className="lp-thumbs">
+            {["18% 28%", "52% 84%", "90% 22%"].map((origin) => (
+              <span className="lp-thumb" key={origin}>
+                <img
+                  src={PROPS[2].img}
+                  alt=""
+                  style={{ transformOrigin: origin }}
+                  decoding="async"
+                  loading="lazy"
+                />
+              </span>
+            ))}
+          </div>
+          <span className="lp-chip-ok">Datos verificados por ti</span>
+        </HowWindow>
+      );
+    case 1:
+      return (
+        <HowWindow title="Estrategia IA">
+          <div className="lp-blocks">
+            <div className="lp-block">
+              <span>Oferta</span>
+              <p>Presenta tu proyecto a compradores interesados en vivir en Quito.</p>
+            </div>
+            <div className="lp-block">
+              <span>Copy</span>
+              <p>“Conoce Torre Horizonte, un proyecto pensado para tu próximo hogar.”</p>
+            </div>
+            <div className="lp-block">
+              <span>Guion</span>
+              <ol>
+                <li>Fachada</li>
+                <li>Interior</li>
+                <li>Llamado a la acción</li>
+              </ol>
+            </div>
+          </div>
+          <span className="lp-chip-ok">Propuesta de ejemplo</span>
+        </HowWindow>
+      );
+    case 2:
+      return (
+        <HowWindow title="Estudio IA">
+          <div className="lp-media">
+            <img src={PROPS[0].img} alt="" decoding="async" loading="lazy" />
+            <span className="lp-play" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </span>
+          </div>
+          <div className="lp-fmts">
+            <span>Imagen</span>
+            <span className="is-on">Video</span>
+            <span>9:16 · Reels y Stories</span>
+            <span>Plantilla: recorrido de fachada</span>
+          </div>
+          <span className="lp-chip-ok">Render conceptual</span>
+        </HowWindow>
+      );
+    case 3:
+      return (
+        <HowWindow title="Campaña Meta · Borrador">
+          <div className="lp-fields">
+            <div className="lp-field">
+              <span>Objetivo</span>
+              <b>Mensajes de WhatsApp</b>
+            </div>
+            <div className="lp-field">
+              <span>Creativos</span>
+              <b>Los que tú aprobaste</b>
+            </div>
+            <div className="lp-field">
+              <span>Presupuesto</span>
+              <b>Lo defines tú</b>
+            </div>
+          </div>
+          <ol className="lp-flow">
+            <li className="is-done">Borrador</li>
+            <li className="is-now">Tu revisión</li>
+            <li>Publicación</li>
+          </ol>
+          <p className="lp-note">Nada se publica ni se gasta sin tu aprobación.</p>
+        </HowWindow>
+      );
+    default:
+      return (
+        <HowWindow title="Resultados">
+          <div className="lp-metrics">
+            <div>
+              <span>Inversión</span>
+              <b>—</b>
+            </div>
+            <div>
+              <span>Contactos</span>
+              <b>—</b>
+            </div>
+            <div>
+              <span>Oportunidades</span>
+              <b>—</b>
+            </div>
+          </div>
+          <div className="lp-bars lp-bars--lg" aria-hidden="true">
+            {[34, 52, 44, 70, 58, 86, 100].map((h, k) => (
+              <i key={k} style={{ height: `${h}%` }} />
+            ))}
+          </div>
+          <p className="lp-note">
+            Ejemplo: aquí verás tus datos reales cuando conectes tus cuentas.
+          </p>
+        </HowWindow>
+      );
+  }
+}
+
+function HowItWorks() {
+  const [step, setStep] = useState(0);
+  // Sin avance automático si el usuario prefiere movimiento reducido
+  const [auto, setAuto] = useState(
+    () => !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  const [inView, setInView] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  // El avance automático solo corre mientras la sección está a la vista
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
+      threshold: 0.35,
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // En móvil la lista es horizontal: centra el paso activo sin mover la página
+  useEffect(() => {
+    const tab = tabRefs.current[step];
+    const list = tab?.parentElement;
+    if (tab && list && list.scrollWidth > list.clientWidth) {
+      list.scrollTo({
+        left: tab.offsetLeft - (list.clientWidth - tab.clientWidth) / 2,
+        behavior: "smooth",
+      });
+    }
+  }, [step]);
+
+  const pick = (i: number, focus = false) => {
+    const n = (i + STEPS.length) % STEPS.length;
+    setStep(n);
+    if (focus) tabRefs.current[n]?.focus();
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const next = e.key === "ArrowDown" || e.key === "ArrowRight";
+    const prev = e.key === "ArrowUp" || e.key === "ArrowLeft";
+    if (next || prev) {
+      e.preventDefault();
+      setAuto(false);
+      pick(step + (next ? 1 : -1), true);
+    } else if (e.key === "Home" || e.key === "End") {
+      e.preventDefault();
+      setAuto(false);
+      pick(e.key === "Home" ? 0 : STEPS.length - 1, true);
+    }
+  };
+
+  return (
+    <div className={`lp-how${auto && inView ? " is-running" : ""}`} ref={rootRef}>
+      <div className="lp-how__side">
+        <div
+          className="lp-how__tabs"
+          role="tablist"
+          aria-orientation="vertical"
+          onKeyDown={onKeyDown}
+        >
+          {STEPS.map((s, i) => (
+            <button
+              key={s.title}
+              ref={(el) => {
+                tabRefs.current[i] = el;
+              }}
+              type="button"
+              role="tab"
+              id={`lp-tab-${i}`}
+              aria-selected={i === step}
+              aria-controls={`lp-panel-${i}`}
+              tabIndex={i === step ? 0 : -1}
+              className={`lp-tab${i === step ? " is-active" : ""}`}
+              onClick={() => {
+                setAuto(false);
+                pick(i);
+              }}
+            >
+              <span className="lp-tab__n">0{i + 1}</span>
+              <span className="lp-tab__t">{s.title}</span>
+              <span className="lp-tab__d">{s.text}</span>
+              <span
+                className="lp-tab__bar"
+                aria-hidden="true"
+                onAnimationEnd={() => auto && pick(step + 1)}
+                style={{ animationDuration: `${HOW_AUTO_MS}ms` }}
+              />
+            </button>
+          ))}
+        </div>
+        <button type="button" className="lp-how__ctl" onClick={() => setAuto((a) => !a)}>
+          {auto ? "Pausar recorrido" : "Reanudar recorrido"}
+        </button>
+      </div>
+
+      <div className="lp-how__stage">
+        {STEPS.map((s, i) => (
+          <div
+            key={s.title}
+            className={`lp-panel${i === step ? " is-active" : ""}`}
+            role="tabpanel"
+            id={`lp-panel-${i}`}
+            aria-labelledby={`lp-tab-${i}`}
+            inert={i !== step}
+          >
+            <HowPanel i={i} />
+            <p className="lp-panel__cap">{s.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ── Componente ──────────────────────────────────────────────────────────────
 export default function LandingPage() {
@@ -696,15 +965,7 @@ export default function LandingPage() {
               De una propiedad a una campaña profesional.
             </h2>
           </div>
-          <div className="lp-steps__grid">
-            {STEPS.map((s, i) => (
-              <article className="lp-step" key={s.title}>
-                <span className="lp-step__n">0{i + 1}</span>
-                <h3>{s.title}</h3>
-                <p>{s.text}</p>
-              </article>
-            ))}
-          </div>
+          <HowItWorks />
         </section>
 
         <section className="lp-cta" aria-labelledby="lp-cta-title">

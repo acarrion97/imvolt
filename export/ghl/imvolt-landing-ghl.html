@@ -358,25 +358,252 @@ html.lenis,html.lenis body{height: auto;}
   text-align: center;}
 #imvolt-lp .lp-steps__head .lp-kicker{color: var(--lp-green-deep);}
 #imvolt-lp .lp-steps__head .lp-h2{color: var(--lp-carbon);}
-#imvolt-lp .lp-steps__grid{display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
+#imvolt-lp .lp-how{display: grid;
+  grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+  gap: clamp(20px, 4vw, 56px);
   max-width: 1180px;
-  margin: 0 auto;}
-#imvolt-lp .lp-step{background: #fff;
+  margin: 0 auto;
+  align-items: stretch;}
+#imvolt-lp .lp-how__side{display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;}
+#imvolt-lp .lp-how__tabs{display: flex;
+  flex-direction: column;
+  gap: 10px;}
+#imvolt-lp .lp-tab{position: relative;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  column-gap: 14px;
+  row-gap: 2px;
+  align-items: center;
+  text-align: left;
+  width: 100%;
+  padding: 16px 18px 18px;
   border: 1px solid #e4ebe8;
   border-radius: 17px;
-  padding: 20px;}
-#imvolt-lp .lp-step__n{font-size: 12px;
+  background: #fff;
+  color: var(--lp-carbon);
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;}
+#imvolt-lp .lp-tab:hover{border-color: #b9dcc7;
+  transform: translateX(3px);}
+#imvolt-lp .lp-tab:focus-visible{outline: 3px solid var(--lp-green-deep);
+  outline-offset: 2px;}
+#imvolt-lp .lp-tab.is-active{border-color: var(--lp-green);
+  box-shadow: 0 16px 40px rgba(7, 83, 53, 0.14);}
+#imvolt-lp .lp-tab__n{grid-row: span 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e8f7ee;
+  color: var(--lp-green-deep);
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--lp-green-deep);}
-#imvolt-lp .lp-step h3{margin: 10px 0 4px;
-  font-size: 18px;
+  letter-spacing: 0.04em;
+  transition: background 0.25s ease, color 0.25s ease;}
+#imvolt-lp .lp-tab.is-active .lp-tab__n{background: var(--lp-green);
+  color: var(--lp-carbon);}
+#imvolt-lp .lp-tab__t{font-size: 17px;
+  font-weight: 700;
   letter-spacing: -0.01em;}
-#imvolt-lp .lp-step p{margin: 0;
+#imvolt-lp .lp-tab__d{grid-column: 2;
   font-size: 14px;
+  line-height: 1.45;
   color: #4a5a55;}
+#imvolt-lp .lp-tab__bar{position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--lp-green-light), var(--lp-green-deep));
+  transform-origin: left;
+  transform: scaleX(0);}
+#imvolt-lp .lp-tab.is-active .lp-tab__bar{transform: scaleX(1);}
+#imvolt-lp .lp-how.is-running .lp-tab.is-active .lp-tab__bar{animation: lp-fill 6.5s linear forwards;}
+@keyframes lp-fill{from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }}
+#imvolt-lp .lp-how__ctl{align-self: flex-start;
+  height: 38px;
+  padding: 0 16px;
+  border: 1.5px solid #c9d8cf;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--lp-carbon);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;}
+#imvolt-lp .lp-how__ctl:hover{border-color: var(--lp-green-deep);}
+#imvolt-lp .lp-how__ctl:focus-visible{outline: 3px solid var(--lp-green-deep);
+  outline-offset: 2px;}
+#imvolt-lp .lp-how__stage{position: relative;
+  min-height: 520px;
+  border-radius: 24px;
+  background: var(--lp-carbon);
+  background-image: repeating-linear-gradient(
+    78deg,
+    transparent 0 46px,
+    rgba(0, 217, 75, 0.1) 46px 47px
+  );
+  padding: clamp(14px, 2.4vw, 28px);
+  overflow: hidden;}
+#imvolt-lp .lp-panel{position: absolute;
+  inset: clamp(14px, 2.4vw, 28px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(14px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 0.45s ease, transform 0.45s ease;}
+#imvolt-lp .lp-panel.is-active{opacity: 1;
+  transform: none;
+  pointer-events: auto;}
+#imvolt-lp .lp-panel__cap{display: none;
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.78);}
+#imvolt-lp .lp-win{background: #fff;
+  color: var(--lp-carbon);
+  border-radius: 16px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4);
+  overflow: hidden;}
+#imvolt-lp .lp-win__bar{display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 14px;
+  border-bottom: 1px solid #eef3f0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5c6b66;}
+#imvolt-lp .lp-win__bar i{width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #dbe5df;}
+#imvolt-lp .lp-win__bar span{margin-left: 8px;}
+#imvolt-lp .lp-win__body{display: grid;
+  gap: 12px;
+  padding: 16px;}
+#imvolt-lp .lp-fields{display: grid;
+  gap: 8px;}
+#imvolt-lp .lp-field{display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f2f7f4;
+  font-size: 13px;}
+#imvolt-lp .lp-field span{color: #5c6b66;}
+#imvolt-lp .lp-field-label{font-size: 12px;
+  font-weight: 600;
+  color: #5c6b66;}
+#imvolt-lp .lp-thumbs{display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;}
+#imvolt-lp .lp-thumb{display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: 9px;
+  overflow: hidden;}
+#imvolt-lp .lp-thumb img{width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(2.1);}
+#imvolt-lp .lp-chip-ok{justify-self: start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #e8f7ee;
+  color: var(--lp-green-deep);
+  font-size: 11.5px;
+  font-weight: 600;}
+#imvolt-lp .lp-blocks{display: grid;
+  gap: 8px;}
+#imvolt-lp .lp-block{padding: 10px 12px;
+  border-radius: 10px;
+  background: #f2f7f4;
+  font-size: 13px;}
+#imvolt-lp .lp-block > span{display: block;
+  margin-bottom: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lp-green-deep);}
+#imvolt-lp .lp-block p,#imvolt-lp .lp-block ol{margin: 0;}
+#imvolt-lp .lp-block ol{padding-left: 18px;}
+#imvolt-lp .lp-media{position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;}
+#imvolt-lp .lp-media img{width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;}
+#imvolt-lp .lp-play{position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(16, 23, 25, 0.62);
+  color: #fff;
+  backdrop-filter: blur(4px);}
+#imvolt-lp .lp-fmts{display: flex;
+  flex-wrap: wrap;
+  gap: 6px;}
+#imvolt-lp .lp-fmts span{padding: 5px 11px;
+  border-radius: 999px;
+  background: #f2f7f4;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3d4a4c;}
+#imvolt-lp .lp-fmts span.is-on{background: var(--lp-green);
+  color: var(--lp-carbon);}
+#imvolt-lp .lp-flow{display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;}
+#imvolt-lp .lp-flow li{flex: 1;
+  padding: 8px 6px;
+  border-radius: 9px;
+  background: #f2f7f4;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5c6b66;}
+#imvolt-lp .lp-flow li.is-done{background: #e8f7ee;
+  color: var(--lp-green-deep);}
+#imvolt-lp .lp-flow li.is-now{background: var(--lp-green);
+  color: var(--lp-carbon);}
+#imvolt-lp .lp-note{margin: 0;
+  font-size: 12.5px;
+  color: #4a5a55;}
+#imvolt-lp .lp-metrics{display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;}
+#imvolt-lp .lp-metrics div{padding: 10px 12px;
+  border-radius: 10px;
+  background: #f2f7f4;}
+#imvolt-lp .lp-metrics span{display: block;
+  font-size: 11.5px;
+  color: #5c6b66;}
+#imvolt-lp .lp-metrics b{font-size: 20px;
+  color: #98a8a1;}
+#imvolt-lp .lp-bars--lg{height: 70px;
+  margin-top: 0;}
 #imvolt-lp .lp-cta{background: var(--lp-carbon);
   padding: clamp(64px, 10vw, 120px) clamp(20px, 6vw, 84px);
   text-align: center;
@@ -399,7 +626,27 @@ html.lenis,html.lenis body{height: auto;}
   height: auto;}
 #imvolt-lp .lp-footer p{margin: 0;
   max-width: 52em;}
-@media (max-width: 900px){#imvolt-lp .lp-steps__grid{grid-template-columns: repeat(2, 1fr);}}
+@media (max-width: 900px){#imvolt-lp .lp-how{grid-template-columns: 1fr;}
+#imvolt-lp .lp-how__tabs{flex-direction: row;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;}
+#imvolt-lp .lp-tab{flex: none;
+    width: auto;
+    grid-template-columns: 34px auto;
+    padding: 10px 16px 12px 12px;
+    border-radius: 999px;
+    scroll-snap-align: center;}
+#imvolt-lp .lp-tab:hover{transform: none;}
+#imvolt-lp .lp-tab__n{grid-row: auto;
+    width: 34px;
+    height: 34px;}
+#imvolt-lp .lp-tab__d{display: none;}
+#imvolt-lp .lp-tab__bar{height: 3px;}
+#imvolt-lp .lp-how__ctl{display: none;}
+#imvolt-lp .lp-how__stage{min-height: 500px;}
+#imvolt-lp .lp-panel__cap{display: block;}}
 @media (max-width: 760px){#imvolt-lp .lp-nav{grid-template-columns: 1fr auto;}
 #imvolt-lp .lp-nav__label,#imvolt-lp .lp-nav .lp-link{display: none;}
 #imvolt-lp .lp-nav__logo img{height: 28px;}
@@ -407,7 +654,6 @@ html.lenis,html.lenis body{height: auto;}
     transform: none;
     max-width: none;}
 #imvolt-lp .lp-section-no{display: none;}
-#imvolt-lp .lp-steps__grid{grid-template-columns: 1fr;}
 #imvolt-lp .lp-picker__label{display: none;}
 #imvolt-lp .lp-chip{height: 36px;
     padding: 0 13px;
@@ -446,6 +692,10 @@ body { overflow-x: clip; }
 #imvolt-lp :where(p, li) { line-height: 1.5; }
 #imvolt-lp :where(h1, h2, h3, p) { color: inherit; }
 #imvolt-lp :where(p) { font-size: inherit; }
+#imvolt-lp :where(ol, ul, li) { color: inherit; font-size: inherit; }
+#imvolt-lp :where(li) { margin: 0; }
+#imvolt-lp .lp-flow li, #imvolt-lp .lp-phone__rows li { list-style: none; }
+#imvolt-lp .lp-block li { list-style: decimal; }
 #imvolt-lp img { border: 0; box-shadow: none; outline: 0; }
 #imvolt-lp :where(button) { margin: 0; text-transform: none; box-shadow: none; letter-spacing: normal; }
 
@@ -586,13 +836,50 @@ body { overflow-x: clip; }
         <span class="lp-kicker">Cómo funciona</span>
         <h2 class="lp-h2" id="lp-steps-title">De una propiedad a una campaña profesional.</h2>
       </div>
-      <div class="lp-steps__grid">
-        <article class="lp-step"><span class="lp-step__n">01</span><h3>Propiedad</h3><p>Carga tu casa, lote o proyecto con datos y fotografías verificados.</p></article>
-        <article class="lp-step"><span class="lp-step__n">02</span><h3>Estrategia IA</h3><p>La IA propone oferta, copy y guion a partir de información real.</p></article>
-        <article class="lp-step"><span class="lp-step__n">03</span><h3>Creativos</h3><p>Genera imágenes y videos con plantillas pensadas para inmuebles.</p></article>
-        <article class="lp-step"><span class="lp-step__n">04</span><h3>Meta Ads</h3><p>Prepara la campaña y publícala solo después de tu aprobación.</p></article>
-        <article class="lp-step"><span class="lp-step__n">05</span><h3>Resultados</h3><p>Mide inversión, contactos y oportunidades en un solo lugar.</p></article>
+      <div class="lp-how">
+      <div class="lp-how__side">
+        <div class="lp-how__tabs" role="tablist" aria-orientation="vertical">
+          <button type="button" role="tab" id="lp-tab-0" aria-selected="true" aria-controls="lp-panel-0" tabindex="0" class="lp-tab is-active">
+            <span class="lp-tab__n">01</span><span class="lp-tab__t">Propiedad</span><span class="lp-tab__d">Carga tu casa, lote o proyecto con datos y fotografías verificados.</span><span class="lp-tab__bar" aria-hidden="true"></span>
+          </button>
+          <button type="button" role="tab" id="lp-tab-1" aria-selected="false" aria-controls="lp-panel-1" tabindex="-1" class="lp-tab">
+            <span class="lp-tab__n">02</span><span class="lp-tab__t">Estrategia IA</span><span class="lp-tab__d">La IA propone oferta, copy y guion a partir de información real.</span><span class="lp-tab__bar" aria-hidden="true"></span>
+          </button>
+          <button type="button" role="tab" id="lp-tab-2" aria-selected="false" aria-controls="lp-panel-2" tabindex="-1" class="lp-tab">
+            <span class="lp-tab__n">03</span><span class="lp-tab__t">Creativos</span><span class="lp-tab__d">Genera imágenes y videos con plantillas pensadas para inmuebles.</span><span class="lp-tab__bar" aria-hidden="true"></span>
+          </button>
+          <button type="button" role="tab" id="lp-tab-3" aria-selected="false" aria-controls="lp-panel-3" tabindex="-1" class="lp-tab">
+            <span class="lp-tab__n">04</span><span class="lp-tab__t">Meta Ads</span><span class="lp-tab__d">Prepara la campaña y publícala solo después de tu aprobación.</span><span class="lp-tab__bar" aria-hidden="true"></span>
+          </button>
+          <button type="button" role="tab" id="lp-tab-4" aria-selected="false" aria-controls="lp-panel-4" tabindex="-1" class="lp-tab">
+            <span class="lp-tab__n">05</span><span class="lp-tab__t">Resultados</span><span class="lp-tab__d">Mide inversión, contactos y oportunidades en un solo lugar.</span><span class="lp-tab__bar" aria-hidden="true"></span>
+          </button>
+        </div>
+        <button type="button" class="lp-how__ctl">Pausar recorrido</button>
       </div>
+      <div class="lp-how__stage">
+        <div class="lp-panel is-active" role="tabpanel" id="lp-panel-0" aria-labelledby="lp-tab-0">
+          <div class="lp-win"><div class="lp-win__bar" aria-hidden="true"><i></i><i></i><i></i><span>Nueva propiedad</span></div><div class="lp-win__body"><div class="lp-fields"><div class="lp-field"><span>Nombre</span><b>Torre Horizonte</b></div><div class="lp-field"><span>Tipo</span><b>Departamento</b></div><div class="lp-field"><span>Ubicación</span><b>Quito, Ecuador</b></div></div><div class="lp-field-label">Fotografías</div><div class="lp-thumbs"><span class="lp-thumb"><img data-lp-prop="2" alt="" style="transform-origin:18% 28%" decoding="async" /></span><span class="lp-thumb"><img data-lp-prop="2" alt="" style="transform-origin:52% 84%" decoding="async" /></span><span class="lp-thumb"><img data-lp-prop="2" alt="" style="transform-origin:90% 22%" decoding="async" /></span></div><span class="lp-chip-ok">Datos verificados por ti</span></div></div>
+          <p class="lp-panel__cap">Carga tu casa, lote o proyecto con datos y fotografías verificados.</p>
+        </div>
+        <div class="lp-panel" role="tabpanel" id="lp-panel-1" aria-labelledby="lp-tab-1">
+          <div class="lp-win"><div class="lp-win__bar" aria-hidden="true"><i></i><i></i><i></i><span>Estrategia IA</span></div><div class="lp-win__body"><div class="lp-blocks"><div class="lp-block"><span>Oferta</span><p>Presenta tu proyecto a compradores interesados en vivir en Quito.</p></div><div class="lp-block"><span>Copy</span><p>“Conoce Torre Horizonte, un proyecto pensado para tu próximo hogar.”</p></div><div class="lp-block"><span>Guion</span><ol><li>Fachada</li><li>Interior</li><li>Llamado a la acción</li></ol></div></div><span class="lp-chip-ok">Propuesta de ejemplo</span></div></div>
+          <p class="lp-panel__cap">La IA propone oferta, copy y guion a partir de información real.</p>
+        </div>
+        <div class="lp-panel" role="tabpanel" id="lp-panel-2" aria-labelledby="lp-tab-2">
+          <div class="lp-win"><div class="lp-win__bar" aria-hidden="true"><i></i><i></i><i></i><span>Estudio IA</span></div><div class="lp-win__body"><div class="lp-media"><img data-lp-prop="0" alt="" decoding="async" /><span class="lp-play" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg></span></div><div class="lp-fmts"><span>Imagen</span><span class="is-on">Video</span><span>9:16 · Reels y Stories</span><span>Plantilla: recorrido de fachada</span></div><span class="lp-chip-ok">Render conceptual</span></div></div>
+          <p class="lp-panel__cap">Genera imágenes y videos con plantillas pensadas para inmuebles.</p>
+        </div>
+        <div class="lp-panel" role="tabpanel" id="lp-panel-3" aria-labelledby="lp-tab-3">
+          <div class="lp-win"><div class="lp-win__bar" aria-hidden="true"><i></i><i></i><i></i><span>Campaña Meta · Borrador</span></div><div class="lp-win__body"><div class="lp-fields"><div class="lp-field"><span>Objetivo</span><b>Mensajes de WhatsApp</b></div><div class="lp-field"><span>Creativos</span><b>Los que tú aprobaste</b></div><div class="lp-field"><span>Presupuesto</span><b>Lo defines tú</b></div></div><ol class="lp-flow"><li class="is-done">Borrador</li><li class="is-now">Tu revisión</li><li>Publicación</li></ol><p class="lp-note">Nada se publica ni se gasta sin tu aprobación.</p></div></div>
+          <p class="lp-panel__cap">Prepara la campaña y publícala solo después de tu aprobación.</p>
+        </div>
+        <div class="lp-panel" role="tabpanel" id="lp-panel-4" aria-labelledby="lp-tab-4">
+          <div class="lp-win"><div class="lp-win__bar" aria-hidden="true"><i></i><i></i><i></i><span>Resultados</span></div><div class="lp-win__body"><div class="lp-metrics"><div><span>Inversión</span><b>—</b></div><div><span>Contactos</span><b>—</b></div><div><span>Oportunidades</span><b>—</b></div></div><div class="lp-bars lp-bars--lg" aria-hidden="true"><i style="height:34%"></i><i style="height:52%"></i><i style="height:44%"></i><i style="height:70%"></i><i style="height:58%"></i><i style="height:86%"></i><i style="height:100%"></i></div><p class="lp-note">Ejemplo: aquí verás tus datos reales cuando conectes tus cuentas.</p></div></div>
+          <p class="lp-panel__cap">Mide inversión, contactos y oportunidades en un solo lugar.</p>
+        </div>
+      </div>
+    </div>
     </section>
 
     <section class="lp-cta" aria-labelledby="lp-cta-title">
@@ -738,6 +1025,73 @@ body { overflow-x: clip; }
       c.addEventListener("click", function () { select(parseInt(c.getAttribute("data-lp-sel"), 10)); });
     });
     select(0);
+
+    // ── "Cómo funciona": recorrido interactivo ──
+    (function () {
+      var how = root.querySelector(".lp-how");
+      if (!how) return;
+      var tabs = Array.prototype.slice.call(how.querySelectorAll(".lp-tab"));
+      var panels = Array.prototype.slice.call(how.querySelectorAll(".lp-panel"));
+      var ctl = how.querySelector(".lp-how__ctl");
+      var list = how.querySelector(".lp-how__tabs");
+      var step = 0;
+      var auto = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var inView = false;
+
+      // Imágenes de las vistas previas (las mismas fotos del selector)
+      Array.prototype.forEach.call(how.querySelectorAll("[data-lp-prop]"), function (img) {
+        img.src = PROPS[parseInt(img.getAttribute("data-lp-prop"), 10)].img;
+      });
+
+      function sync() {
+        how.classList.toggle("is-running", auto && inView);
+        ctl.textContent = auto ? "Pausar recorrido" : "Reanudar recorrido";
+      }
+      function pick(i, focus) {
+        var n = (i + tabs.length) % tabs.length;
+        step = n;
+        tabs.forEach(function (t, k) {
+          t.classList.toggle("is-active", k === n);
+          t.setAttribute("aria-selected", k === n ? "true" : "false");
+          t.tabIndex = k === n ? 0 : -1;
+        });
+        panels.forEach(function (p, k) {
+          p.classList.toggle("is-active", k === n);
+          if (k === n) p.removeAttribute("inert"); else p.setAttribute("inert", "");
+        });
+        // En móvil la lista es horizontal: centra el paso activo sin mover la página
+        var t = tabs[n];
+        if (list.scrollWidth > list.clientWidth) {
+          list.scrollTo({ left: t.offsetLeft - (list.clientWidth - t.clientWidth) / 2, behavior: "smooth" });
+        }
+        if (focus) t.focus();
+      }
+      panels.forEach(function (p, k) { if (k !== 0) p.setAttribute("inert", ""); });
+
+      tabs.forEach(function (t, i) {
+        t.addEventListener("click", function () { auto = false; sync(); pick(i); });
+        t.querySelector(".lp-tab__bar").addEventListener("animationend", function () {
+          if (auto) pick(step + 1);
+        });
+      });
+      list.addEventListener("keydown", function (e) {
+        var next = e.key === "ArrowDown" || e.key === "ArrowRight";
+        var prev = e.key === "ArrowUp" || e.key === "ArrowLeft";
+        if (next || prev) {
+          e.preventDefault(); auto = false; sync(); pick(step + (next ? 1 : -1), true);
+        } else if (e.key === "Home" || e.key === "End") {
+          e.preventDefault(); auto = false; sync(); pick(e.key === "Home" ? 0 : tabs.length - 1, true);
+        }
+      });
+      ctl.addEventListener("click", function () { auto = !auto; sync(); });
+
+      if ("IntersectionObserver" in window) {
+        new IntersectionObserver(function (entries) {
+          inView = entries[0].isIntersecting; sync();
+        }, { threshold: 0.35 }).observe(how);
+      }
+      sync();
+    })();
 
     var scene = { hero: 1, dark: 0, ribbon: 0, amp: 0, phase: 0, enter: 0, orbit: 0, angle: 0, lines: 0, fall: 0, phone: 0 };
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

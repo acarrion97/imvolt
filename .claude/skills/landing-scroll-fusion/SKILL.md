@@ -114,3 +114,8 @@ Para que la landing responda al visitante, no solo al scroll: un **selector de v
 
 ### Versión para GoHighLevel
 `export/ghl/build/build.py` regenera `export/ghl/imvolt-landing-ghl.html` (un solo archivo: CSS prefijado con `#imvolt-lp`, logos y fotos embebidos, GSAP/Lenis desde CDN). Volver a correrlo cada vez que cambie la landing de React.
+
+### Sección "Cómo funciona" interactiva (patrón tabs + vista previa)
+En vez de N tarjetas estáticas: lista de pasos (tabs accesibles: `role="tablist"`, flechas/Home/End) + escenario con una vista previa de ejemplo por paso (ventana con datos ilustrativos, sin cifras reales). Avance automático con barra de progreso CSS (`animationend` pasa al siguiente), solo mientras la sección está a la vista (`IntersectionObserver`); un clic o una flecha lo detiene y hay botón "Pausar/Reanudar" (accesibilidad). Respeta `prefers-reduced-motion` (sin autoplay). En móvil la lista pasa a horizontal con scroll.
+
+Lecciones del export a GHL: el prefijador de CSS **no debe prefijar `@keyframes`** (rompe la animación); probar siempre en una página con estilos globales hostiles (`h1/h2/p/ol/ul/li/button/img`) porque el tema de GHL filtra mayúsculas, cursiva, tamaños, márgenes y numeración de listas. Los resets van con `:where()` (especificidad baja) para no pisar las clases `.lp-*`.

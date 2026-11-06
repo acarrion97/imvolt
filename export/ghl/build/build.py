@@ -46,6 +46,8 @@ def prefix(css):
         body = css[j + 1:k - 1]
         if sel.startswith("@media"):
             out.append(f"{sel}{{{prefix(body)}}}")
+        elif sel.startswith("@keyframes"):
+            out.append(f"{sel}{{{body.strip()}}}")   # los pasos from/to no se prefijan
         else:
             parts = []
             for s in (x.strip() for x in sel.split(",")):
@@ -86,6 +88,10 @@ body { overflow-x: clip; }
 #imvolt-lp :where(p, li) { line-height: 1.5; }
 #imvolt-lp :where(h1, h2, h3, p) { color: inherit; }
 #imvolt-lp :where(p) { font-size: inherit; }
+#imvolt-lp :where(ol, ul, li) { color: inherit; font-size: inherit; }
+#imvolt-lp :where(li) { margin: 0; }
+#imvolt-lp .lp-flow li, #imvolt-lp .lp-phone__rows li { list-style: none; }
+#imvolt-lp .lp-block li { list-style: decimal; }
 #imvolt-lp img { border: 0; box-shadow: none; outline: 0; }
 #imvolt-lp :where(button) { margin: 0; text-transform: none; box-shadow: none; letter-spacing: normal; }
 """
