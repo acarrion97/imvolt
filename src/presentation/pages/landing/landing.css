@@ -276,11 +276,29 @@ html.lenis body {
   margin-top: 2px;
 }
 .lp-card__art {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 11px;
   margin-bottom: 10px;
+}
+
+/* Imágenes apiladas con fundido cruzado (selector de propiedad) */
+.lp-art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 220 / 128;
+  border-radius: 11px;
+  overflow: hidden;
+  background: #cfe9db;
+}
+.lp-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+}
+.lp-art img.is-active {
+  opacity: 1;
 }
 .lp-card__tag {
   display: inline-block;
@@ -312,7 +330,7 @@ html.lenis body {
   top: 0;
   z-index: 4;
   width: var(--lp-phonew, 250px);
-  aspect-ratio: 9 / 18.2;
+  aspect-ratio: var(--lp-phone-ratio, 0.4945);
   border-radius: 34px;
   padding: 9px;
   background: #0b1112;
@@ -350,15 +368,20 @@ html.lenis body {
   width: 14px;
   height: auto;
 }
+.lp-phone__bar {
+  white-space: nowrap;
+}
 .lp-phone__tag {
   margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 9.5px;
   font-weight: 600;
   color: #5c6b66;
 }
 .lp-phone__art {
   width: 100%;
-  display: block;
+  border-radius: 0;
 }
 .lp-phone__copy {
   padding: 12px;
@@ -421,6 +444,55 @@ html.lenis body {
   white-space: nowrap;
   font-size: 12px;
   color: var(--lp-muted);
+}
+
+/* ── Selector de tipo de propiedad ───────────────────────────────────────── */
+.lp-picker {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(14px, 3.5vh, 30px);
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--lp-carbon);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
+  white-space: nowrap;
+}
+.lp-picker__label {
+  padding: 0 10px 0 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.66);
+}
+.lp-chip {
+  height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.82);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.lp-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.lp-chip.is-active {
+  background: var(--lp-green);
+  color: var(--lp-carbon);
+}
+.lp-chip:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
 }
 
 /* ── Secciones posteriores ───────────────────────────────────────────────── */
@@ -533,6 +605,14 @@ html.lenis body {
   .lp-steps__grid {
     grid-template-columns: 1fr;
   }
+  .lp-picker__label {
+    display: none;
+  }
+  .lp-chip {
+    height: 36px;
+    padding: 0 13px;
+    font-size: 13px;
+  }
   .lp-card {
     padding: 10px;
   }
@@ -541,6 +621,24 @@ html.lenis body {
   }
   .lp-card__sub {
     font-size: 11px;
+  }
+}
+
+/* Celulares de pantalla corta: libera espacio en el hero */
+@media (max-width: 760px) and (max-height: 720px) {
+  .lp-t--hero .lp-sub {
+    display: none;
+  }
+  .lp-hero-logo {
+    width: 190px;
+    margin-bottom: 16px;
+  }
+  .lp-t--act4 .lp-sub,
+  .lp-phone__rows {
+    display: none;
+  }
+  .lp-t--center .lp-h2 {
+    font-size: 1.7rem;
   }
 }
 

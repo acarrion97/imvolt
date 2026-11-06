@@ -1,0 +1,538 @@
+<!--
+  IMVOLT · MARKETING INMOBILIARIO AI — Landing para GoHighLevel
+  ─────────────────────────────────────────────────────────────────────────────
+  CÓMO USARLO (resumen):
+   1. En GoHighLevel crea/abre la página → agrega una sección de ANCHO COMPLETO
+      con padding 0 → agrega un elemento "Custom JS/HTML" → pega TODO este archivo.
+   2. Edita las 3 líneas de IMVOLT_CONFIG (más abajo): URL de registro, URL de login
+      y, si quieres, desactivar el scroll suave.
+   3. Guarda y abre la vista previa/publicada (el editor de GHL no ejecuta scripts).
+  Requiere internet en el navegador (carga GSAP y Lenis desde cdn.jsdelivr.net y la
+  fuente Inter desde Google Fonts). Logos oficiales e imágenes de ejemplo embebidos: no depende de hosting.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+/>
+
+<style>
+/*__CSS__*/
+</style>
+
+<div class="lp-root" id="imvolt-lp">
+  <header class="lp-nav">
+    <a href="#imvolt-lp" class="lp-nav__logo" data-lp-top aria-label="IMVOLT · MARKETING INMOBILIARIO AI">
+      <img src="__LOGO_ISO__" alt="IMVOLT" />
+    </a>
+    <span class="lp-nav__label" aria-hidden="true">01 · Propiedad</span>
+    <div class="lp-nav__actions">
+      <a href="#" class="lp-link" data-lp-link="login">Iniciar sesión</a>
+      <a href="#" class="lp-btn" data-lp-link="register">Crear con AI</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="lp-pin">
+      <section class="lp-stage" aria-label="De la propiedad al anuncio">
+        <div class="lp-stage__lines" aria-hidden="true"></div>
+        <span class="lp-section-no" aria-hidden="true">Sección 01</span>
+
+        <svg class="lp-ribbon" aria-hidden="true">
+          <defs>
+            <linearGradient id="lp-ribbon-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="800">
+              <stop offset="0" stop-color="#04EB40" />
+              <stop offset="1" stop-color="#075335" />
+            </linearGradient>
+          </defs>
+          <path id="lp-strand-c" fill="none" stroke="#00D94B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+          <path id="lp-strand-b" fill="none" stroke="#075335" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+          <path id="lp-strand-a" fill="none" stroke="url(#lp-ribbon-grad)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+
+        <svg class="lp-leaders" aria-hidden="true">
+          <g><line class="lp-leader" stroke="currentColor" stroke-opacity="0.55" stroke-width="1.2" style="color:#4A5A55;opacity:0" /><circle class="lp-leader-dot" r="4" fill="#00D94B" style="opacity:0" /></g>
+          <g><line class="lp-leader" stroke="currentColor" stroke-opacity="0.55" stroke-width="1.2" style="color:#4A5A55;opacity:0" /><circle class="lp-leader-dot" r="4" fill="#00D94B" style="opacity:0" /></g>
+          <g><line class="lp-leader" stroke="currentColor" stroke-opacity="0.55" stroke-width="1.2" style="color:#4A5A55;opacity:0" /><circle class="lp-leader-dot" r="4" fill="#00D94B" style="opacity:0" /></g>
+          <g><line class="lp-leader" stroke="currentColor" stroke-opacity="0.55" stroke-width="1.2" style="color:#4A5A55;opacity:0" /><circle class="lp-leader-dot" r="4" fill="#00D94B" style="opacity:0" /></g>
+          <g><line class="lp-leader" stroke="currentColor" stroke-opacity="0.55" stroke-width="1.2" style="color:#4A5A55;opacity:0" /><circle class="lp-leader-dot" r="4" fill="#00D94B" style="opacity:0" /></g>
+        </svg>
+
+        <!-- Acto 1 -->
+        <div class="lp-t lp-t--hero">
+          <img class="lp-hero-logo" src="__LOGO_H__" alt="IMVOLT MARKETING INMOBILIARIO AI" />
+          <h1 class="lp-h1">Tu próxima campaña comienza con una propiedad.</h1>
+          <p class="lp-sub">
+            Crea imágenes, videos y campañas listas para revisar. Una nueva forma de impulsar tu
+            inventario inmobiliario.
+          </p>
+          <div class="lp-actions">
+            <a href="#" class="lp-btn" data-lp-link="register">Crear mi primer creativo →</a>
+          </div>
+        </div>
+
+        <!-- Acto 2 -->
+        <div class="lp-t lp-t--center lp-t--act2">
+          <h2 class="lp-h2">Crea. Anuncia. Vende.</h2>
+          <p class="lp-sub">Del inmueble al anuncio, en pocos clics.</p>
+        </div>
+
+        <!-- Acto 3 -->
+        <div class="lp-t lp-t--center lp-t--act3">
+          <h2 class="lp-h2">Todo tu proceso, en una sola plataforma.</h2>
+          <p class="lp-sub">Propiedad, estrategia, creativos, campañas y resultados conectados entre sí.</p>
+        </div>
+
+        <!-- Acto 4 -->
+        <div class="lp-t lp-t--center lp-t--act4">
+          <h2 class="lp-h2">Tu campaña, lista para revisar.</h2>
+          <p class="lp-sub">Revisa, ajusta y aprueba antes de publicar.</p>
+        </div>
+
+        <!-- Tarjetas de la cadena -->
+        <article class="lp-card">
+          <div class="lp-art lp-card__art" data-lp-art></div>
+          <div class="lp-card__title" data-lp-title></div>
+          <div class="lp-card__sub" data-lp-place></div>
+          <span class="lp-card__tag">Render conceptual</span>
+        </article>
+        <article class="lp-card">
+          <div class="lp-card__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z" /></svg></div>
+          <div class="lp-card__title">Estrategia IA</div>
+          <div class="lp-card__sub">Oferta, copy, guion</div>
+        </article>
+        <article class="lp-card">
+          <div class="lp-card__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M10 9.5v5l4.5-2.5z" /></svg></div>
+          <div class="lp-card__title">Creativos</div>
+          <div class="lp-card__sub">Imagen y video</div>
+        </article>
+        <article class="lp-card">
+          <div class="lp-card__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7" /><path d="M8 7h9v9" /></svg></div>
+          <div class="lp-card__title">Meta Ads</div>
+          <div class="lp-card__sub">Campañas aprobadas</div>
+        </article>
+        <article class="lp-card">
+          <div class="lp-card__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10" /><path d="M10 20V4" /><path d="M16 20v-7" /><path d="M22 20H2" /></svg></div>
+          <div class="lp-card__title">Resultados</div>
+          <div class="lp-card__sub">Leads y analítica</div>
+          <div class="lp-bars" aria-hidden="true"><i style="height:40%"></i><i style="height:62%"></i><i style="height:48%"></i><i style="height:80%"></i><i style="height:100%"></i></div>
+        </article>
+
+        <!-- Anuncio final -->
+        <div class="lp-phone" aria-label="Vista previa de un anuncio de ejemplo">
+          <div class="lp-phone__screen">
+            <div class="lp-phone__bar">
+              <span class="lp-phone__avatar"><img src="__LOGO_ISO__" alt="" /></span>
+              Tu marca
+              <span class="lp-phone__tag">Anuncio de ejemplo</span>
+            </div>
+            <div class="lp-art lp-phone__art" data-lp-art></div>
+            <div class="lp-phone__copy">
+              <b data-lp-title></b>
+              <span data-lp-adline></span>
+              <ul class="lp-phone__rows">
+                <li>Creativo revisado</li>
+                <li>Copy redactado con tus datos</li>
+                <li class="is-pending">Pendiente: tu aprobación</li>
+              </ul>
+              <div class="lp-phone__cta">Más información</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selector interactivo: visible en el hero y en el anuncio final -->
+        <div class="lp-picker" role="group" aria-label="Tipo de propiedad">
+          <span class="lp-picker__label">Prueba con tu propiedad</span>
+          <button type="button" class="lp-chip is-active" aria-pressed="true" data-lp-sel="0">Casa</button>
+          <button type="button" class="lp-chip" aria-pressed="false" data-lp-sel="1">Lote</button>
+          <button type="button" class="lp-chip" aria-pressed="false" data-lp-sel="2">Departamento</button>
+        </div>
+      </section>
+    </div>
+
+    <section class="lp-steps" aria-labelledby="lp-steps-title">
+      <div class="lp-steps__head">
+        <span class="lp-kicker">Cómo funciona</span>
+        <h2 class="lp-h2" id="lp-steps-title">De una propiedad a una campaña profesional.</h2>
+      </div>
+      <div class="lp-steps__grid">
+        <article class="lp-step"><span class="lp-step__n">01</span><h3>Propiedad</h3><p>Carga tu casa, lote o proyecto con datos y fotografías verificados.</p></article>
+        <article class="lp-step"><span class="lp-step__n">02</span><h3>Estrategia IA</h3><p>La IA propone oferta, copy y guion a partir de información real.</p></article>
+        <article class="lp-step"><span class="lp-step__n">03</span><h3>Creativos</h3><p>Genera imágenes y videos con plantillas pensadas para inmuebles.</p></article>
+        <article class="lp-step"><span class="lp-step__n">04</span><h3>Meta Ads</h3><p>Prepara la campaña y publícala solo después de tu aprobación.</p></article>
+        <article class="lp-step"><span class="lp-step__n">05</span><h3>Resultados</h3><p>Mide inversión, contactos y oportunidades en un solo lugar.</p></article>
+      </div>
+    </section>
+
+    <section class="lp-cta" aria-labelledby="lp-cta-title">
+      <h2 class="lp-h2" id="lp-cta-title">Convierte tus proyectos en campañas que generan oportunidades.</h2>
+      <div class="lp-actions">
+        <a href="#" class="lp-btn" data-lp-link="register">Crear mi primer creativo →</a>
+        <a href="#" class="lp-btn lp-btn--ghost" data-lp-link="login">Iniciar sesión</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="lp-footer">
+    <img src="__LOGO_H__" alt="IMVOLT MARKETING INMOBILIARIO AI" />
+    <p>
+      Contenido ilustrativo. IMVOLT no garantiza ventas ni resultados publicitarios: toda campaña
+      requiere tu aprobación antes de publicarse.
+    </p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ═══ CONFIGURACIÓN — edita solo este bloque ═══════════════════════════════ */
+  var IMVOLT_CONFIG = {
+    registerUrl: "",      // p. ej. "https://TU-DOMINIO/registro"  (botones "Crear…")
+    loginUrl: "",         // p. ej. "https://TU-DOMINIO/login"     ("Iniciar sesión")
+    smoothScroll: true    // false = desactiva Lenis (scroll suave) si choca con GHL
+  };
+  /* ═════════════════════════════════════════════════════════════════════════ */
+
+  var LIBS = [
+    "https://cdn.jsdelivr.net/npm/gsap@3.15.1/dist/gsap.min.js",
+    "https://cdn.jsdelivr.net/npm/gsap@3.15.1/dist/ScrollTrigger.min.js",
+    "https://cdn.jsdelivr.net/npm/lenis@1.3.27/dist/lenis.min.js"
+  ];
+
+  function loadSequential(urls, done) {
+    var i = 0;
+    (function next() {
+      if (i >= urls.length) return done();
+      var s = document.createElement("script");
+      s.src = urls[i++];
+      s.async = false;
+      s.onload = next;
+      s.onerror = function () { console.error("IMVOLT landing: no se pudo cargar " + s.src); };
+      document.head.appendChild(s);
+    })();
+  }
+
+  function init() {
+    var root = document.getElementById("imvolt-lp");
+    if (!root || root.getAttribute("data-lp-ready")) return;
+    root.setAttribute("data-lp-ready", "1");
+
+    var gsap = window.gsap;
+    var ScrollTrigger = window.ScrollTrigger;
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Enlaces de la configuración
+    var urls = { register: IMVOLT_CONFIG.registerUrl, login: IMVOLT_CONFIG.loginUrl };
+    Array.prototype.forEach.call(root.querySelectorAll("[data-lp-link]"), function (a) {
+      var u = urls[a.getAttribute("data-lp-link")];
+      if (u) a.setAttribute("href", u);
+    });
+
+    var clamp = function (v, min, max) {
+      min = min === undefined ? 0 : min;
+      max = max === undefined ? 1 : max;
+      return Math.min(max, Math.max(min, v));
+    };
+    var lerp = function (a, b, t) { return a + (b - a) * t; };
+    function hexToRgb(hex) {
+      var n = parseInt(hex.slice(1), 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    function mix(from, to, t) {
+      var a = hexToRgb(from), b = hexToRgb(to);
+      return "rgb(" + Math.round(lerp(a[0], b[0], t)) + "," + Math.round(lerp(a[1], b[1], t)) + "," + Math.round(lerp(a[2], b[2], t)) + ")";
+    }
+
+    // Propiedades de ejemplo (nombres y ciudades del prototipo; imágenes = renders conceptuales con IA)
+    var PROPS = [
+      { title: "Casa Mirador", place: "Samborondón, Ecuador", adLine: "Casa en Samborondón · Conoce la propiedad",
+        alt: "Render conceptual de una casa moderna rodeada de vegetación", img: "__IMG_CASA__" },
+      { title: "Urbanización Aurora", place: "Machala, Ecuador", adLine: "Lotes en Machala · Conoce el proyecto",
+        alt: "Render conceptual aéreo de una lotización con vías y áreas verdes", img: "__IMG_LOTE__" },
+      { title: "Torre Horizonte", place: "Quito, Ecuador", adLine: "Departamentos en Quito · Conoce el proyecto",
+        alt: "Render conceptual de un edificio de departamentos con balcones", img: "__IMG_DEPARTAMENTO__" }
+    ];
+
+    var SCATTER_DESKTOP = [[0.17, 0.42], [0.82, 0.36], [0.27, 0.74], [0.76, 0.72], [0.5, 0.84]];
+    var SCATTER_MOBILE = [[0.27, 0.34], [0.73, 0.42], [0.27, 0.58], [0.73, 0.68], [0.5, 0.84]];
+    var LABELS = ["01 · Propiedad", "02 · Estrategia y creativos", "03 · La cadena completa", "04 · Tu campaña"];
+
+    var stage = root.querySelector(".lp-stage");
+    var pin = root.querySelector(".lp-pin");
+    var navLabel = root.querySelector(".lp-nav__label");
+    var sectionNo = root.querySelector(".lp-section-no");
+    var cards = gsap.utils.toArray(".lp-card", root);
+    var phone = root.querySelector(".lp-phone");
+    var heroText = root.querySelector(".lp-t--hero");
+    var picker = root.querySelector(".lp-picker");
+    var act4 = root.querySelector(".lp-t--act4");
+    var gradient = root.querySelector("#lp-ribbon-grad");
+    var strandA = root.querySelector("#lp-strand-a");
+    var strandB = root.querySelector("#lp-strand-b");
+    var strandC = root.querySelector("#lp-strand-c");
+    var lineEls = gsap.utils.toArray(".lp-leader", root);
+    var dotEls = gsap.utils.toArray(".lp-leader-dot", root);
+
+    // Imágenes apiladas (la activa se funde) y selector de tipo de propiedad
+    var artBoxes = Array.prototype.slice.call(root.querySelectorAll("[data-lp-art]"));
+    artBoxes.forEach(function (box) {
+      PROPS.forEach(function (p) {
+        var img = document.createElement("img");
+        img.src = p.img;
+        img.alt = "";
+        img.decoding = "async";
+        box.appendChild(img);
+      });
+    });
+    var chips = Array.prototype.slice.call(root.querySelectorAll("[data-lp-sel]"));
+    function select(i) {
+      var p = PROPS[i];
+      artBoxes.forEach(function (box) {
+        Array.prototype.forEach.call(box.children, function (img, k) {
+          img.classList.toggle("is-active", k === i);
+          img.alt = k === i ? p.alt : "";
+          img.setAttribute("aria-hidden", k === i ? "false" : "true");
+        });
+      });
+      Array.prototype.forEach.call(root.querySelectorAll("[data-lp-title]"), function (e) { e.textContent = p.title; });
+      Array.prototype.forEach.call(root.querySelectorAll("[data-lp-place]"), function (e) { e.textContent = p.place; });
+      Array.prototype.forEach.call(root.querySelectorAll("[data-lp-adline]"), function (e) { e.textContent = p.adLine; });
+      chips.forEach(function (c, k) {
+        c.classList.toggle("is-active", k === i);
+        c.setAttribute("aria-pressed", k === i ? "true" : "false");
+      });
+    }
+    chips.forEach(function (c) {
+      c.addEventListener("click", function () { select(parseInt(c.getAttribute("data-lp-sel"), 10)); });
+    });
+    select(0);
+
+    var scene = { hero: 1, dark: 0, ribbon: 0, amp: 0, phase: 0, enter: 0, orbit: 0, angle: 0, lines: 0, fall: 0, phone: 0 };
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      scene = { hero: 0, dark: 1, ribbon: 1, amp: 0.7, phase: 1.2, enter: 1, orbit: 1, angle: 0.5, lines: 1, fall: 0, phone: 0 };
+    }
+
+    var currentLabel = "";
+
+    function render() {
+      var W = stage.clientWidth;
+      var H = stage.clientHeight;
+      var mobile = W < 760;
+      var cx = W / 2;
+
+      stage.style.background = mix("#101719", "#F2F7F4", scene.dark);
+      stage.style.setProperty("--lp-fg", mix("#FFFFFF", "#101719", scene.dark));
+      stage.style.setProperty("--lp-muted", mix("#A9AFB0", "#4A5A55", scene.dark));
+
+      var cardW = mobile ? Math.min(158, W * 0.42) : 214;
+      stage.style.setProperty("--lp-cardw", cardW + "px");
+
+      // Teléfono: ocupa el espacio libre entre el título del acto 4 y el selector
+      var shortPhone = mobile && H <= 720;
+      var phoneRatio = shortPhone ? 15 / 9 : 18.2 / 9;
+      var phoneTop = act4.offsetTop + act4.offsetHeight + 16;
+      var phoneBottom = picker.offsetTop - 14;
+      var phoneW = Math.max(120, Math.min(mobile ? W * 0.6 : 250, (phoneBottom - phoneTop) / phoneRatio));
+      stage.style.setProperty("--lp-phonew", phoneW.toFixed(1) + "px");
+      stage.style.setProperty("--lp-phone-ratio", (1 / phoneRatio).toFixed(4));
+      var phoneCy = (phoneTop + phoneBottom) / 2;
+
+      // Cinta (doble hélice)
+      var y0 = 68 + H * 0.02;
+      var y1 = y0 + (H - y0 - H * 0.02) * clamp(scene.ribbon);
+      var amp = scene.amp * Math.min(W * 0.17, 140);
+      var turns = 2.1;
+      var N = 70;
+      function ribbonX(t, off) {
+        return cx + amp * Math.pow(Math.sin(Math.PI * clamp(t)), 0.7) *
+          Math.sin(2 * Math.PI * turns * t + scene.phase + off);
+      }
+      function build(off) {
+        var d = "";
+        for (var k = 0; k <= N; k++) {
+          var t = k / N;
+          var y = lerp(y0, y1, t);
+          d += (k === 0 ? "M" : "L") + ribbonX(t, off).toFixed(1) + " " + y.toFixed(1) + " ";
+        }
+        return d;
+      }
+      var ribbonAlpha = clamp(scene.ribbon * 2) * (1 - clamp(scene.fall * 1.3));
+      gradient.setAttribute("y2", String(H));
+      strandA.setAttribute("d", build(0));
+      strandB.setAttribute("d", build(Math.PI));
+      strandC.setAttribute("d", build(Math.PI / 2));
+      strandA.style.opacity = String(ribbonAlpha);
+      strandB.style.opacity = String(ribbonAlpha * 0.55);
+      strandC.style.opacity = String(ribbonAlpha * 0.3);
+
+      // Tarjetas
+      var scatter = mobile ? SCATTER_MOBILE : SCATTER_DESKTOP;
+      var heroPos = [0.74, 0.53];
+      var heroScale = 1.45;
+      if (mobile) {
+        // La tarjeta del hero ocupa el espacio libre entre el texto y el selector
+        var textBottom = heroText.offsetTop + heroText.offsetHeight;
+        var pickerTop = picker.offsetTop;
+        var band = pickerTop - textBottom - 28;
+        heroScale = clamp(band / (cards[0].offsetHeight || 200), 0.6, 1.15);
+        heroPos = [0.5, (textBottom + pickerTop) / 2 / H];
+      }
+      var orbitCy = H * 0.56;
+      var rx = mobile ? W * 0.3 : Math.min(W * 0.4, 430);
+      var ry = mobile ? Math.min(H * 0.34, 300) : Math.min(H * 0.3, 250);
+      var yFactor = mobile ? 0.95 : 0.55;
+
+      cards.forEach(function (card, i) {
+        var sx = scatter[i][0] * W;
+        var sy = scatter[i][1] * H;
+        var e = i === 0 ? 1 : clamp(scene.enter * 2.4 - (i - 1) * 0.45);
+
+        var px = sx;
+        var py = sy + (1 - e) * H * 0.34;
+        var scale = 1;
+        if (i === 0) {
+          px = lerp(sx, heroPos[0] * W, scene.hero);
+          py = lerp(sy, heroPos[1] * H, scene.hero);
+          scale = lerp(1, heroScale, scene.hero);
+        }
+
+        var theta = scene.angle + (i * Math.PI * 2) / cards.length;
+        var depth = (Math.sin(theta) + 1) / 2;
+        var ox = cx + rx * Math.cos(theta);
+        var oy = orbitCy + ry * Math.sin(theta) * yFactor;
+        px = lerp(px, ox, scene.orbit);
+        py = lerp(py, oy, scene.orbit);
+        var orbitScale = mobile ? lerp(0.78, 0.98, depth) : lerp(0.82, 1.08, depth);
+        scale = lerp(scale, orbitScale, scene.orbit);
+        var z = Math.round(lerp(5, 15, depth * scene.orbit));
+
+        px = lerp(px, cx, scene.fall);
+        py = lerp(py, phoneCy, scene.fall);
+        scale *= 1 - 0.78 * scene.fall;
+
+        var rot = (1 - e) * (i % 2 ? 10 : -10) + scene.orbit * (1 - scene.fall) * Math.sin(theta) * 4;
+        var alpha = e * lerp(1, lerp(0.92, 1, depth), scene.orbit) * (1 - clamp((scene.fall - 0.35) / 0.4));
+
+        card.style.transform = "translate(" + px.toFixed(1) + "px, " + py.toFixed(1) + "px) translate(-50%, -50%) scale(" + scale.toFixed(3) + ") rotate(" + rot.toFixed(2) + "deg)";
+        card.style.opacity = alpha.toFixed(3);
+        card.style.zIndex = String(z);
+        card.style.pointerEvents = alpha > 0.5 ? "auto" : "none";
+
+        var line = lineEls[i];
+        var dot = dotEls[i];
+        if (line && dot) {
+          var ty = (py - y0) / Math.max(1, y1 - y0);
+          var rxp = ribbonX(ty, 0);
+          var edge = px + (px > rxp ? -1 : 1) * (cardW / 2) * scale;
+          var len = Math.abs(edge - rxp);
+          line.setAttribute("x1", rxp.toFixed(1));
+          line.setAttribute("y1", py.toFixed(1));
+          line.setAttribute("x2", edge.toFixed(1));
+          line.setAttribute("y2", py.toFixed(1));
+          line.style.strokeDasharray = len.toFixed(1);
+          line.style.strokeDashoffset = (len * (1 - scene.lines)).toFixed(1);
+          line.style.opacity = String(scene.lines * alpha);
+          dot.setAttribute("cx", rxp.toFixed(1));
+          dot.setAttribute("cy", py.toFixed(1));
+          dot.style.opacity = String(scene.lines * alpha);
+        }
+      });
+
+      // Teléfono
+      var pe = clamp(scene.phone);
+      var phoneScale = lerp(0.88, 1, pe);
+      phone.style.transform = "translate(-50%, " + (phoneCy + (1 - pe) * H * 0.45).toFixed(1) + "px) translate(0, -50%) scale(" + phoneScale.toFixed(3) + ")";
+      phone.style.opacity = String(pe);
+
+      // Etiqueta de sección
+      var idx = 0;
+      if (scene.fall > 0.05) idx = 3;
+      else if (scene.orbit > 0.15) idx = 2;
+      else if (scene.hero < 0.5) idx = 1;
+      var label = LABELS[idx];
+      if (label !== currentLabel) {
+        currentLabel = label;
+        navLabel.textContent = label;
+        sectionNo.textContent = "Sección 0" + (idx + 1);
+      }
+    }
+
+    // Movimiento reducido: sin pin, composición estática
+    if (reduce) {
+      gsap.set(".lp-t--hero, .lp-t--act2, .lp-t--act4", { autoAlpha: 0 });
+      gsap.set(".lp-t--act3", { autoAlpha: 1 });
+      render();
+      window.addEventListener("resize", render);
+      return;
+    }
+
+    // Scroll suave (opcional)
+    var lenis = null;
+    if (IMVOLT_CONFIG.smoothScroll && window.Lenis) {
+      lenis = new window.Lenis({ lerp: 0.1 });
+      lenis.on("scroll", ScrollTrigger.update);
+      gsap.ticker.add(function (time) { lenis.raf(time * 1000); });
+      gsap.ticker.lagSmoothing(0);
+    }
+
+    render();
+
+    gsap.from(".lp-t--hero > *", { y: 40, opacity: 0, duration: 0.9, ease: "power3.out", stagger: 0.1, delay: 0.15 });
+
+    var tl = gsap.timeline({
+      defaults: { ease: "power2.inOut" },
+      scrollTrigger: {
+        trigger: pin,
+        start: "top top",
+        end: "+=480%",
+        scrub: 0.8,
+        pin: true,
+        anticipatePin: 1,
+        invalidateOnRefresh: true
+      },
+      onUpdate: render
+    });
+
+    tl.to(scene, { hero: 0, dark: 1, duration: 18 }, 8)
+      .to(scene, { ribbon: 1, amp: 0.25, duration: 20 }, 12)
+      .to(scene, { enter: 1, duration: 18, ease: "power2.out" }, 26)
+      .to(scene, { amp: 1, orbit: 1, angle: Math.PI * 1.4, duration: 30, ease: "power1.inOut" }, 44)
+      .to(scene, { lines: 1, duration: 10, ease: "none" }, 56)
+      .to(scene, { lines: 0, duration: 6, ease: "none" }, 74)
+      .to(scene, { phone: 1, duration: 14, ease: "power2.out" }, 74)
+      .to(scene, { fall: 1, duration: 18, ease: "power2.in" }, 80)
+      .to(scene, { phase: Math.PI * 7, duration: 100, ease: "none" }, 0)
+      .to({}, { duration: 0.001 }, 100);
+
+    tl.to(".lp-t--hero", { autoAlpha: 0, y: -80, duration: 10, ease: "power2.in" }, 4)
+      .fromTo(".lp-t--act2", { autoAlpha: 0, y: 60 }, { autoAlpha: 1, y: 0, duration: 10 }, 22)
+      .to(".lp-t--act2", { autoAlpha: 0, y: -40, duration: 8, ease: "power2.in" }, 42)
+      .fromTo(".lp-t--act3", { autoAlpha: 0, y: 60 }, { autoAlpha: 1, y: 0, duration: 10 }, 46)
+      .to(".lp-t--act3", { autoAlpha: 0, y: -40, duration: 8, ease: "power2.in" }, 72)
+      .fromTo(".lp-t--act4", { autoAlpha: 0, y: 60 }, { autoAlpha: 1, y: 0, duration: 10 }, 84)
+      .to(".lp-picker", { autoAlpha: 0, y: 14, duration: 6, ease: "power2.in" }, 6)
+      .fromTo(".lp-picker", { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 8, immediateRender: false }, 90);
+
+    ScrollTrigger.addEventListener("refresh", render);
+    window.addEventListener("resize", render);
+
+    // Logo del menú: volver arriba
+    var top = root.querySelector("[data-lp-top]");
+    if (top) {
+      top.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        if (lenis) lenis.scrollTo(0); else window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+  }
+
+  if (window.gsap && window.ScrollTrigger) {
+    init();
+  } else {
+    loadSequential(LIBS, init);
+  }
+})();
+</script>

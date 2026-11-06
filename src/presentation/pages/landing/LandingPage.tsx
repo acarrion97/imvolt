@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
@@ -109,39 +109,57 @@ const STEPS = [
   },
 ] as const;
 
-// ── Ilustraciones en SVG ────────────────────────────────────────────────────
-function PropertyArt({ className }: { className?: string }) {
+// ── Datos e ilustraciones ───────────────────────────────────────────────────
+/**
+ * Propiedades de ejemplo para el selector interactivo. Los nombres y ciudades
+ * salen de los datos ilustrativos del prototipo (Documento Maestro); las
+ * imágenes son renders conceptuales generados con IA, no inmuebles reales.
+ */
+const PROPS = [
+  {
+    key: "casa",
+    label: "Casa",
+    title: "Casa Mirador",
+    place: "Samborondón, Ecuador",
+    adLine: "Casa en Samborondón · Conoce la propiedad",
+    img: "/landing/prop-casa.webp",
+    alt: "Render conceptual de una casa moderna rodeada de vegetación",
+  },
+  {
+    key: "lote",
+    label: "Lote",
+    title: "Urbanización Aurora",
+    place: "Machala, Ecuador",
+    adLine: "Lotes en Machala · Conoce el proyecto",
+    img: "/landing/prop-lote.webp",
+    alt: "Render conceptual aéreo de una lotización con vías y áreas verdes",
+  },
+  {
+    key: "departamento",
+    label: "Departamento",
+    title: "Torre Horizonte",
+    place: "Quito, Ecuador",
+    adLine: "Departamentos en Quito · Conoce el proyecto",
+    img: "/landing/prop-departamento.webp",
+    alt: "Render conceptual de un edificio de departamentos con balcones",
+  },
+] as const;
+
+/** Las 3 imágenes se apilan y la activa se funde: cambiar de tipo no recarga nada. */
+function PropArt({ sel, className }: { sel: number; className?: string }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 220 128"
-      role="img"
-      aria-label="Ilustración de una casa"
-    >
-      <defs>
-        <linearGradient id="lp-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f2f7f4" />
-          <stop offset="1" stopColor="#cfe9db" />
-        </linearGradient>
-        <linearGradient id="lp-hill" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#04eb40" />
-          <stop offset="1" stopColor="#075335" />
-        </linearGradient>
-      </defs>
-      <rect width="220" height="128" fill="url(#lp-sky)" />
-      <circle cx="184" cy="26" r="13" fill="#fff" opacity=".85" />
-      <ellipse cx="60" cy="132" rx="140" ry="40" fill="#0a7a46" />
-      <ellipse cx="190" cy="136" rx="110" ry="34" fill="url(#lp-hill)" />
-      <rect x="64" y="58" width="96" height="48" rx="3" fill="#101719" />
-      <polygon points="58,60 112,30 166,60" fill="#1d2a2c" />
-      <rect x="76" y="70" width="26" height="22" rx="2" fill="#00d94b" opacity=".9" />
-      <rect x="110" y="70" width="14" height="36" rx="2" fill="#2a3a3c" />
-      <rect x="132" y="70" width="18" height="22" rx="2" fill="#00d94b" opacity=".55" />
-      <circle cx="34" cy="92" r="14" fill="#075335" />
-      <rect x="32" y="100" width="4" height="12" fill="#101719" />
-      <circle cx="190" cy="96" r="11" fill="#075335" />
-      <rect x="188" y="102" width="4" height="10" fill="#101719" />
-    </svg>
+    <div className={`lp-art ${className ?? ""}`}>
+      {PROPS.map((p, i) => (
+        <img
+          key={p.key}
+          src={p.img}
+          alt={i === sel ? p.alt : ""}
+          aria-hidden={i !== sel}
+          className={i === sel ? "is-active" : undefined}
+          decoding="async"
+        />
+      ))}
+    </div>
   );
 }
 
@@ -200,6 +218,8 @@ const SCATTER_MOBILE: Array<[number, number]> = [
 // ── Componente ──────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const rootRef = useRef<HTMLDivElement>(null);
+  const [sel, setSel] = useState(0);
+  const prop = PROPS[sel];
 
   useEffect(() => {
     const root = rootRef.current;
@@ -211,6 +231,9 @@ export default function LandingPage() {
     const sectionNo = root.querySelector<HTMLElement>(".lp-section-no")!;
     const cards = gsap.utils.toArray<HTMLElement>(".lp-card", root);
     const phone = root.querySelector<HTMLElement>(".lp-phone")!;
+    const heroText = root.querySelector<HTMLElement>(".lp-t--hero")!;
+    const picker = root.querySelector<HTMLElement>(".lp-picker")!;
+    const act4 = root.querySelector<HTMLElement>(".lp-t--act4")!;
     const gradient = root.querySelector<SVGLinearGradientElement>("#lp-ribbon-grad")!;
     const strandA = root.querySelector<SVGPathElement>("#lp-strand-a")!;
     const strandB = root.querySelector<SVGPathElement>("#lp-strand-b")!;
@@ -244,7 +267,18 @@ export default function LandingPage() {
       // Tamaños responsivos
       const cardW = mobile ? Math.min(158, W * 0.42) : 214;
       stage.style.setProperty("--lp-cardw", `${cardW}px`);
-      stage.style.setProperty("--lp-phonew", `${Math.min(mobile ? W * 0.6 : 250, H * 0.34)}px`);
+      // Teléfono: ocupa el espacio libre entre el título del acto 4 y el selector
+      const shortPhone = mobile && H <= 720;
+      const phoneRatio = shortPhone ? 15 / 9 : 18.2 / 9;
+      const phoneTop = act4.offsetTop + act4.offsetHeight + 16;
+      const phoneBottom = picker.offsetTop - 14;
+      const phoneW = Math.max(
+        120,
+        Math.min(mobile ? W * 0.6 : 250, (phoneBottom - phoneTop) / phoneRatio),
+      );
+      stage.style.setProperty("--lp-phonew", `${phoneW.toFixed(1)}px`);
+      stage.style.setProperty("--lp-phone-ratio", (1 / phoneRatio).toFixed(4));
+      const phoneCy = (phoneTop + phoneBottom) / 2;
 
       // ── Cinta (doble hélice) ──
       const y0 = 68 + H * 0.02;
@@ -277,13 +311,20 @@ export default function LandingPage() {
 
       // ── Tarjetas ──
       const scatter = mobile ? SCATTER_MOBILE : SCATTER_DESKTOP;
-      const heroPos: [number, number] = mobile ? [0.5, 0.76] : [0.74, 0.53];
-      const heroScale = mobile ? 1.15 : 1.45;
+      let heroPos: [number, number] = [0.74, 0.53];
+      let heroScale = 1.45;
+      if (mobile) {
+        // La tarjeta del hero ocupa el espacio libre entre el texto y el selector.
+        const textBottom = heroText.offsetTop + heroText.offsetHeight;
+        const pickerTop = picker.offsetTop;
+        const band = pickerTop - textBottom - 28;
+        heroScale = clamp(band / (cards[0].offsetHeight || 200), 0.6, 1.15);
+        heroPos = [0.5, (textBottom + pickerTop) / 2 / H];
+      }
       const orbitCy = H * 0.56;
       const rx = mobile ? W * 0.3 : Math.min(W * 0.4, 430);
       const ry = mobile ? Math.min(H * 0.34, 300) : Math.min(H * 0.3, 250);
       const yFactor = mobile ? 0.95 : 0.55;
-      const phoneCy = H * 0.6;
 
       cards.forEach((card, i) => {
         const sx = scatter[i][0] * W;
@@ -434,7 +475,15 @@ export default function LandingPage() {
         .to(".lp-t--act2", { autoAlpha: 0, y: -40, duration: 8, ease: "power2.in" }, 42)
         .fromTo(".lp-t--act3", { autoAlpha: 0, y: 60 }, { autoAlpha: 1, y: 0, duration: 10 }, 46)
         .to(".lp-t--act3", { autoAlpha: 0, y: -40, duration: 8, ease: "power2.in" }, 72)
-        .fromTo(".lp-t--act4", { autoAlpha: 0, y: 60 }, { autoAlpha: 1, y: 0, duration: 10 }, 84);
+        .fromTo(".lp-t--act4", { autoAlpha: 0, y: 60 }, { autoAlpha: 1, y: 0, duration: 10 }, 84)
+        // El selector se oculta mientras la cinta y las tarjetas ocupan el escenario
+        .to(".lp-picker", { autoAlpha: 0, y: 14, duration: 6, ease: "power2.in" }, 6)
+        .fromTo(
+          ".lp-picker",
+          { autoAlpha: 0, y: 14 },
+          { autoAlpha: 1, y: 0, duration: 8, immediateRender: false },
+          90,
+        );
     }, root);
 
     const onRefresh = () => render();
@@ -576,10 +625,10 @@ export default function LandingPage() {
               <article className="lp-card" key={c.title}>
                 {i === 0 ? (
                   <>
-                    <PropertyArt className="lp-card__art" />
-                    <div className="lp-card__title">Urbanización Aurora</div>
-                    <div className="lp-card__sub">Machala, Ecuador</div>
-                    <span className="lp-card__tag">Ejemplo ilustrativo</span>
+                    <PropArt sel={sel} className="lp-card__art" />
+                    <div className="lp-card__title">{prop.title}</div>
+                    <div className="lp-card__sub">{prop.place}</div>
+                    <span className="lp-card__tag">Render conceptual</span>
                   </>
                 ) : (
                   <>
@@ -608,10 +657,10 @@ export default function LandingPage() {
                   Tu marca
                   <span className="lp-phone__tag">Anuncio de ejemplo</span>
                 </div>
-                <PropertyArt className="lp-phone__art" />
+                <PropArt sel={sel} className="lp-phone__art" />
                 <div className="lp-phone__copy">
-                  <b>Urbanización Aurora</b>
-                  <span>Lotes en Machala · Conoce el proyecto</span>
+                  <b>{prop.title}</b>
+                  <span>{prop.adLine}</span>
                   <ul className="lp-phone__rows">
                     <li>Creativo revisado</li>
                     <li>Copy redactado con tus datos</li>
@@ -620,6 +669,22 @@ export default function LandingPage() {
                   <div className="lp-phone__cta">Más información</div>
                 </div>
               </div>
+            </div>
+
+            {/* Selector interactivo: visible en el hero y en el anuncio final */}
+            <div className="lp-picker" role="group" aria-label="Tipo de propiedad">
+              <span className="lp-picker__label">Prueba con tu propiedad</span>
+              {PROPS.map((p, i) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  className={`lp-chip${i === sel ? " is-active" : ""}`}
+                  aria-pressed={i === sel}
+                  onClick={() => setSel(i)}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
           </section>
         </div>

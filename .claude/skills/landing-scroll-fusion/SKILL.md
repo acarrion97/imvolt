@@ -96,3 +96,21 @@ Todo asset se guarda en la carpeta de la landing con nombre descriptivo y se lis
 - [ ] Movimiento reducido funcional
 - [ ] `npm run build` y `npm run lint` en verde
 - [ ] Consola sin errores
+
+## Interactividad con assets de Higgsfield (patrón "selector de producto")
+
+Para que la landing responda al visitante, no solo al scroll: un **selector de variante del producto** (en IMVOLT: Casa · Lote · Departamento) que cambia la foto del hero, la tarjeta y el anuncio final.
+
+- **Assets:** una imagen 16:9 por variante, mismo ancla de estilo (luz natural, paleta de marca, sin personas/texto/logos). Se generan con `generate_image_batch` (`gpt_image_2_6`). Costo observado: **0,25 créditos por imagen**; un video de 5 s (`seedance_2_5`) cuesta ~35 créditos, así que solo vale la pena si el usuario lo pide. Preguntar el costo con `get_cost: true` antes de generar.
+- **Veracidad (marca):** rotular las imágenes como "Render conceptual"; no inventar amenidades ni atributos.
+- **Peso:** reducir a ~720 px de ancho en WebP (q≈78, ~60–80 KB c/u) en `public/landing/`.
+- **Implementación:** imágenes apiladas con `opacity` + transición (fundido cruzado), estado en React (`useState`) o JS plano en la versión GHL; botones con `aria-pressed`.
+- **Selector visible solo donde estorba menos:** se oculta mientras la cinta y las tarjetas ocupan el escenario y reaparece en el acto final.
+
+### Lecciones de layout (evitan retrabajo)
+- No posicionar a ojo en móvil: calcular el espacio libre real (`offsetTop`/`offsetHeight` del texto y del selector) y dimensionar la tarjeta/el teléfono con eso. Probar al menos 390×780 y 360×640.
+- En GSAP, `immediateRender: false` va en el **segundo** objeto de `fromTo`; si no, el elemento queda oculto desde el inicio.
+- Para probar posiciones de scroll usar `ScrollTrigger.getAll()[0].start/end`, no cálculos manuales (con contenido previo o clics que desplazan la página dan capturas engañosas).
+
+### Versión para GoHighLevel
+`export/ghl/build/build.py` regenera `export/ghl/imvolt-landing-ghl.html` (un solo archivo: CSS prefijado con `#imvolt-lp`, logos y fotos embebidos, GSAP/Lenis desde CDN). Volver a correrlo cada vez que cambie la landing de React.
