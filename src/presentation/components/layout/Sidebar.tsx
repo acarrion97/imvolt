@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   ApartmentOutlined,
   BarChartOutlined,
+  ControlOutlined,
   HomeOutlined,
   LayoutOutlined,
   NotificationOutlined,
@@ -10,6 +11,7 @@ import {
   SettingOutlined,
   UsergroupAddOutlined,
 } from "@ant-design/icons";
+import { AUTH_ENABLED } from "@/presentation/auth/AuthProvider";
 import { useAuth, useWallet } from "@/presentation/hooks";
 import { capitalize, initials } from "@/presentation/components/common/userLabel";
 
@@ -52,6 +54,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   const navigate = useNavigate();
   const { data: wallet } = useWallet();
   const { perfil, rol } = useAuth();
+  const esSuperAdmin = perfil?.es_super_admin === true;
   const saldo = wallet?.saldo ?? 0;
   const pct = Math.max(4, Math.min(100, Math.round((saldo / CUOTA_MENSUAL) * 100)));
 
@@ -91,7 +94,19 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
       <nav className="nav">{renderItems(ESPACIO)}</nav>
 
       <div className="section-cap">Administración</div>
-      <nav className="nav">{renderItems(ADMIN)}</nav>
+      <nav className="nav">
+        {renderItems(ADMIN)}
+        {(esSuperAdmin || !AUTH_ENABLED) && (
+          <NavLink
+            to="/administracion"
+            onClick={onNavigate}
+            className={({ isActive }) => (isActive ? "nav-item active" : "nav-item")}
+          >
+            <span className="symbol"><ControlOutlined /></span>
+            Panel de plataforma
+          </NavLink>
+        )}
+      </nav>
 
       <div className="sidebar-bottom">
         <p className="workspace-label">WORKSPACE ACTIVO</p>

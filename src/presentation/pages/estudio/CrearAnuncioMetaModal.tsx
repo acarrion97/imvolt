@@ -11,13 +11,16 @@ import {
   useMetaPages,
   useModelos,
   usePropiedades,
-  usePublicarCampana,
+  useSolicitarAprobacionCampana,
+  useUpdateCampana,
+  useValidarCampana,
 } from "@/presentation/hooks";
 
 interface FormValues {
   nombre: string;
   connection_id: string;
   meta_page_id: string;
+  meta_instagram_id?: string;
   target_location_key: string;
   presupuesto_maximo: number;
   fechas: [Dayjs, Dayjs];
@@ -56,7 +59,9 @@ export function CrearAnuncioMetaModal({ generation, onClose }: CrearAnuncioMetaM
   const { data: properties } = usePropiedades();
   const { data: models } = useModelos();
   const createCampaign = useCreateCampana();
-  const publishCampaign = usePublicarCampana();
+  const updateCampaign = useUpdateCampana();
+  const validateCampaign = useValidarCampana();
+  const requestApproval = useSolicitarAprobacionCampana();
 
   const activeConnections = (connections ?? []).filter(
     (item) => item.estado === "conectada" && item.autenticada,
@@ -84,7 +89,11 @@ export function CrearAnuncioMetaModal({ generation, onClose }: CrearAnuncioMetaM
     currentGeneration?.status === "completed" &&
     isPublicHttpsMedia &&
     Boolean(mediaType);
-  const saving = createCampaign.isPending || publishCampaign.isPending;
+  const saving =
+    createCampaign.isPending ||
+    updateCampaign.isPending ||
+    validateCampaign.isPending ||
+    requestApproval.isPending;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedLocationQuery(locationSearch), 300);
@@ -109,20 +118,17 @@ export function CrearAnuncioMetaModal({ generation, onClose }: CrearAnuncioMetaM
     property?.nombre,
   ]);
 
-  const publishDraft = async (campaignId: string) => {
+  const submitForApproval = async (campaignId: string) => {
     try {
-      const result = await publishCampaign.mutateAsync(campaignId);
-      if (result.simulado) {
-        message.warning("Anuncio de demostración creado en pausa; no existe en Meta.");
-      } else {
-        message.success("Anuncio creado en Meta y dejado en pausa. No empezará a gastar hasta que lo actives.");
-      }
+      await validateCampaign.mutateAsync(campaignId);
+      await requestApproval.mutateAsync(campaignId);
+      message.success("Borrador enviado a aprobación. No se ha creado ni publicado nada en Meta.");
       onClose();
     } catch (error) {
       message.error(
         error instanceof Error
-          ? `El borrador quedó guardado, pero Meta no pudo crear el anuncio: ${error.message}`
-          : "El borrador quedó guardado, pero Meta no pudo crear el anuncio.",
+          ? `El borrador quedó guardado, pero no pudo enviarse a aprobación: ${error.message}`
+          : "El borrador quedó guardado, pero no pudo enviarse a aprobación.",
       );
     }
   };
@@ -132,11 +138,6 @@ export function CrearAnuncioMetaModal({ generation, onClose }: CrearAnuncioMetaM
       message.error("La generación todavía no tiene un archivo listo para anunciar.");
       return;
     }
-    if (draftId) {
-      await publishDraft(draftId);
-      return;
-    }
-
     const [start, end] = values.fechas;
     const payload: CampanaCreate = {
       nombre: values.nombre,
@@ -152,8 +153,10 @@ export function CrearAnuncioMetaModal({ generation, onClose }: CrearAnuncioMetaM
       copy: values.copy,
       cta: "SIGN_UP",
       creative_url: resultUrl,
+      duration_days: Number((end.valueOf() - start.valueOf()) / 86_400_000),
       meta_page_id: values.meta_page_id,
       meta_page_name: pages?.find((page) => page.id === values.meta_page_id)?.name ?? null,
+      meta_instagram_id: values.meta_instagram_id || null,
       target_location_key: values.target_location_key,
       target_location_name:
         locations?.find((location) => location.key === values.target_location_key)?.name ?? null,
@@ -164,9 +167,14 @@ export function CrearAnuncioMetaModal({ generation, onClose }: CrearAnuncioMetaM
     };
 
     try {
+      if (draftId) {
+        await updateCampaign.mutateAsync({ id: draftId, data: payload });
+        await submitForApproval(draftId);
+        return;
+      }
       const campaign = await createCampaign.mutateAsync(payload);
       setDraftId(campaign.campaign_id);
-      await publishDraft(campaign.campaign_id);
+      await submitForApproval(campaign.campaign_id);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "No se pudo guardar el borrador del anuncio.");
     }
@@ -233,7 +241,7 @@ export function CrearAnuncioMetaModal({ generation, onClose }: CrearAnuncioMetaM
                   type="info"
                   showIcon
                   message={`${mediaType === "video" ? "Video" : "Imagen"} · ${property?.nombre ?? "Creativo generado"}`}
-                  description="La campaña, el conjunto, el formulario instantáneo y el anuncio se crearán pausados. Meta no empezará a gastar hasta que los actives."
+                  description="El creativo y los datos se guardarán como borrador para revisión explícita. No se creará nada en Meta hasta que una persona autorizada apruebe la campaña."
                 />
                 {mediaType === "video" ? (
                   <video src={resultUrl} controls style={{ width: "100%", maxHeight: 300 }} />
@@ -249,7 +257,7 @@ export function CrearAnuncioMetaModal({ generation, onClose }: CrearAnuncioMetaM
                     type="warning"
                     showIcon
                     message={`Borrador ${draftId} guardado`}
-                    description="No cierres ni edites los datos. Puedes reintentar la creación pausada en Meta."
+                    description="No se ha publicado. Puedes reintentar el envío a aprobación."
                   />
                 )}
                 {connectionId && !accountCurrency && (
@@ -280,7 +288,7 @@ export function CrearAnuncioMetaModal({ generation, onClose }: CrearAnuncioMetaM
                   form={form}
                   layout="vertical"
                   onFinish={(values) => void handleSubmit(values)}
-                  disabled={!canCreate || saving || Boolean(draftId)}
+                  disabled={!canCreate || saving}
                 >
                   <Form.Item
                     label="Cuenta publicitaria"
@@ -317,6 +325,25 @@ export function CrearAnuncioMetaModal({ generation, onClose }: CrearAnuncioMetaM
                       loading={loadingPages}
                       placeholder="Selecciona una página administrada"
                       options={(pages ?? []).map((page) => ({ value: page.id, label: page.name }))}
+                      onChange={() => form.setFieldsValue({ meta_instagram_id: undefined })}
+                    />
+                  </Form.Item>
+                  <Form.Item label="Cuenta de Instagram vinculada (opcional)" name="meta_instagram_id">
+                    <Select
+                      allowClear
+                      placeholder="Selecciona una cuenta vinculada a la página"
+                      options={(pages ?? [])
+                        .filter(
+                          (page) =>
+                            page.id === form.getFieldValue("meta_page_id") &&
+                            page.instagram_business_account,
+                        )
+                        .map((page) => ({
+                          value: page.instagram_business_account?.id,
+                          label: page.instagram_business_account?.username
+                            ? `@${page.instagram_business_account.username}`
+                            : page.instagram_business_account?.id,
+                        }))}
                     />
                   </Form.Item>
                   {locationsError && (
@@ -411,7 +438,7 @@ export function CrearAnuncioMetaModal({ generation, onClose }: CrearAnuncioMetaM
                       loading={saving}
                       disabled={!canCreate || !accountCurrency}
                     >
-                      {draftId ? "Reintentar creación en Meta" : "Crear anuncio pausado"}
+                      {draftId ? "Reintentar envío a aprobación" : "Guardar y solicitar aprobación"}
                     </Button>
                   </div>
                 </Form>

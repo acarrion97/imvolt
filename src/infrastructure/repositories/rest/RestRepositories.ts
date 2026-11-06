@@ -11,6 +11,8 @@ import type {
 import type {
   Campana,
   CampanaCreate,
+  CampanaObjetivo,
+  EstrategiaCampana,
   PublicacionCampana,
   CampanaRepository,
 } from "@/domain/campana";
@@ -22,6 +24,9 @@ import type {
 import type {
   Generacion,
   GeneracionCreate,
+  GenerationOutput,
+  GeneracionQuote,
+  GeneracionQuoteInput,
   GeneracionRepository,
 } from "@/domain/generacion";
 import type { Lead, LeadCreate, LeadRepository } from "@/domain/lead";
@@ -292,6 +297,14 @@ export class RestGeneracionRepository
   async getByPropiedadId(propertyId: string): Promise<Generacion[]> {
     return this.getAll({ property_id: propertyId });
   }
+
+  async getOutputs(generationId: string): Promise<GenerationOutput[]> {
+    return http.get<GenerationOutput[]>(`/v1/creative/generations/${generationId}/outputs`);
+  }
+
+  async quote(input: GeneracionQuoteInput): Promise<GeneracionQuote> {
+    return http.post<GeneracionQuote>("/v1/creative/generations/quote", input);
+  }
 }
 
 export class RestConexionRepository
@@ -316,8 +329,35 @@ export class RestCampanaRepository
     return this.getAll({ property_id: propertyId });
   }
 
-  publicar(campaignId: string): Promise<PublicacionCampana> {
-    return http.post<PublicacionCampana>(`/v1/campanias-publicitarias/${campaignId}/publicar`, {});
+  validar(campaignId: string): Promise<Campana> {
+    return http.post<Campana>(`/v1/campaigns/${campaignId}/validate`, {});
+  }
+
+  solicitarAprobacion(campaignId: string): Promise<Campana> {
+    return http.post<Campana>(`/v1/campaigns/${campaignId}/request-approval`, {});
+  }
+
+  aprobar(campaignId: string): Promise<Campana> {
+    return http.post<Campana>(`/v1/campaigns/${campaignId}/approve`, {});
+  }
+
+  sincronizarEstadoMeta(campaignId: string): Promise<Campana> {
+    return http.post<Campana>(`/v1/campaigns/${campaignId}/sync-status`, {});
+  }
+
+  generarEstrategia(propertyId: string, objective: CampanaObjetivo): Promise<EstrategiaCampana> {
+    return http.post<EstrategiaCampana>("/v1/campaigns/strategist", {
+      property_id: propertyId,
+      objetivo: objective,
+    });
+  }
+
+  publicar(campaignId: string, idempotencyKey: string): Promise<PublicacionCampana> {
+    return http.post<PublicacionCampana>(
+      `/v1/campanias-publicitarias/${campaignId}/publicar`,
+      {},
+      { "Idempotency-Key": idempotencyKey },
+    );
   }
 }
 
@@ -343,7 +383,7 @@ export class RestWalletRepository implements WalletRepository {
     return http.get<TransaccionCredito[]>(`/v1/billing/transactions${buildQuery()}`);
   }
 
-  async recargar(monto: number, idempotencyKey?: string): Promise<Wallet> {
+  async recargar(monto: number, idempotencyKey: string): Promise<Wallet> {
     return http.post<Wallet>("/v1/billing/recharge", {
       monto,
       idempotency_key: idempotencyKey,
@@ -460,6 +500,7 @@ export class RestAuthRepository implements AuthRepository {
       usuario: AuthUsuario | null;
       roles: AuthRol[];
       permisos?: string[];
+      es_super_admin?: boolean;
     }>("/auth/me");
 
     if (!response.usuario) {
@@ -473,6 +514,7 @@ export class RestAuthRepository implements AuthRepository {
       usuario: response.usuario,
       roles: response.roles ?? [],
       permisos: response.permisos ?? [],
+      es_super_admin: response.es_super_admin === true,
     };
   }
 }

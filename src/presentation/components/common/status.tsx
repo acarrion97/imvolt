@@ -30,7 +30,7 @@ export function EstadoCampanaTag({ estado }: { estado: CampanaEstado }) {
 
 const GEN_COLORS: Record<GeneracionStatus, string> = {
   created: "default",
-  quoted: "default",
+  quoted: "gold",
   credits_reserved: "processing",
   queued: "processing",
   processing: "blue",
@@ -39,8 +39,19 @@ const GEN_COLORS: Record<GeneracionStatus, string> = {
   canceled: "default",
 };
 
+const GEN_LABELS: Record<GeneracionStatus, string> = {
+  created: "CREADO",
+  quoted: "COTIZADO",
+  credits_reserved: "CRÉDITOS RESERVADOS",
+  queued: "EN COLA",
+  processing: "PROCESANDO",
+  completed: "COMPLETADO",
+  failed: "FALLIDO",
+  canceled: "CANCELADO",
+};
+
 export function EstadoGeneracionTag({ status }: { status: GeneracionStatus }) {
-  return <Tag color={GEN_COLORS[status]}>{status.replace(/_/g, " ").toUpperCase()}</Tag>;
+  return <Tag color={GEN_COLORS[status]}>{GEN_LABELS[status]}</Tag>;
 }
 
 const LEAD_COLORS: Record<LeadEstado, string> = {

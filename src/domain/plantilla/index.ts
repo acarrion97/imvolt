@@ -2,7 +2,7 @@ import type { CrudRepository } from "@/domain/core/repositories/CrudRepository";
 
 export type PlantillaEstado = "activo" | "inactivo";
 
-/** Entidad `public.plantillas` de la API. */
+/** Contrato `public.templates`, expuesto como vista de `public.plantillas`. */
 export interface Plantilla {
   plantilla_id: number;
   nombre: string;

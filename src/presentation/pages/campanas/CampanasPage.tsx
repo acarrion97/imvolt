@@ -1,14 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   App,
   DatePicker,
   Form,
   Input,
   InputNumber,
+  Modal,
   Popconfirm,
   Select,
 } from "antd";
-import { DeleteOutlined, EditOutlined, FacebookOutlined, PlusOutlined, SendOutlined } from "@ant-design/icons";
+import {
+  CheckOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+  EditOutlined,
+  FacebookOutlined,
+  PlusOutlined,
+  SendOutlined,
+  BulbOutlined,
+} from "@ant-design/icons";
 import { DataTable } from "@/presentation/components/common/DataTable";
 import { EstadoCampanaTag, formatFecha, formatPrecio } from "@/presentation/components/common/status";
 import {
@@ -16,13 +26,26 @@ import {
   useConexiones,
   useCreateCampana,
   useDeleteCampana,
+  useMetaAdLocations,
+  useMetaPages,
+  useAprobarCampana,
+  useGenerarEstrategiaCampana,
   usePropiedades,
   usePublicarCampana,
+  useSolicitarAprobacionCampana,
+  useSincronizarEstadoMetaCampana,
   useUpdateCampana,
   useValidarCampana,
 } from "@/presentation/hooks";
 import { campanaSchema } from "@/presentation/validations";
-import type { Campana, CampanaDestino, CampanaEstado, CampanaObjetivo } from "@/domain/campana";
+import type {
+  Campana,
+  CampanaDestino,
+  CampanaEstado,
+  CampanaObjetivo,
+  EstrategiaCampana,
+  VarianteEstrategia,
+} from "@/domain/campana";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 
@@ -51,6 +74,32 @@ interface FormValues {
   copy: string;
   cta?: string | null;
   fechas?: [dayjs.Dayjs, dayjs.Dayjs] | null;
+  creative_url?: string | null;
+  media_type?: "image" | "video";
+  meta_page_id?: string | null;
+  meta_instagram_id?: string | null;
+  target_location_key?: string | null;
+  target_location_name?: string | null;
+  target_location_country_code?: string | null;
+  privacy_policy_url?: string | null;
+}
+
+const publishStorageKey = (campaignId: string): string => `imvolt:campaign-publish:${campaignId}`;
+
+function exportDrafts(campaigns: Campana[]): void {
+  const drafts = campaigns.filter((campaign) =>
+    ["local_draft", "validated", "awaiting_approval", "approved", "rejected", "failed"].includes(campaign.estado),
+  );
+  if (!drafts.length) throw new Error("No hay borradores disponibles para exportar.");
+  const blob = new Blob([JSON.stringify(drafts, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `imvolt-borradores-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /**
@@ -62,6 +111,9 @@ export function CampanasPage() {
   const { message } = App.useApp();
   const [form] = Form.useForm<FormValues>();
   const [editing, setEditing] = useState<Campana | null>(null);
+  const [estrategia, setEstrategia] = useState<EstrategiaCampana | null>(null);
+  const [locationQuery, setLocationQuery] = useState("");
+  const [debouncedLocationQuery, setDebouncedLocationQuery] = useState("");
 
   const { data: campanas, isLoading } = useCampanas();
   const { data: propiedades } = usePropiedades();
@@ -74,6 +126,10 @@ export function CampanasPage() {
   const deleteCampana = useDeleteCampana();
   const validarCampana = useValidarCampana();
   const publicarCampana = usePublicarCampana();
+  const solicitarAprobacion = useSolicitarAprobacionCampana();
+  const aprobarCampana = useAprobarCampana();
+  const sincronizarEstadoMeta = useSincronizarEstadoMetaCampana();
+  const generarEstrategia = useGenerarEstrategiaCampana();
 
   const saving = createCampana.isPending || updateCampana.isPending;
 
@@ -89,6 +145,15 @@ export function CampanasPage() {
   const presupuesto = Form.useWatch("presupuesto_maximo", form);
   const copy = Form.useWatch("copy", form);
   const fechas = Form.useWatch("fechas", form);
+  const selectedConnectionId = Form.useWatch("connection_id", form);
+  const selectedPageId = Form.useWatch("meta_page_id", form);
+  const { data: metaPages, isLoading: loadingMetaPages } = useMetaPages(selectedConnectionId ?? undefined);
+  const {
+    data: metaLocations,
+    isLoading: loadingMetaLocations,
+    error: metaLocationsError,
+  } = useMetaAdLocations(selectedConnectionId ?? undefined, debouncedLocationQuery);
+  const strategyPending = generarEstrategia.isPending;
 
   const p1 = Boolean(nombre) && Boolean(propertyId);
   const p2 = p1 && Boolean(objetivo) && Boolean(destino) && Boolean(presupuesto);
@@ -106,13 +171,45 @@ export function CampanasPage() {
     return dias > 0 ? dias : null;
   }, [fechas]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedLocationQuery(locationQuery), 300);
+    return () => window.clearTimeout(timer);
+  }, [locationQuery]);
+
+  const handleGenerarEstrategia = async () => {
+    if (!propertyId || !objetivo) {
+      message.warning("Selecciona una propiedad y un objetivo para generar la estrategia.");
+      return;
+    }
+    try {
+      setEstrategia(
+        await generarEstrategia.mutateAsync({ propertyId, objective: objetivo }),
+      );
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "No se pudo generar la estrategia.");
+    }
+  };
+
+  const aplicarVariante = (variant: VarianteEstrategia) => {
+    form.setFieldsValue({
+      titulo: variant.titular,
+      copy: variant.copy_corto,
+      cta: variant.cta,
+    });
+    setEstrategia(null);
+    message.success(`Variante ${variant.variante} aplicada al borrador.`);
+  };
+
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
+    setLocationQuery("");
+    setDebouncedLocationQuery("");
     form.setFieldsValue({
       objetivo: "mensajes",
       destino: "whatsapp",
       connection_id: cuentasMeta[0]?.connection_id ?? null,
+      media_type: "image",
     });
   };
 
@@ -128,6 +225,14 @@ export function CampanasPage() {
       titulo: row.titulo,
       copy: row.copy ?? "",
       cta: row.cta,
+      creative_url: row.creative_url,
+      media_type: row.media_type ?? undefined,
+      meta_page_id: row.meta_page_id,
+      meta_instagram_id: row.meta_instagram_id,
+      target_location_key: row.target_location_key,
+      target_location_name: row.target_location_name,
+      target_location_country_code: row.target_location_country_code,
+      privacy_policy_url: row.privacy_policy_url,
       fechas:
         row.fecha_inicio && row.fecha_fin
           ? [dayjs(row.fecha_inicio), dayjs(row.fecha_fin)]
@@ -165,8 +270,26 @@ export function CampanasPage() {
       titulo: parsed.data.titulo ?? null,
       cta: parsed.data.cta ?? null,
       presupuesto_maximo: parsed.data.presupuesto_maximo,
-      moneda: "USD",
-      creative_url: null,
+      moneda:
+        cuentasMeta.find((item) => item.connection_id === values.connection_id)?.account_currency ?? "USD",
+      duration_days: values.fechas
+        ? Number(((values.fechas[1].valueOf() - values.fechas[0].valueOf()) / 86_400_000).toFixed(2))
+        : null,
+      creative_url: values.creative_url?.trim() || null,
+      media_type: values.media_type ?? null,
+      meta_page_id: values.meta_page_id ?? null,
+      meta_page_name: metaPages?.find((page) => page.id === values.meta_page_id)?.name ?? null,
+      meta_instagram_id: values.meta_instagram_id ?? null,
+      target_location_key: values.target_location_key ?? null,
+      target_location_name:
+        metaLocations?.find((location) => location.key === values.target_location_key)?.name ??
+        values.target_location_name ??
+        null,
+      target_location_country_code:
+        metaLocations?.find((location) => location.key === values.target_location_key)?.country_code?.toUpperCase() ??
+        values.target_location_country_code ??
+        null,
+      privacy_policy_url: values.privacy_policy_url?.trim() || null,
       fecha_inicio: parsed.data.fecha_inicio
         ? new Date(parsed.data.fecha_inicio).toISOString()
         : null,
@@ -198,9 +321,37 @@ export function CampanasPage() {
     if (!id) return;
     try {
       await validarCampana.mutateAsync(id);
-      message.success("Campaña validada y enviada al flujo de aprobación.");
+      await solicitarAprobacion.mutateAsync(id);
+      message.success("Campaña enviada a revisión. Meta no recibe anuncios antes de la aprobación explícita.");
     } catch (error) {
       message.error(error instanceof Error ? error.message : "La campaña no pudo validarse.");
+    }
+  };
+
+  const handleSolicitarAprobacion = async (campaignId: string) => {
+    try {
+      await solicitarAprobacion.mutateAsync(campaignId);
+      message.success("Campaña enviada a revisión.");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "No se pudo solicitar la aprobación.");
+    }
+  };
+
+  const handleAprobar = async (campaignId: string) => {
+    try {
+      await aprobarCampana.mutateAsync(campaignId);
+      message.success("Campaña aprobada. La publicación pausada ahora está habilitada.");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "No se pudo aprobar la campaña.");
+    }
+  };
+
+  const handleSincronizarEstadoMeta = async (campaignId: string) => {
+    try {
+      const campaign = await sincronizarEstadoMeta.mutateAsync(campaignId);
+      message.success(`Estado actualizado desde Meta: ${campaign.estado}.`);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "No se pudo sincronizar el estado con Meta.");
     }
   };
 
@@ -215,14 +366,32 @@ export function CampanasPage() {
 
   const handlePublicar = async (row: Campana) => {
     try {
-      const resultado = await publicarCampana.mutateAsync(row.campaign_id);
+      const storageKey = publishStorageKey(row.campaign_id);
+      const idempotencyKey = sessionStorage.getItem(storageKey) ?? crypto.randomUUID();
+      sessionStorage.setItem(storageKey, idempotencyKey);
+      const resultado = await publicarCampana.mutateAsync({
+        campaignId: row.campaign_id,
+        idempotencyKey,
+      });
+      sessionStorage.removeItem(storageKey);
       if (resultado.simulado) {
         message.warning("La API está en modo simulado: no se creó ninguna campaña real en Meta.");
+      } else if (resultado.replayed) {
+        message.success(`Resultado de publicación recuperado (ID: ${resultado.meta_campaign_id}).`);
       } else {
         message.success(`Campaña enviada a Meta y creada pausada (ID: ${resultado.meta_campaign_id}).`);
       }
     } catch (error) {
       message.error(error instanceof Error ? error.message : "No se pudo enviar la campaña a Meta.");
+    }
+  };
+
+  const handleExportDrafts = () => {
+    try {
+      exportDrafts(campanas ?? []);
+      message.success("Borradores exportados. Puedes compartir el archivo manualmente mientras Meta está pendiente.");
+    } catch (error) {
+      message.warning(error instanceof Error ? error.message : "No se pudieron exportar los borradores.");
     }
   };
 
@@ -274,11 +443,10 @@ export function CampanasPage() {
       width: 255,
       render: (_, row) => (
         <span style={{ display: "flex", gap: 6 }}>
-          {!row.meta_campaign_id &&
-            ["validated", "awaiting_approval", "approved"].includes(row.estado) && (
+          {row.estado === "approved" && !row.meta_campaign_id && (
             <Popconfirm
               title="¿Enviar campaña a Meta?"
-              description="Se creará pausada. No empezará a generar gasto hasta que la actives en Meta Ads."
+              description="La aprobación ya quedó registrada. La campaña, conjunto y anuncio se crearán PAUSED y no iniciarán gasto."
               okText="Enviar pausada"
               cancelText="Cancelar"
               onConfirm={() => handlePublicar(row)}
@@ -302,7 +470,7 @@ export function CampanasPage() {
                 openEdit(row);
                 try {
                   await validarCampana.mutateAsync(row.campaign_id);
-                  message.success("Campaña avanzada en el flujo de aprobación.");
+                  message.success("Validación correcta. Ahora envía el borrador a aprobación.");
                 } catch (error) {
                   message.error(
                     error instanceof Error ? error.message : "La campaña no pudo validarse.",
@@ -313,28 +481,69 @@ export function CampanasPage() {
               Validar
             </button>
           )}
-          <button
-            type="button"
-            className="btn btn-outline"
-            style={{ padding: "6px 11px", fontSize: 11 }}
-            onClick={() => openEdit(row)}
-          >
-            <EditOutlined /> Editar
-          </button>
-          <Popconfirm
-            title="¿Eliminar esta campaña?"
-            okText="Eliminar"
-            cancelText="Cancelar"
-            onConfirm={() => handleDelete(row.campaign_id)}
-          >
+          {row.estado === "validated" && (
+            <Popconfirm
+              title="¿Solicitar aprobación?"
+              description="Un propietario o administrador debe aprobarlo antes de publicarlo."
+              okText="Solicitar"
+              cancelText="Cancelar"
+              onConfirm={() => handleSolicitarAprobacion(row.campaign_id)}
+            >
+              <button type="button" className="btn btn-soft" style={{ padding: "6px 10px", fontSize: 11 }}>
+                Solicitar aprobación
+              </button>
+            </Popconfirm>
+          )}
+          {row.estado === "awaiting_approval" && (
+            <Popconfirm
+              title="¿Aprobar esta campaña?"
+              description="Esto habilita su publicación pausada en Meta, no inicia gasto."
+              okText="Aprobar"
+              cancelText="Cancelar"
+              onConfirm={() => handleAprobar(row.campaign_id)}
+            >
+              <button type="button" className="btn btn-primary" style={{ padding: "6px 10px", fontSize: 11 }}>
+                <CheckOutlined /> Aprobar
+              </button>
+            </Popconfirm>
+          )}
+          {["published_paused", "active"].includes(row.estado) && (
             <button
               type="button"
-              className="btn btn-danger"
+              className="btn btn-soft"
               style={{ padding: "6px 10px", fontSize: 11 }}
+              onClick={() => void handleSincronizarEstadoMeta(row.campaign_id)}
+              disabled={sincronizarEstadoMeta.isPending}
             >
-              <DeleteOutlined />
+              Sincronizar Meta
             </button>
-          </Popconfirm>
+          )}
+          {["local_draft", "validated"].includes(row.estado) && (
+            <button
+              type="button"
+              className="btn btn-outline"
+              style={{ padding: "6px 11px", fontSize: 11 }}
+              onClick={() => openEdit(row)}
+            >
+              <EditOutlined /> Editar
+            </button>
+          )}
+          {["local_draft", "validated"].includes(row.estado) && (
+            <Popconfirm
+              title="¿Eliminar esta campaña?"
+              okText="Eliminar"
+              cancelText="Cancelar"
+              onConfirm={() => handleDelete(row.campaign_id)}
+            >
+              <button
+                type="button"
+                className="btn btn-danger"
+                style={{ padding: "6px 10px", fontSize: 11 }}
+              >
+                <DeleteOutlined />
+              </button>
+            </Popconfirm>
+          )}
         </span>
       ),
     },
@@ -351,6 +560,9 @@ export function CampanasPage() {
           </p>
         </div>
         <div className="header-actions">
+          <button type="button" className="btn btn-outline" onClick={handleExportDrafts}>
+            <DownloadOutlined /> Exportar borradores
+          </button>
           <button type="button" className="btn btn-primary" onClick={openCreate}>
             <PlusOutlined /> Nueva campaña
           </button>
@@ -358,8 +570,8 @@ export function CampanasPage() {
       </div>
 
       <div className="notice">
-        <strong>Publicación directa en Meta.</strong> La API usa el token y la cuenta publicitaria
-        configurados de forma privada en el backend.
+        <strong>Aprobación explícita antes de publicar.</strong> Los borradores pueden exportarse sin
+        permisos de Meta; tras la aprobación, los recursos se crean pausados.
       </div>
 
       <div className="campaign-layout">
@@ -406,8 +618,80 @@ export function CampanasPage() {
                       value: conexion.connection_id,
                       label: `${conexion.nombre_cuenta} · ${conexion.cuenta_publicitaria_id}`,
                     }))}
+                    onChange={() =>
+                      form.setFieldsValue({
+                        meta_page_id: undefined,
+                        meta_instagram_id: undefined,
+                        target_location_key: undefined,
+                        target_location_name: undefined,
+                        target_location_country_code: undefined,
+                      })
+                    }
                   />
                 </Form.Item>
+              </div>
+
+              <div className="field">
+                <span className="lbl">Página de Facebook</span>
+                <Form.Item name="meta_page_id" noStyle>
+                  <Select
+                    loading={loadingMetaPages}
+                    allowClear
+                    placeholder="Selecciona una página administrada"
+                    options={(metaPages ?? []).map((page) => ({ value: page.id, label: page.name }))}
+                    onChange={() =>
+                      form.setFieldsValue({ meta_instagram_id: undefined })
+                    }
+                  />
+                </Form.Item>
+              </div>
+
+              <div className="field">
+                <span className="lbl">Instagram vinculado</span>
+                <Form.Item name="meta_instagram_id" noStyle>
+                  <Select
+                    allowClear
+                    placeholder="Opcional"
+                    options={(metaPages ?? [])
+                      .filter((page) => page.id === selectedPageId && page.instagram_business_account)
+                      .map((page) => ({
+                        value: page.instagram_business_account?.id,
+                        label: page.instagram_business_account?.username
+                          ? `@${page.instagram_business_account.username}`
+                          : page.instagram_business_account?.id,
+                      }))}
+                  />
+                </Form.Item>
+              </div>
+
+              <div className="field full">
+                <span className="lbl">Ciudad Meta · categoría especial de vivienda</span>
+                <Form.Item name="target_location_key" noStyle>
+                  <Select
+                    showSearch
+                    filterOption={false}
+                    onSearch={setLocationQuery}
+                    loading={loadingMetaLocations}
+                    placeholder="Busca y selecciona la ciudad de la propiedad"
+                    notFoundContent={debouncedLocationQuery.length < 2 ? "Escribe al menos dos caracteres" : "Sin resultados"}
+                    options={(metaLocations ?? [])
+                      .filter((location) => location.country_code)
+                      .map((location) => ({
+                        value: location.key,
+                        label: [location.name, location.region, location.country_name].filter(Boolean).join(", "),
+                      }))}
+                    onChange={(key) => {
+                      const location = metaLocations?.find((item) => item.key === key);
+                      form.setFieldsValue({
+                        target_location_name: location?.name ?? null,
+                        target_location_country_code: location?.country_code?.toUpperCase() ?? null,
+                      });
+                    }}
+                  />
+                </Form.Item>
+                {metaLocationsError && (
+                  <span style={{ color: "#b42318", fontSize: 12 }}>{metaLocationsError.message}</span>
+                )}
               </div>
 
               <div className="field">
@@ -489,6 +773,33 @@ export function CampanasPage() {
               </div>
 
               <div className="field full">
+                <span className="lbl">Creativo aprobado · URL pública HTTPS</span>
+                <Form.Item name="creative_url" noStyle>
+                  <Input type="url" placeholder="https://..." />
+                </Form.Item>
+              </div>
+
+              <div className="field">
+                <span className="lbl">Formato del creativo</span>
+                <Form.Item name="media_type" noStyle>
+                  <Select
+                    allowClear
+                    options={[
+                      { value: "image", label: "Imagen" },
+                      { value: "video", label: "Video" },
+                    ]}
+                  />
+                </Form.Item>
+              </div>
+
+              <div className="field">
+                <span className="lbl">Política de privacidad · HTTPS</span>
+                <Form.Item name="privacy_policy_url" noStyle>
+                  <Input type="url" placeholder="https://tu-dominio.com/privacidad" />
+                </Form.Item>
+              </div>
+
+              <div className="field full">
                 <span className="lbl">Copy del anuncio</span>
                 <Form.Item
                   name="copy"
@@ -502,6 +813,15 @@ export function CampanasPage() {
                     placeholder="Lotes desde USD 35.000 a 15 minutos del centro. Agenda tu visita hoy."
                   />
                 </Form.Item>
+                <button
+                  type="button"
+                  className="btn btn-soft"
+                  style={{ marginTop: 8 }}
+                  onClick={() => void handleGenerarEstrategia()}
+                  disabled={strategyPending || !propertyId || !objetivo}
+                >
+                  <BulbOutlined /> {strategyPending ? "Generando…" : "Generar estrategia y variantes A/B"}
+                </button>
               </div>
 
               <div className="field full">
@@ -592,9 +912,61 @@ export function CampanasPage() {
       </div>
 
       <p className="footer-note">
-        Las campañas enviadas se crean pausadas en Meta; confirma el estado real en Ads Manager
-        antes de activarlas.
+        Solo las campañas aprobadas pueden enviarse a Meta. La API crea todos los recursos en PAUSED;
+        la activación del gasto se hace aparte en Ads Manager.
       </p>
+
+      <Modal
+        title={`Estrategia comercial · ${estrategia?.propiedad ?? ""}`}
+        open={Boolean(estrategia)}
+        onCancel={() => setEstrategia(null)}
+        footer={null}
+        width={760}
+        destroyOnHidden
+      >
+        {estrategia && (
+          <div style={{ display: "grid", gap: 16 }}>
+            <p>
+              Propuestas construidas únicamente con los datos registrados en la ficha. Revisa y
+              confirma precio, disponibilidad y condiciones antes de publicar.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+              {estrategia.variantes_ab.map((variant) => (
+                <div key={variant.variante} className="card card-pad">
+                  <p className="eyebrow">Variante {variant.variante} · {variant.enfoque}</p>
+                  <h3>{variant.titular}</h3>
+                  <p><strong>Copy corto:</strong> {variant.copy_corto}</p>
+                  <p><strong>Copy largo:</strong> {variant.copy_largo}</p>
+                  <p><strong>CTA:</strong> {variant.cta}</p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => aplicarVariante(variant)}
+                  >
+                    Usar variante {variant.variante}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <section>
+              <h3>Formatos recomendados</h3>
+              <p>{estrategia.formatos_recomendados.join(" · ")}</p>
+              <h3>Guion de 15 segundos</h3>
+              <p>{estrategia.guion_15s}</p>
+              <h3>Guion de 30 segundos</h3>
+              <p>{estrategia.guion_30s}</p>
+              <h3>Checklist antes de publicar</h3>
+              <ul>{estrategia.checklist_editorial.map((item) => <li key={item}>{item}</li>)}</ul>
+            </section>
+            {estrategia.advertencias.length > 0 && (
+              <div className="notice">
+                <strong>Revisión editorial</strong>
+                <ul>{estrategia.advertencias.map((item) => <li key={item}>{item}</li>)}</ul>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

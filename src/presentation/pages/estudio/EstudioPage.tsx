@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { App, Empty, Input, Select, Spin } from "antd";
 import {
@@ -15,6 +15,7 @@ import {
   useModelos,
   usePlantillas,
   usePropiedades,
+  useQuoteGeneracion,
   useWallet,
 } from "@/presentation/hooks";
 import type { Generacion } from "@/domain/generacion";
@@ -78,7 +79,7 @@ function formatoPrecioModelo(modelo: Modelo | undefined): string | null {
 export function EstudioPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
 
   const { data: plantillas, isLoading: loadingPlantillas } = usePlantillas();
   const { data: modelos } = useModelos();
@@ -86,6 +87,8 @@ export function EstudioPage() {
   const { data: generaciones, isLoading: loadingGeneraciones } = useGeneraciones();
   const { data: wallet } = useWallet();
   const createGeneracion = useCreateGeneracion();
+  const quoteGeneracion = useQuoteGeneracion();
+  const generationConfirmationOpen = useRef(false);
 
   const preset = location.state as { propertyId?: string; templateId?: string } | null;
   const [media, setMedia] = useState<Media>("image");
@@ -165,7 +168,7 @@ export function EstudioPage() {
   const creditosCotizados = useMemo(() => {
     if (!modelo) return 0;
     const extra =
-      modelo.media_type === "video" && modelo.duracion_max_s
+      modelo.media_type === "video"
         ? Math.max(0, Math.ceil((duration ?? modelo.duracion_min_s ?? 5) / 5) - 1)
         : 0;
     return modelo.quote_creditos + extra;
@@ -181,6 +184,7 @@ export function EstudioPage() {
   const duracionPreview = duration ?? modelo?.duracion_min_s ?? 5;
 
   const handleGenerar = async () => {
+    if (generationConfirmationOpen.current) return;
     if (!modelo) {
       message.error("Selecciona un modelo disponible para este medio.");
       return;
@@ -189,29 +193,59 @@ export function EstudioPage() {
       message.error("Escribe o genera un prompt antes de crear la generación.");
       return;
     }
-    if (!saldoSuficiente) {
-      message.error("Saldo de créditos insuficiente para esta generación.");
-      return;
-    }
-
     const parametros: Record<string, unknown> = {};
     if (duration) parametros.duration = duration;
     if (ratio) parametros.ratio = ratio;
 
+    generationConfirmationOpen.current = true;
     try {
-      await createGeneracion.mutateAsync({
-        property_id: propertyId ?? null,
-        template_id: templateId ?? null,
+      const quote = await quoteGeneracion.mutateAsync({
         model_id: modelo.model_id,
-        modo,
-        prompt: promptActual,
         parametros,
-        status: "queued",
-        credits_cost: creditosCotizados,
       });
-      message.success("Generación encolada. El Estudio la procesará en unos segundos.");
+      const availableCredits = quote.available_credits ?? saldo;
+      if (quote.credits_cost > availableCredits) {
+        message.error(
+          `Saldo insuficiente: necesitas ${quote.credits_cost} créditos y tienes ${availableCredits}.`,
+        );
+        generationConfirmationOpen.current = false;
+        return;
+      }
+
+      const idempotencyKey = crypto.randomUUID();
+      modal.confirm({
+        title: "Confirmar generación",
+        content: `El modelo ${modelo.nombre} requiere ${quote.credits_cost} créditos. Se reservarán al aceptar y solo se confirmará el consumo cuando la generación finalice.`,
+        okText: "Confirmar y reservar",
+        cancelText: "Cancelar",
+        onCancel: () => {
+          generationConfirmationOpen.current = false;
+        },
+        onOk: async () => {
+          try {
+            await createGeneracion.mutateAsync({
+              property_id: propertyId ?? null,
+              template_id: templateId ?? null,
+              model_id: modelo.model_id,
+              idempotency_key: idempotencyKey,
+              quoted_credits: quote.credits_cost,
+              modo,
+              prompt: promptActual,
+              parametros,
+            });
+            message.success(
+              `Generación encolada. Se reservaron ${quote.credits_cost} créditos.`,
+            );
+          } catch (error) {
+            message.error(error instanceof Error ? error.message : "No se pudo crear la generación.");
+          } finally {
+            generationConfirmationOpen.current = false;
+          }
+        },
+      });
     } catch (error) {
       message.error(error instanceof Error ? error.message : "No se pudo crear la generación.");
+      generationConfirmationOpen.current = false;
     }
   };
 
@@ -477,8 +511,8 @@ export function EstudioPage() {
 
           {!saldoSuficiente && (
             <div className="notice warning" role="status" style={{ marginTop: 12 }}>
-              Saldo insuficiente: esta generación requiere {creditosCotizados} créditos y tienes{" "}
-              {saldo}.
+              Estimación: {creditosCotizados} créditos (saldo actual: {saldo}). El servidor
+              confirmará el costo final antes de aceptar la generación.
             </div>
           )}
 
@@ -488,10 +522,14 @@ export function EstudioPage() {
               className="btn btn-primary"
               style={{ flex: 1 }}
               onClick={handleGenerar}
-              disabled={!modelo || !saldoSuficiente || createGeneracion.isPending}
+              disabled={!modelo || quoteGeneracion.isPending || createGeneracion.isPending}
             >
               <RobotOutlined />
-              {createGeneracion.isPending ? "Encolando..." : "Generar propuesta"}
+              {quoteGeneracion.isPending
+                ? "Cotizando..."
+                : createGeneracion.isPending
+                  ? "Encolando..."
+                  : "Generar propuesta"}
             </button>
             <button type="button" className="btn btn-outline" onClick={handleCopiarPrompt}>
               <CopyOutlined /> Copiar prompt

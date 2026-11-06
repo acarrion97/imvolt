@@ -33,12 +33,14 @@ export interface Campana {
   moneda: string;
   fecha_inicio: string | null;
   fecha_fin: string | null;
+  duration_days: number | null;
   copy: string | null;
   titulo: string | null;
   cta: string | null;
   creative_url: string | null;
   meta_page_id?: string | null;
   meta_page_name?: string | null;
+  meta_instagram_id?: string | null;
   target_location_key?: string | null;
   target_location_name?: string | null;
   target_location_country_code?: string | null;
@@ -51,9 +53,10 @@ export interface Campana {
 
 export type CampanaCreate = Omit<
   Campana,
-  "campaign_id" | "organization_id" | "estado" | "meta_campaign_id" | "created_at" | "updated_at"
+  "campaign_id" | "organization_id" | "estado" | "duration_days" | "meta_campaign_id" | "created_at" | "updated_at"
 > & {
   estado?: CampanaEstado;
+  duration_days?: number | null;
 };
 
 export interface PublicacionCampana {
@@ -63,9 +66,41 @@ export interface PublicacionCampana {
   meta_estado: "published_paused";
   simulado: boolean;
   validado_solo: boolean;
+  replayed?: boolean;
+}
+
+export interface VarianteEstrategia {
+  variante: "A" | "B";
+  enfoque: string;
+  titular: string;
+  copy_corto: string;
+  copy_largo: string;
+  cta: string;
+}
+
+export interface EstrategiaCampana {
+  propiedad: string;
+  objetivo: string;
+  angulos: Array<{ id: string; nombre: string; enfoque: string; copy_sugerido: string }>;
+  titular: string;
+  copy_corto: string;
+  copy_largo: string;
+  variantes_ab: VarianteEstrategia[];
+  cta: string;
+  guion_audiovisual: string;
+  guion_15s: string;
+  guion_30s: string;
+  formatos_recomendados: string[];
+  checklist_editorial: string[];
+  advertencias: string[];
 }
 
 export interface CampanaRepository extends CrudRepository<Campana, string, CampanaCreate> {
   getByPropiedadId(propertyId: string, filters?: FilterParams): Promise<Campana[]>;
-  publicar(campaignId: string): Promise<PublicacionCampana>;
+  validar(campaignId: string): Promise<Campana>;
+  solicitarAprobacion(campaignId: string): Promise<Campana>;
+  aprobar(campaignId: string): Promise<Campana>;
+  sincronizarEstadoMeta(campaignId: string): Promise<Campana>;
+  generarEstrategia(propertyId: string, objective: CampanaObjetivo): Promise<EstrategiaCampana>;
+  publicar(campaignId: string, idempotencyKey: string): Promise<PublicacionCampana>;
 }

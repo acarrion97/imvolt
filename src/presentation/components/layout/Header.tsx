@@ -24,6 +24,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/contactos": "Contactos",
   "/analitica": "Analítica",
   "/configuracion": "Configuración",
+  "/administracion": "Administración",
 };
 
 interface HeaderProps {

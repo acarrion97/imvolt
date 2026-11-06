@@ -364,6 +364,66 @@ a { color: var(--green); }
   .cols2, .cols3, .cols4 { grid-template-columns: 1fr; }
 }
 
+/* ── Administración de plataforma ───────────────────────────────────────── */
+.admin-page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.admin-page-heading h1 { font-size: 32px; line-height: 1.15; margin-bottom: 7px; }
+.admin-page-heading .sub { color: #738579; font-size: 13px; }
+.admin-security-badge { margin-top: 6px; padding: 7px 11px; }
+.admin-error { margin-bottom: 16px; }
+.admin-stats { margin-bottom: 22px; }
+.admin-stat-card { border-radius: 15px; border-color: #e4ebe7; box-shadow: var(--shadow); }
+.admin-stat-card .ant-card-body {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 11px;
+  row-gap: 4px;
+  padding: 16px;
+}
+.admin-stat-icon {
+  grid-row: span 2;
+  background: #e5f8ea;
+  color: #007a43;
+  border-radius: 11px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+}
+.admin-stat-label { color: var(--muted); font-size: 11px; font-weight: 600; }
+.admin-stat-card strong { color: #0e2420; font-size: 20px; letter-spacing: -0.035em; }
+.admin-tabs > .ant-tabs-nav { margin-bottom: 16px; }
+.admin-content-card { border-radius: 16px; border-color: #e4ebe7; }
+.admin-content-card .ant-card-body { padding: 20px; }
+.admin-table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 18px;
+}
+.admin-table-toolbar h2 { font-size: 17px; margin-bottom: 4px; }
+.admin-table-toolbar p, .admin-table-secondary { color: #738579; font-size: 11.5px; }
+.admin-table-secondary { margin-top: 3px; }
+.admin-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.admin-modal-company { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--ink); }
+.admin-templates-panel { background: transparent; }
+
+@media (max-width: 760px) {
+  .admin-page-heading, .admin-table-toolbar { align-items: stretch; flex-direction: column; }
+  .admin-security-badge { align-self: flex-start; }
+  .admin-form-grid { grid-template-columns: 1fr; }
+  .admin-content-card .ant-card-body { padding: 14px; }
+}
+
 /* ── Estadísticas ─────────────────────────────────────────────────────────── */
 .stat { display: flex; align-items: center; gap: 14px; padding: 19px 21px; }
 .stat-icon {

@@ -15,13 +15,14 @@ export type TransaccionTipo =
   | "recarga"
   | "ajuste";
 
-/** Entidad `public.credit_transactions` — monto positivo suma, negativo resta. */
+/** Entidad `public.credit_transactions` — `monto` cambia saldo; `creditos` registra el volumen del evento. */
 export interface TransaccionCredito {
   transaction_id: string;
   wallet_id: string;
   organization_id: string;
   tipo: TransaccionTipo;
   monto: number;
+  creditos: number;
   generation_id: string | null;
   descripcion: string | null;
   idempotency_key: string | null;
@@ -37,8 +38,11 @@ export interface WalletRepository {
   getWallet(): Promise<Wallet>;
   getTransacciones(filters?: FilterParams): Promise<TransaccionCredito[]>;
   /** Recarga (stub de pasarela: POST /billing/recharge). */
-  recargar(monto: number, idempotencyKey?: string): Promise<Wallet>;
+  recargar(monto: number, idempotencyKey: string): Promise<Wallet>;
 }
 
-export interface TransaccionRepository
-  extends CrudRepository<TransaccionCredito, string, TransaccionCreditoCreate> {}
+export type TransaccionRepository = CrudRepository<
+  TransaccionCredito,
+  string,
+  TransaccionCreditoCreate
+>;

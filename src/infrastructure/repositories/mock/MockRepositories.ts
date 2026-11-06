@@ -9,6 +9,8 @@ import type {
 import type {
   Campana,
   CampanaCreate,
+  CampanaObjetivo,
+  EstrategiaCampana,
   PublicacionCampana,
   CampanaRepository,
 } from "@/domain/campana";
@@ -20,6 +22,9 @@ import type {
 import type {
   Generacion,
   GeneracionCreate,
+  GenerationOutput,
+  GeneracionQuote,
+  GeneracionQuoteInput,
   GeneracionRepository,
 } from "@/domain/generacion";
 import type { Lead, LeadCreate, LeadRepository } from "@/domain/lead";
@@ -525,7 +530,7 @@ export class MockGeneracionRepository
         parametros: data.parametros ?? {},
         // §09: toda generación nueva entra a la cola simulada.
         status: data.status ?? "queued",
-        credits_cost: data.credits_cost ?? 0,
+        credits_cost: data.credits_cost ?? data.quoted_credits,
         provider_request_id: null,
         error_message: null,
         created_at: nowIso(),
@@ -541,6 +546,41 @@ export class MockGeneracionRepository
 
   async getByPropiedadId(propertyId: string): Promise<Generacion[]> {
     return this.applyFilters(await this.getAll(), { property_id: propertyId });
+  }
+
+  async getOutputs(generationId: string): Promise<GenerationOutput[]> {
+    const generation = await this.getById(generationId);
+    if (!generation) throw new Error(`No existe la generación ${generationId}`);
+    return generation.outputs ?? [];
+  }
+
+  async quote(input: GeneracionQuoteInput): Promise<GeneracionQuote> {
+    const model = seedModelos.find((item) => item.model_id === input.model_id && item.status === "activo");
+    if (!model) throw new Error("No se encontró un modelo activo para cotizar.");
+    const duration = Number(input.parametros.duration ?? model.duracion_min_s ?? 5);
+    if (model.media_type === "video" && (
+      !Number.isFinite(duration) ||
+      duration <= 0 ||
+      (model.duracion_min_s != null && duration < model.duracion_min_s) ||
+      (model.duracion_max_s != null && duration > model.duracion_max_s)
+    )) {
+      throw new Error("La duración no está permitida para este modelo.");
+    }
+    if (
+      ["kling-video/v2.6/pro/text-to-video", "higgsfield/veo3-video"].includes(model.provider_model_id) &&
+      duration !== 5 &&
+      duration !== 10
+    ) {
+      throw new Error("Kling 2.6 admite únicamente 5 o 10 segundos.");
+    }
+    const ratio = input.parametros.ratio;
+    if (ratio && model.ratios && !model.ratios.includes(String(ratio))) {
+      throw new Error("Selecciona una relación de aspecto disponible para este modelo.");
+    }
+    return {
+      credits_cost: model.quote_creditos +
+        (model.media_type === "video" ? Math.max(0, Math.ceil(duration / 5) - 1) : 0),
+    };
   }
 }
 
@@ -590,10 +630,12 @@ export class MockCampanaRepository
         moneda: data.moneda || "USD",
         fecha_inicio: data.fecha_inicio ?? null,
         fecha_fin: data.fecha_fin ?? null,
+        duration_days: data.duration_days ?? null,
         copy: data.copy ?? null,
         titulo: data.titulo ?? null,
         cta: data.cta ?? null,
         creative_url: data.creative_url ?? null,
+        meta_instagram_id: data.meta_instagram_id ?? null,
         meta_campaign_id: null,
         created_at: nowIso(),
         updated_at: nowIso(),
@@ -610,9 +652,85 @@ export class MockCampanaRepository
     return this.applyFilters(await this.getAll(), { property_id: propertyId });
   }
 
-  async publicar(campaignId: string): Promise<PublicacionCampana> {
+  async validar(campaignId: string): Promise<Campana> {
+    const campaign = await this.getById(campaignId);
+    if (!campaign || campaign.estado !== "local_draft") {
+      throw new Error("Solo se pueden validar campañas en borrador local.");
+    }
+    if (!campaign.copy || campaign.copy.trim().length < 10 || campaign.presupuesto_maximo <= 0) {
+      throw new Error("Completa presupuesto y copy antes de validar.");
+    }
+    return this.update(campaignId, { estado: "validated" });
+  }
+
+  async solicitarAprobacion(campaignId: string): Promise<Campana> {
+    const campaign = await this.getById(campaignId);
+    if (!campaign || campaign.estado !== "validated") {
+      throw new Error("Valida la campaña antes de solicitar aprobación.");
+    }
+    return this.update(campaignId, { estado: "awaiting_approval" });
+  }
+
+  async aprobar(campaignId: string): Promise<Campana> {
+    const campaign = await this.getById(campaignId);
+    if (!campaign || campaign.estado !== "awaiting_approval") {
+      throw new Error("Solo se pueden aprobar campañas pendientes.");
+    }
+    return this.update(campaignId, { estado: "approved" });
+  }
+
+  async sincronizarEstadoMeta(campaignId: string): Promise<Campana> {
+    const campaign = await this.getById(campaignId);
+    if (!campaign || !["published_paused", "active"].includes(campaign.estado)) {
+      throw new Error("Solo se pueden sincronizar campañas publicadas.");
+    }
+    return campaign;
+  }
+
+  async generarEstrategia(
+    propertyId: string,
+    objective: CampanaObjetivo,
+  ): Promise<EstrategiaCampana> {
+    const property = seedPropiedades.find((item) => String(item.propiedad_id) === propertyId);
+    if (!property) throw new Error("La propiedad no existe.");
+    const location = property.ubicacion?.trim();
+    const amount = property.precio
+      ? ` desde ${property.precio.toLocaleString("es-EC")}`
+      : "";
+    const availability = property.disponibilidad === "disponible"
+      ? " Consulta disponibilidad vigente."
+      : "";
+    const variantA = `${property.nombre}${location ? `, en ${location}` : ""}${amount}.${availability} Solicita información a un asesor.`;
+    const variantB = `${property.nombre}: conoce los detalles confirmados de la ficha y consulta condiciones vigentes con un asesor.`;
+    return {
+      propiedad: property.nombre,
+      objetivo: objective,
+      angulos: [
+        { id: "ubicacion", nombre: "Ubicación confirmada", enfoque: "Comunicar solo la ubicación registrada.", copy_sugerido: variantA },
+        { id: "consulta", nombre: "Consulta informativa", enfoque: "Invitar a conversar sin agregar atributos.", copy_sugerido: variantB },
+      ],
+      titular: property.nombre,
+      copy_corto: variantA,
+      copy_largo: variantA,
+      variantes_ab: [
+        { variante: "A", enfoque: "Ubicación y valor registrados.", titular: property.nombre, copy_corto: variantA, copy_largo: variantA, cta: "Solicita información" },
+        { variante: "B", enfoque: "Consulta informativa sin promesas.", titular: property.nombre, copy_corto: variantB, copy_largo: variantB, cta: "Conversa con un asesor" },
+      ],
+      cta: "Solicita información",
+      guion_audiovisual: `${property.nombre}${location ? ` en ${location}` : ""}. Muestra únicamente elementos confirmados y cierra invitando a solicitar información.`,
+      guion_15s: `Presenta ${property.nombre}${location ? ` en ${location}` : ""}; cierra invitando a consultar.`,
+      guion_30s: `Presenta ${property.nombre}${location ? ` en ${location}` : ""}${amount}. Expón solo lo que consta en la ficha y cierra con una invitación a consultar.`,
+      formatos_recomendados: ["Reels 9:16", "Imagen 4:5", "Feed 1:1"],
+      checklist_editorial: ["Verifica precio y disponibilidad.", "No agregues atributos no confirmados.", "Confirma derechos de uso del creativo."],
+      advertencias: property.disponibilidad !== "disponible" ? ["La disponibilidad no figura como disponible; confírmala antes de anunciar."] : [],
+    };
+  }
+
+  async publicar(campaignId: string, idempotencyKey: string): Promise<PublicacionCampana> {
     const campaign = await this.getById(campaignId);
     if (!campaign) throw new Error("La campaña no existe.");
+    if (!idempotencyKey) throw new Error("Se requiere una clave de idempotencia.");
+    if (campaign.estado !== "approved") throw new Error("La campaña requiere aprobación explícita.");
     if (campaign.meta_campaign_id) throw new Error("La campaña ya fue publicada en Meta.");
     const metaCampaignId = `META-SIM-${campaignId.slice(0, 8).toUpperCase()}`;
     await this.update(campaignId, {
@@ -626,6 +744,7 @@ export class MockCampanaRepository
       meta_estado: "published_paused",
       simulado: true,
       validado_solo: false,
+      replayed: false,
     };
   }
 }
@@ -677,9 +796,14 @@ export class MockWalletRepository implements WalletRepository {
     return [...this.transacciones];
   }
 
-  async recargar(monto: number, idempotencyKey?: string): Promise<Wallet> {
+  async recargar(monto: number, idempotencyKey: string): Promise<Wallet> {
     if (monto <= 0) throw new Error("El monto de la recarga debe ser mayor a cero.");
-    if (idempotencyKey && this.transacciones.some((t) => t.idempotency_key === idempotencyKey)) {
+    if (!idempotencyKey.trim()) throw new Error("La recarga requiere una clave de idempotencia.");
+    const existing = this.transacciones.find((t) => t.idempotency_key === idempotencyKey);
+    if (existing) {
+      if (existing.tipo !== "recarga" || existing.creditos !== monto) {
+        throw new Error("La clave de idempotencia ya se usó con otros datos.");
+      }
       return { ...this.wallet }; // idempotente: ya procesada
     }
     this.wallet = { ...this.wallet, saldo: this.wallet.saldo + monto, updated_at: nowIso() };
@@ -690,9 +814,10 @@ export class MockWalletRepository implements WalletRepository {
         organization_id: this.wallet.organization_id,
         tipo: "recarga",
         monto,
+        creditos: monto,
         generation_id: null,
         descripcion: "Recarga de créditos",
-        idempotency_key: idempotencyKey ?? null,
+        idempotency_key: idempotencyKey,
         created_at: nowIso(),
       },
       ...this.transacciones,

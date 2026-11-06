@@ -62,7 +62,7 @@ export function ConfiguracionPage() {
   const recargarCreditos = async (monto: number) => {
     setRecargando(monto);
     try {
-      await recargar.mutateAsync({ monto, idempotencyKey: `demo-${Date.now()}` });
+      await recargar.mutateAsync({ monto, idempotencyKey: crypto.randomUUID() });
       message.success(`Recarga simulada: +${monto} créditos.`);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "No se pudo recargar.");
@@ -132,9 +132,12 @@ export function ConfiguracionPage() {
                   {t.descripcion ?? t.tipo}
                   <span style={{ color: "#9aaba0", fontSize: 11 }}>· {formatFecha(t.created_at)}</span>
                 </span>
-                <span className={`amount ${Number(t.monto) < 0 ? "neg" : "pos"}`}>
-                  {Number(t.monto) > 0 ? "+" : ""}
-                  {t.monto}
+                <span className={`amount ${t.tipo === "reserva" || t.tipo === "consumo" ? "neg" : "pos"}`}>
+                  {t.tipo === "consumo"
+                    ? `${t.creditos} gastados`
+                    : t.tipo === "reserva"
+                      ? `${t.creditos} reservados`
+                      : `${Number(t.monto) > 0 ? "+" : ""}${t.monto}`}
                 </span>
               </div>
             ))}

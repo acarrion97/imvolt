@@ -5,6 +5,7 @@ import { getContainer } from "@/infrastructure/container";
 import { createCrudHooks } from "./createCrudHooks";
 import { domainKey, queryKeys } from "@/infrastructure/cache/queryKeys";
 import type { FilterParams } from "@/domain/core/repositories/CrudRepository";
+import type { GeneracionCreate, GeneracionQuoteInput } from "@/domain/generacion";
 import type {
   EmpresaIntegracionConfig,
   EmpresaUpdate,
@@ -73,14 +74,34 @@ const generacionesHooks = createCrudHooks(getContainer().generaciones, "generaci
 export const {
   useList: useGeneraciones,
   useById: useGeneracion,
-  useCreate: useCreateGeneracion,
   useUpdate: useUpdateGeneracion,
   useDelete: useDeleteGeneracion,
 } = generacionesHooks;
 
+export function useCreateGeneracion() {
+  const queryClient = useQueryClient();
+  const { generaciones } = getContainer();
+  return useMutation({
+    mutationFn: (input: GeneracionCreate) => generaciones.create.execute(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.generaciones() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.wallet() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transacciones() });
+    },
+  });
+}
+
+export function useQuoteGeneracion() {
+  const { quoteGeneracion } = getContainer();
+  return useMutation({
+    mutationFn: (input: GeneracionQuoteInput) => quoteGeneracion.execute(input),
+  });
+}
+
 export interface MetaPage {
   id: string;
   name: string;
+  instagram_business_account?: { id: string; username?: string };
 }
 
 export interface MetaAdLocation {
@@ -159,8 +180,44 @@ export function usePublicarCampana() {
   const queryClient = useQueryClient();
   const { publicarCampana } = getContainer();
   return useMutation({
-    mutationFn: (campaignId: string) => publicarCampana.execute(campaignId),
+    mutationFn: (input: { campaignId: string; idempotencyKey: string }) =>
+      publicarCampana.execute(input.campaignId, input.idempotencyKey),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: domainKey("campanas") }),
+  });
+}
+
+export function useSolicitarAprobacionCampana() {
+  const queryClient = useQueryClient();
+  const { solicitarAprobacionCampana } = getContainer();
+  return useMutation({
+    mutationFn: (campaignId: string) => solicitarAprobacionCampana.execute(campaignId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: domainKey("campanas") }),
+  });
+}
+
+export function useAprobarCampana() {
+  const queryClient = useQueryClient();
+  const { aprobarCampana } = getContainer();
+  return useMutation({
+    mutationFn: (campaignId: string) => aprobarCampana.execute(campaignId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: domainKey("campanas") }),
+  });
+}
+
+export function useSincronizarEstadoMetaCampana() {
+  const queryClient = useQueryClient();
+  const { sincronizarEstadoCampanaMeta } = getContainer();
+  return useMutation({
+    mutationFn: (campaignId: string) => sincronizarEstadoCampanaMeta.execute(campaignId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: domainKey("campanas") }),
+  });
+}
+
+export function useGenerarEstrategiaCampana() {
+  const { generarEstrategiaCampana } = getContainer();
+  return useMutation({
+    mutationFn: (input: { propertyId: string; objective: import("@/domain/campana").CampanaObjetivo }) =>
+      generarEstrategiaCampana.execute(input.propertyId, input.objective),
   });
 }
 
@@ -394,7 +451,7 @@ export function useRecargarCreditos() {
   const queryClient = useQueryClient();
   const { recargarCreditos } = getContainer();
   return useMutation({
-    mutationFn: ({ monto, idempotencyKey }: { monto: number; idempotencyKey?: string }) =>
+    mutationFn: ({ monto, idempotencyKey }: { monto: number; idempotencyKey: string }) =>
       recargarCreditos.execute(monto, idempotencyKey),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.wallet() });

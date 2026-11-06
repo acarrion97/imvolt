@@ -14,9 +14,12 @@ export class RecargarCreditosUseCase {
     this.walletRepo = walletRepo;
   }
 
-  execute(monto: number, idempotencyKey?: string): Promise<Wallet> {
+  execute(monto: number, idempotencyKey: string): Promise<Wallet> {
     if (!Number.isFinite(monto) || monto <= 0) {
       throw new Error("El monto de la recarga debe ser mayor a cero.");
+    }
+    if (!idempotencyKey.trim()) {
+      throw new Error("La recarga requiere una clave de idempotencia.");
     }
     return this.walletRepo.recargar(monto, idempotencyKey);
   }

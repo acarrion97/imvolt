@@ -16,6 +16,8 @@ import { AnaliticaPage } from "@/presentation/pages/analitica/AnaliticaPage";
 import { MediosPage } from "@/presentation/pages/medios/MediosPage";
 import { EquipoPage } from "@/presentation/pages/equipo/EquipoPage";
 import { ConfiguracionPage } from "@/presentation/pages/configuracion/ConfiguracionPage";
+import { AdministracionPage } from "@/presentation/pages/administracion/AdministracionPage";
+import { RequireSuperAdmin } from "./RequireSuperAdmin";
 
 /**
  * Navegación principal IMVOLT — mapa del prototipo (UI Concept 01):
@@ -62,6 +64,14 @@ export function AppRouter() {
             }
           />
           <Route path="/configuracion" element={<ConfiguracionPage />} />
+          <Route
+            path="/administracion"
+            element={
+              <RequireSuperAdmin>
+                <AdministracionPage />
+              </RequireSuperAdmin>
+            }
+          />
           <Route path="/" element={<Navigate to="/inicio" replace />} />
           <Route path="/dashboard" element={<Navigate to="/inicio" replace />} />
           <Route path="*" element={<Navigate to="/inicio" replace />} />

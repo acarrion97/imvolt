@@ -2,9 +2,20 @@ import type { Repositories } from "./create-repositories";
 import type { CrudUseCases } from "@/application/core/crud-use-cases";
 
 import type { LoginInput, Perfil, RegisterInput, RegisterResult, Session } from "@/domain/auth";
-import type { Campana, CampanaCreate, PublicacionCampana } from "@/domain/campana";
+import type {
+  Campana,
+  CampanaCreate,
+  CampanaObjetivo,
+  EstrategiaCampana,
+  PublicacionCampana,
+} from "@/domain/campana";
 import type { Conexion, ConexionCreate } from "@/domain/conexion";
-import type { Generacion, GeneracionCreate } from "@/domain/generacion";
+import type {
+  Generacion,
+  GeneracionCreate,
+  GeneracionQuote,
+  GeneracionQuoteInput,
+} from "@/domain/generacion";
 import type { Lead, LeadCreate } from "@/domain/lead";
 import type {
   MediaAsset,
@@ -56,6 +67,7 @@ export interface UseCases {
   plantillas: CrudUseCases<Plantilla, string, PlantillaCreate>;
   modelos: CrudUseCases<Modelo, string, ModeloCreate>;
   generaciones: CrudUseCases<Generacion, string, GeneracionCreate>;
+  quoteGeneracion: { execute(input: GeneracionQuoteInput): Promise<GeneracionQuote> };
   conexiones: CrudUseCases<Conexion, string, ConexionCreate>;
   campanas: CrudUseCases<Campana, string, CampanaCreate>;
   leads: CrudUseCases<Lead, string, LeadCreate>;
@@ -101,7 +113,15 @@ export interface UseCases {
   getTransacciones: { execute(): Promise<TransaccionCredito[]> };
   recargarCreditos: RecargarCreditosUseCase;
   validarCampana: ValidarCampanaUseCase;
-  publicarCampana: { execute(campaignId: string): Promise<PublicacionCampana> };
+  solicitarAprobacionCampana: { execute(campaignId: string): Promise<Campana> };
+  aprobarCampana: { execute(campaignId: string): Promise<Campana> };
+  sincronizarEstadoCampanaMeta: { execute(campaignId: string): Promise<Campana> };
+  generarEstrategiaCampana: {
+    execute(propertyId: string, objective: CampanaObjetivo): Promise<EstrategiaCampana>;
+  };
+  publicarCampana: {
+    execute(campaignId: string, idempotencyKey: string): Promise<PublicacionCampana>;
+  };
 
   // autenticación (solo con VITE_DATA_PROVIDER=rest)
   login: { execute(input: LoginInput): Promise<Session> };
@@ -118,6 +138,7 @@ export function createUseCases(repos: Repositories): UseCases {
     plantillas: buildCrudUseCases(repos.plantillaRepo),
     modelos: buildCrudUseCases(repos.modeloRepo),
     generaciones: buildCrudUseCases(repos.generacionRepo),
+    quoteGeneracion: { execute: (input) => repos.generacionRepo.quote(input) },
     conexiones: buildCrudUseCases(repos.conexionRepo),
     campanas: buildCrudUseCases(repos.campanaRepo),
     leads: buildCrudUseCases(repos.leadRepo),
@@ -166,7 +187,19 @@ export function createUseCases(repos: Repositories): UseCases {
     getTransacciones: { execute: () => repos.walletRepo.getTransacciones() },
     recargarCreditos: new RecargarCreditosUseCase(repos.walletRepo),
     validarCampana: new ValidarCampanaUseCase(repos.campanaRepo),
-    publicarCampana: { execute: (campaignId) => repos.campanaRepo.publicar(campaignId) },
+    solicitarAprobacionCampana: {
+      execute: (campaignId) => repos.campanaRepo.solicitarAprobacion(campaignId),
+    },
+    aprobarCampana: { execute: (campaignId) => repos.campanaRepo.aprobar(campaignId) },
+    sincronizarEstadoCampanaMeta: {
+      execute: (campaignId) => repos.campanaRepo.sincronizarEstadoMeta(campaignId),
+    },
+    generarEstrategiaCampana: {
+      execute: (propertyId, objective) => repos.campanaRepo.generarEstrategia(propertyId, objective),
+    },
+    publicarCampana: {
+      execute: (campaignId, idempotencyKey) => repos.campanaRepo.publicar(campaignId, idempotencyKey),
+    },
 
     login: { execute: (input) => repos.authRepo.login(input) },
     register: { execute: (input) => repos.authRepo.register(input) },

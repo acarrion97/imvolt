@@ -87,6 +87,11 @@ async function request<T>(
 
   try {
     const headers: Record<string, string> = { Accept: "application/json" };
+    if (init?.headers) {
+      new Headers(init.headers).forEach((value, key) => {
+        headers[key] = value;
+      });
+    }
     // FormData lleva su propio boundary: nunca se le fija Content-Type.
     const isForm = init?.body instanceof FormData;
     if (init?.body && !isForm) headers["Content-Type"] = "application/json";
@@ -131,8 +136,8 @@ async function request<T>(
 
 export const http = {
   get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body: unknown) =>
-    request<T>(path, { method: "POST", body: JSON.stringify(body) }),
+  post: <T>(path: string, body: unknown, headers?: Record<string, string>) =>
+    request<T>(path, { method: "POST", headers, body: JSON.stringify(body) }),
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
