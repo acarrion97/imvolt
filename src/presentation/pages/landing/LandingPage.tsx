@@ -454,7 +454,7 @@ export default function LandingPage() {
     <div className="lp-root" ref={rootRef}>
       <header className="lp-nav">
         <Link
-          to="/landing"
+          to="/"
           className="lp-nav__logo"
           aria-label="IMVOLT · MARKETING INMOBILIARIO AI"
         >

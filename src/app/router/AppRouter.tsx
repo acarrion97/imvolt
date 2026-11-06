@@ -40,13 +40,14 @@ export function AppRouter() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegisterPage />} />
         <Route
-          path="/landing"
+          path="/"
           element={
             <Suspense fallback={null}>
               <LandingPage />
             </Suspense>
           }
         />
+        <Route path="/landing" element={<Navigate to="/" replace />} />
 
         <Route
           element={
@@ -74,7 +75,6 @@ export function AppRouter() {
             }
           />
           <Route path="/configuracion" element={<ConfiguracionPage />} />
-          <Route path="/" element={<Navigate to="/inicio" replace />} />
           <Route path="/dashboard" element={<Navigate to="/inicio" replace />} />
           <Route path="*" element={<Navigate to="/inicio" replace />} />
         </Route>
