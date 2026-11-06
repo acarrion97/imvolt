@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { App } from "antd";
 import {
-  MessageOutlined,
   ReloadOutlined,
   WalletOutlined,
 } from "@ant-design/icons";
@@ -191,24 +190,9 @@ export function ConfiguracionPage() {
             )}
         </div>
       </div>
-      <div className="grid cols2">
-         <div className="card card-pad" style={{ marginTop: 20 }}>
-          <h2 style={{ fontSize: 17, marginBottom: 14 }}>Otras integraciones</h2>
-          <div className="integration">
-            <span className="connect-logo">
-              <MessageOutlined />
-            </span>
-            <span className="info">
-              <b>Lotes al Mando</b>
-              <span>Captación de leads por mensajería (§11).</span>
-            </span>
-            <span className="mini-badge grey">Próximamente</span>
-            </div>
-          </div>
-          <div className="card card-pad" style={{ marginTop: 20 }}>
-            <IntegracionesEmpresaPanel/>
-          </div>
-      </div>   
+      <div className="card card-pad" style={{ marginTop: 20 }}>
+        <IntegracionesEmpresaPanel />
+      </div>
     </div>
   );
 }
