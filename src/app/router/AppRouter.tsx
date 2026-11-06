@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/presentation/components/layout/AppLayout";
 import { LoginPage } from "@/presentation/pages/auth/LoginPage";
@@ -17,6 +18,9 @@ import { MediosPage } from "@/presentation/pages/medios/MediosPage";
 import { EquipoPage } from "@/presentation/pages/equipo/EquipoPage";
 import { ConfiguracionPage } from "@/presentation/pages/configuracion/ConfiguracionPage";
 
+// Landing pública (carga diferida: gsap/lenis no pesan en el resto de la app).
+const LandingPage = lazy(() => import("@/presentation/pages/landing/LandingPage"));
+
 /**
  * Navegación principal IMVOLT — mapa del prototipo (UI Concept 01):
  *
@@ -35,6 +39,14 @@ export function AppRouter() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegisterPage />} />
+        <Route
+          path="/landing"
+          element={
+            <Suspense fallback={null}>
+              <LandingPage />
+            </Suspense>
+          }
+        />
 
         <Route
           element={
