@@ -329,6 +329,7 @@ function HowWindow({ title, children }: { title: string; children: ReactNode }) 
 function SampleVideo({ active }: { active: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [failed, setFailed] = useState(false);
   const reduce =
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -347,7 +348,8 @@ function SampleVideo({ active }: { active: boolean }) {
   };
 
   return (
-    <div className="lp-media">
+    <div className={`lp-media${failed ? " is-fallback" : ""}`}>
+      <img src={PROPS[0].img} alt="" decoding="async" loading="lazy" />
       <video
         ref={ref}
         src={PROPS[0].video}
@@ -359,18 +361,21 @@ function SampleVideo({ active }: { active: boolean }) {
         aria-label="Video de muestra generado con IA. Render conceptual"
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
+        onError={() => setFailed(true)}
         onClick={toggle}
       />
-      <button
-        type="button"
-        className={`lp-play${playing ? " is-playing" : ""}`}
-        onClick={toggle}
-        aria-label={playing ? "Pausar video de muestra" : "Reproducir video de muestra"}
-      >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          {playing ? <path d="M7 5h4v14H7zM13 5h4v14h-4z" /> : <path d="M8 5v14l11-7z" />}
-        </svg>
-      </button>
+      {!failed && (
+        <button
+          type="button"
+          className={`lp-play${playing ? " is-playing" : ""}`}
+          onClick={toggle}
+          aria-label={playing ? "Pausar video de muestra" : "Reproducir video de muestra"}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            {playing ? <path d="M7 5h4v14H7zM13 5h4v14h-4z" /> : <path d="M8 5v14l11-7z" />}
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

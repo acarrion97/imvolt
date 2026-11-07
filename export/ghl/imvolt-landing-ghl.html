@@ -1139,6 +1139,18 @@ html.lenis,html.lenis body{height: auto;}
   border-radius: 12px;
   overflow: hidden;
   aspect-ratio: 16 / 9;}
+#imvolt-lp .lp-media video{position: absolute;
+  inset: 0;
+  z-index: 1;}
+#imvolt-lp .lp-media .lp-play{z-index: 2;}
+#imvolt-lp .lp-media.is-fallback img{animation: lp-k-kenburns 9s ease-in-out infinite alternate;}
+@keyframes lp-k-kenburns{from {
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    transform: scale(1.12) translate(-2%, -1.5%);
+  }}
+@media (prefers-reduced-motion: reduce){#imvolt-lp .lp-media.is-fallback img{animation: none;}}
 #imvolt-lp .lp-media img,#imvolt-lp .lp-media video{width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1500,7 +1512,7 @@ body { overflow-x: clip; }
           <p class="lp-panel__cap">Habla con el agente y elige un enfoque.</p>
         </div>
         <div class="lp-panel" role="tabpanel" id="lp-panel-2" aria-labelledby="lp-tab-2">
-          <div class="lp-win"><div class="lp-win__bar" aria-hidden="true"><i></i><i></i><i></i><span>Estudio IA</span></div><div class="lp-win__body"><div class="lp-media"><img data-lp-prop="0" alt="" decoding="async" /><video data-lp-video muted loop playsinline preload="none" aria-label="Video de muestra generado con IA. Render conceptual" hidden></video><button type="button" class="lp-play" data-lp-play aria-label="Reproducir video de muestra" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg></button></div><div class="lp-fmts"><span>Imagen IA</span><span class="is-on">Video bajo demanda</span><span>9:16 · Reels y Stories</span><span>Videos extra: pago por uso</span></div><span class="lp-chip-ok">Render conceptual</span></div></div>
+          <div class="lp-win"><div class="lp-win__bar" aria-hidden="true"><i></i><i></i><i></i><span>Estudio IA</span></div><div class="lp-win__body"><div class="lp-media"><img data-lp-prop="0" alt="" decoding="async" /><video data-lp-video muted loop playsinline preload="metadata" aria-label="Video de muestra generado con IA. Render conceptual" hidden></video><button type="button" class="lp-play" data-lp-play aria-label="Reproducir video de muestra" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg></button></div><div class="lp-fmts"><span>Imagen IA</span><span class="is-on">Video bajo demanda</span><span>9:16 · Reels y Stories</span><span>Videos extra: pago por uso</span></div><span class="lp-chip-ok">Render conceptual</span></div></div>
           <p class="lp-panel__cap">Personaliza imágenes, guiones y plantillas.</p>
         </div>
         <div class="lp-panel" role="tabpanel" id="lp-panel-3" aria-labelledby="lp-tab-3">
@@ -1805,7 +1817,19 @@ body { overflow-x: clip; }
       var reduceMo = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       var vidPanel = -1;
       if (vid && vbtn && IMVOLT_CONFIG.videoUrl) {
-        vid.src = IMVOLT_CONFIG.videoUrl;
+        var media = vid.parentNode;
+        var useFallback = function () { media.classList.add("is-fallback"); vid.hidden = true; vbtn.hidden = true; };
+        vid.addEventListener("error", useFallback);
+        var src = IMVOLT_CONFIG.videoUrl;
+        if (src.indexOf("data:") === 0) {
+          // Algunos navegadores (Safari) o políticas de GHL no reproducen "data:" directo: se convierte a Blob
+          try {
+            var bin = atob(src.split(",")[1]), bytes = new Uint8Array(bin.length);
+            for (var bi = 0; bi < bin.length; bi++) bytes[bi] = bin.charCodeAt(bi);
+            src = URL.createObjectURL(new Blob([bytes], { type: "video/mp4" }));
+          } catch (err) { useFallback(); }
+        }
+        vid.src = src;
         vid.poster = PROPS[0].img;
         vid.hidden = false; vbtn.hidden = false;
         vidPanel = panels.indexOf(vid.closest(".lp-panel"));

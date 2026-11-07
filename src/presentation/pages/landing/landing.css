@@ -1669,6 +1669,30 @@ html.lenis body {
   overflow: hidden;
   aspect-ratio: 16 / 9;
 }
+.lp-media video {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.lp-media .lp-play {
+  z-index: 2;
+}
+.lp-media.is-fallback img {
+  animation: lp-k-kenburns 9s ease-in-out infinite alternate;
+}
+@keyframes lp-k-kenburns {
+  from {
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    transform: scale(1.12) translate(-2%, -1.5%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-media.is-fallback img {
+    animation: none;
+  }
+}
 .lp-media img,
 .lp-media video {
   width: 100%;
