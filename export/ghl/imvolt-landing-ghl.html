@@ -4,8 +4,8 @@
   CÓMO USARLO (resumen):
    1. En GoHighLevel crea/abre la página → agrega una sección de ANCHO COMPLETO
       con padding 0 → agrega un elemento "Custom JS/HTML" → pega TODO este archivo.
-   2. Edita las 3 líneas de IMVOLT_CONFIG (más abajo): URL de registro, URL de login
-      y, si quieres, desactivar el scroll suave.
+   2. Todos los botones abren tu calendario de agendamiento (bookingUrl en IMVOLT_CONFIG,
+      más abajo, ya viene con tu enlace). Si quieres, desactiva el scroll suave ahí mismo.
    3. Guarda y abre la vista previa/publicada (el editor de GHL no ejecuta scripts).
   Requiere internet en el navegador (carga GSAP y Lenis desde cdn.jsdelivr.net y la
   fuente Inter desde Google Fonts). Logos oficiales e imágenes de ejemplo embebidos: no depende de hosting.
@@ -81,9 +81,11 @@ html.lenis,html.lenis body{height: auto;}
   pointer-events: auto;}
 #imvolt-lp .lp-btn:hover{transform: translateY(-2px);
   box-shadow: 0 10px 28px rgba(0, 217, 75, 0.35);}
+#imvolt-lp .lp-btn,#imvolt-lp .lp-btn:hover,#imvolt-lp .lp-btn:focus,#imvolt-lp .lp-btn:active,#imvolt-lp .lp-btn:visited{color: var(--lp-carbon);
+  text-decoration: none;}
 #imvolt-lp .lp-btn:focus-visible,#imvolt-lp .lp-link:focus-visible{outline: 3px solid #fff;
   outline-offset: 3px;}
-#imvolt-lp .lp-btn--ghost{background: transparent;
+#imvolt-lp .lp-btn--ghost,#imvolt-lp .lp-btn--ghost:hover,#imvolt-lp .lp-btn--ghost:focus,#imvolt-lp .lp-btn--ghost:active,#imvolt-lp .lp-btn--ghost:visited{background: transparent;
   color: var(--lp-fg);
   border: 1.5px solid currentColor;}
 #imvolt-lp .lp-nav .lp-btn{height: 40px;
@@ -704,8 +706,7 @@ body { overflow-x: clip; }
     </a>
     <span class="lp-nav__label" aria-hidden="true">01 · Propiedad</span>
     <div class="lp-nav__actions">
-      <a href="#" class="lp-link" data-lp-link="login">Iniciar sesión</a>
-      <a href="#" class="lp-btn" data-lp-link="register">Crear con AI</a>
+      <a href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" class="lp-btn" data-lp-link="booking" target="_blank" rel="noopener noreferrer">Agendar sesión</a>
     </div>
   </header>
 
@@ -744,7 +745,7 @@ body { overflow-x: clip; }
             inventario inmobiliario.
           </p>
           <div class="lp-actions">
-            <a href="#" class="lp-btn" data-lp-link="register">Crear mi primer creativo →</a>
+            <a href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" class="lp-btn" data-lp-link="booking" target="_blank" rel="noopener noreferrer">Agendar sesión estratégica →</a>
           </div>
         </div>
 
@@ -878,8 +879,7 @@ body { overflow-x: clip; }
     <section class="lp-cta" aria-labelledby="lp-cta-title">
       <h2 class="lp-h2" id="lp-cta-title">Convierte tus proyectos en campañas que generan oportunidades.</h2>
       <div class="lp-actions">
-        <a href="#" class="lp-btn" data-lp-link="register">Crear mi primer creativo →</a>
-        <a href="#" class="lp-btn lp-btn--ghost" data-lp-link="login">Iniciar sesión</a>
+        <a href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" class="lp-btn" data-lp-link="booking" target="_blank" rel="noopener noreferrer">Agendar sesión estratégica →</a>
       </div>
     </section>
   </main>
@@ -899,8 +899,7 @@ body { overflow-x: clip; }
 
   /* ═══ CONFIGURACIÓN — edita solo este bloque ═══════════════════════════════ */
   var IMVOLT_CONFIG = {
-    registerUrl: "",      // p. ej. "https://TU-DOMINIO/registro"  (botones "Crear…")
-    loginUrl: "",         // p. ej. "https://TU-DOMINIO/login"     ("Iniciar sesión")
+    bookingUrl: "https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z",  // calendario de agendamiento (todos los botones)
     smoothScroll: true    // false = desactiva Lenis (scroll suave) si choca con GHL
   };
   /* ═════════════════════════════════════════════════════════════════════════ */
@@ -934,7 +933,7 @@ body { overflow-x: clip; }
     gsap.registerPlugin(ScrollTrigger);
 
     // Enlaces de la configuración
-    var urls = { register: IMVOLT_CONFIG.registerUrl, login: IMVOLT_CONFIG.loginUrl };
+    var urls = { booking: IMVOLT_CONFIG.bookingUrl };
     Array.prototype.forEach.call(root.querySelectorAll("[data-lp-link]"), function (a) {
       var u = urls[a.getAttribute("data-lp-link")];
       if (u) a.setAttribute("href", u);

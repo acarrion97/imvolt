@@ -86,6 +86,10 @@ const CHAIN = [
   { title: "Resultados", sub: "Leads y analítica" },
 ] as const;
 
+/** Único CTA de la landing: agendar una sesión estratégica (calendario de GoHighLevel). */
+const BOOKING_URL = "https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z";
+const BOOKING_LABEL = "Agendar sesión estratégica";
+
 const STEPS = [
   {
     title: "Propiedad",
@@ -799,12 +803,9 @@ export default function LandingPage() {
           01 · Propiedad
         </span>
         <div className="lp-nav__actions">
-          <Link to="/login" className="lp-link">
-            Iniciar sesión
-          </Link>
-          <Link to="/registro" className="lp-btn">
-            Crear con AI
-          </Link>
+          <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="lp-btn">
+            Agendar sesión
+          </a>
         </div>
       </header>
 
@@ -884,9 +885,9 @@ export default function LandingPage() {
                 inventario inmobiliario.
               </p>
               <div className="lp-actions">
-                <Link to="/registro" className="lp-btn">
-                  Crear mi primer creativo →
-                </Link>
+                <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="lp-btn">
+                  {BOOKING_LABEL} →
+                </a>
               </div>
             </div>
 
@@ -986,12 +987,9 @@ export default function LandingPage() {
             Convierte tus proyectos en campañas que generan oportunidades.
           </h2>
           <div className="lp-actions">
-            <Link to="/registro" className="lp-btn">
-              Crear mi primer creativo →
-            </Link>
-            <Link to="/login" className="lp-btn lp-btn--ghost">
-              Iniciar sesión
-            </Link>
+            <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="lp-btn">
+              {BOOKING_LABEL} →
+            </a>
           </div>
         </section>
       </main>

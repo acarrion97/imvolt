@@ -96,12 +96,25 @@ html.lenis body {
   transform: translateY(-2px);
   box-shadow: 0 10px 28px rgba(0, 217, 75, 0.35);
 }
+/* Los estilos globales de enlaces (a:hover, a:visited…) no deben cambiar el color del texto del botón */
+.lp-btn,
+.lp-btn:hover,
+.lp-btn:focus,
+.lp-btn:active,
+.lp-btn:visited {
+  color: var(--lp-carbon);
+  text-decoration: none;
+}
 .lp-btn:focus-visible,
 .lp-link:focus-visible {
   outline: 3px solid #fff;
   outline-offset: 3px;
 }
-.lp-btn--ghost {
+.lp-btn--ghost,
+.lp-btn--ghost:hover,
+.lp-btn--ghost:focus,
+.lp-btn--ghost:active,
+.lp-btn--ghost:visited {
   background: transparent;
   color: var(--lp-fg);
   border: 1.5px solid currentColor;
