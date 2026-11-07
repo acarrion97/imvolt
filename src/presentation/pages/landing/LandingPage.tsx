@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
+import type { CSSProperties, KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { preconnect } from "react-dom";
 import gsap from "gsap";
@@ -94,25 +94,114 @@ const BOOKING_LABEL = "Agendar sesión estratégica";
 const STEPS = [
   {
     title: "Propiedad",
-    text: "Carga tu casa, lote o proyecto con datos y fotografías verificados.",
+    text: "Tu proyecto, fotos, beneficios y oferta.",
   },
   {
     title: "Estrategia IA",
-    text: "La IA propone oferta, copy y guion a partir de información real.",
+    text: "Habla con el agente y elige un enfoque.",
   },
   {
     title: "Creativos",
-    text: "Genera imágenes y videos con plantillas pensadas para inmuebles.",
+    text: "Personaliza imágenes, guiones y plantillas.",
   },
   {
     title: "Meta Ads",
-    text: "Prepara la campaña y publícala solo después de tu aprobación.",
+    text: "Aprueba, publica y mide en Meta.",
   },
   {
     title: "Resultados",
     text: "Mide inversión, contactos y oportunidades en un solo lugar.",
   },
 ] as const;
+
+// ── Contenido comercial (Presentación Comercial Potenciada 2026) ────────────
+const PAIRS = [
+  {
+    from: "Estrategia",
+    fromText: "Qué vender, a quién y con qué mensaje.",
+    to: "Estratega IA",
+    toText: "Analiza la oferta y diseña el plan.",
+  },
+  {
+    from: "Diseño y contenido",
+    fromText: "Piezas, videos y anuncios que destacan.",
+    to: "Creativo IA",
+    toText: "Prepara guiones, piezas y anuncios.",
+  },
+  {
+    from: "Publicidad",
+    fromText: "Campañas, pruebas y presupuestos.",
+    to: "Gestor de campañas",
+    toText: "Organiza y ejecuta tu publicidad en Meta, con tu aprobación.",
+  },
+  {
+    from: "Análisis",
+    fromText: "Aprender de los datos para mejorar.",
+    to: "Analista IA",
+    toText: "Interpreta datos y propone ajustes.",
+  },
+] as const;
+
+const BENEFITS = [
+  { title: "Menos dependencia", text: "Reduce tareas repetitivas de diseño y planificación." },
+  { title: "Más velocidad", text: "Pasa de una idea a piezas y campañas en menos pasos." },
+  { title: "Consistencia", text: "Mantén la comunicación alineada con cada proyecto." },
+  { title: "Mejores decisiones", text: "Aprende de los datos, no solo de la intuición." },
+] as const;
+
+const PLANS = [
+  {
+    name: "Agent",
+    price: "$39",
+    items: ["1 proyecto", "1 video IA de 10 s", "20 imágenes IA", "2 campañas Meta", "1 usuario"],
+    featured: false,
+  },
+  {
+    name: "Business",
+    price: "$89",
+    items: [
+      "5 proyectos",
+      "2 videos IA de 10 s",
+      "60 imágenes IA",
+      "10 campañas Meta",
+      "5 usuarios",
+    ],
+    featured: true,
+  },
+  {
+    name: "Prime",
+    price: "$149",
+    items: [
+      "10 proyectos",
+      "3 videos IA de 10 s",
+      "120 imágenes IA",
+      "20 campañas Meta",
+      "15 usuarios",
+    ],
+    featured: false,
+  },
+] as const;
+
+const INVEST = [
+  {
+    title: "Suscripción",
+    text: "Estratega IA, proyectos, plantillas, campañas y análisis por plan.",
+  },
+  {
+    title: "Contenido adicional",
+    text: "Videos y modelos premium con precio visible antes de generar.",
+  },
+  { title: "Pauta publicitaria", text: "Tú decides tu inversión y pagas directamente en Meta." },
+] as const;
+
+/** Etiqueta del menú superior según la sección que cruza el centro de la pantalla. */
+const SECTION_LABELS = {
+  team: "Tu equipo IA",
+  how: "Cómo funciona",
+  benefits: "Beneficios",
+  plans: "Planes",
+  cta: "Agenda tu sesión",
+} as const;
 
 // ── Datos e ilustraciones ───────────────────────────────────────────────────
 /**
@@ -274,23 +363,21 @@ function HowPanel({ i }: { i: number }) {
       );
     case 1:
       return (
-        <HowWindow title="Estrategia IA">
-          <div className="lp-blocks">
-            <div className="lp-block">
-              <span>Oferta</span>
-              <p>Presenta tu proyecto a compradores interesados en vivir en Quito.</p>
+        <HowWindow title="Estratega IA">
+          <div className="lp-chat">
+            <div className="lp-bubble lp-bubble--you">
+              <span>Tú</span>
+              ¿Cómo promociono una urbanización con un presupuesto de $300 al mes?
             </div>
-            <div className="lp-block">
-              <span>Copy</span>
-              <p>“Conoce Torre Horizonte, un proyecto pensado para tu próximo hogar.”</p>
-            </div>
-            <div className="lp-block">
-              <span>Guion</span>
-              <ol>
-                <li>Fachada</li>
-                <li>Interior</li>
-                <li>Llamado a la acción</li>
-              </ol>
+            <div className="lp-bubble lp-bubble--ai">
+              <span>Estratega IA</span>
+              <ul>
+                <li>Analiza comprador y argumentos de venta</li>
+                <li>Propone campañas y mensajes</li>
+                <li>Prepara guiones y piezas publicitarias</li>
+                <li>Sugiere indicadores para medir resultados</li>
+                <li>Conversa y ajusta antes de invertir</li>
+              </ul>
             </div>
           </div>
           <span className="lp-chip-ok">Propuesta de ejemplo</span>
@@ -308,10 +395,10 @@ function HowPanel({ i }: { i: number }) {
             </span>
           </div>
           <div className="lp-fmts">
-            <span>Imagen</span>
-            <span className="is-on">Video</span>
+            <span>Imagen IA</span>
+            <span className="is-on">Video bajo demanda</span>
             <span>9:16 · Reels y Stories</span>
-            <span>Plantilla: recorrido de fachada</span>
+            <span>Videos extra: pago por uso</span>
           </div>
           <span className="lp-chip-ok">Render conceptual</span>
         </HowWindow>
@@ -338,7 +425,9 @@ function HowPanel({ i }: { i: number }) {
             <li className="is-now">Tu revisión</li>
             <li>Publicación</li>
           </ol>
-          <p className="lp-note">Nada se publica ni se gasta sin tu aprobación.</p>
+          <p className="lp-note">
+            Nada se publica ni se gasta sin tu aprobación. La inversión se paga directamente a Meta.
+          </p>
         </HowWindow>
       );
     default:
@@ -451,11 +540,16 @@ function HowItWorks() {
   };
 
   return (
-    <section className="lp-steps" aria-labelledby="lp-steps-title" ref={sectionRef}>
+    <section
+      className="lp-steps"
+      aria-labelledby="lp-steps-title"
+      ref={sectionRef}
+      data-lp-label={SECTION_LABELS.how}
+    >
       <div className="lp-steps__head">
         <span className="lp-kicker">Cómo funciona</span>
         <h2 className="lp-h2" id="lp-steps-title">
-          De una propiedad a una campaña profesional.
+          De la idea a una campaña con una ruta clara.
         </h2>
       </div>
 
@@ -622,6 +716,153 @@ function BookingModal({
         </a>
       </div>
     </div>
+  );
+}
+
+// ── Secciones comerciales ───────────────────────────────────────────────────
+const stagger = (i: number) => ({ "--i": i }) as CSSProperties;
+
+function TeamSection() {
+  return (
+    <section
+      className="lp-sec lp-team"
+      aria-labelledby="lp-team-title"
+      data-lp-label={SECTION_LABELS.team}
+    >
+      <div className="lp-sec-head lp-reveal">
+        <span className="lp-kicker">IMVOLT = tu equipo de marketing IA</span>
+        <h2 className="lp-h2" id="lp-team-title">
+          No contrates una herramienta más. Accede a un sistema de trabajo.
+        </h2>
+        <p className="lp-sec-sub">
+          Promocionar un proyecto requiere muchos perfiles y coordinación. IMVOLT los reúne en una
+          sola plataforma.
+        </p>
+      </div>
+      <div className="lp-pairs">
+        {PAIRS.map((p, i) => (
+          <article className="lp-pair lp-reveal" style={stagger(i)} key={p.from}>
+            <div className="lp-pair__from">
+              <span className="lp-pair__tag">Hoy necesitas</span>
+              <h3>{p.from}</h3>
+              <p>{p.fromText}</p>
+            </div>
+            <span className="lp-pair__arrow" aria-hidden="true">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="M13 6l6 6-6 6" />
+              </svg>
+            </span>
+            <div className="lp-pair__to">
+              <span className="lp-pair__tag">Con IMVOLT</span>
+              <h3>{p.to}</h3>
+              <p>{p.toText}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+      <p className="lp-sec-note lp-reveal">
+        Todo en un solo panel: proyectos comerciales, tareas y creativos, campañas y resultados, y
+        acceso al estratega IA.
+      </p>
+    </section>
+  );
+}
+
+function BenefitsSection() {
+  return (
+    <section
+      className="lp-sec lp-benefits"
+      aria-labelledby="lp-ben-title"
+      data-lp-label={SECTION_LABELS.benefits}
+    >
+      <div className="lp-sec-head lp-reveal">
+        <span className="lp-kicker">El beneficio no es solo crear un anuncio</span>
+        <h2 className="lp-h2" id="lp-ben-title">
+          Es contar con un proceso de marketing siempre disponible.
+        </h2>
+      </div>
+      <div className="lp-bens">
+        {BENEFITS.map((b, i) => (
+          <article className="lp-ben lp-reveal" style={stagger(i)} key={b.title}>
+            <h3>{b.title}</h3>
+            <p>{b.text}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PlansSection({ cta }: { cta: ReactNode }) {
+  return (
+    <section
+      className="lp-sec lp-plans"
+      aria-labelledby="lp-plans-title"
+      data-lp-label={SECTION_LABELS.plans}
+    >
+      <div className="lp-sec-head lp-reveal">
+        <span className="lp-kicker">Elige tu plan</span>
+        <h2 className="lp-h2" id="lp-plans-title">
+          Un equipo de marketing IA a tu medida.
+        </h2>
+      </div>
+      <div className="lp-plan-grid">
+        {PLANS.map((p, i) => (
+          <article
+            className={`lp-plan lp-reveal${p.featured ? " is-featured" : ""}`}
+            style={stagger(i)}
+            key={p.name}
+          >
+            <span className="lp-plan__name">{p.name}</span>
+            <div className="lp-plan__price">
+              {p.price}
+              <small>/mes</small>
+            </div>
+            <ul>
+              {p.items.map((it) => (
+                <li key={it}>{it}</li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+      <p className="lp-sec-note lp-reveal">
+        Videos adicionales y modelos premium: precio por generación. Valores en USD, antes de
+        impuestos.
+      </p>
+
+      <div className="lp-invest">
+        <div className="lp-sec-head lp-reveal">
+          <span className="lp-kicker">Tu inversión, bajo control</span>
+          <h3 className="lp-invest__title">
+            Pagas por la inteligencia. Producción extra, solo cuando la necesites.
+          </h3>
+        </div>
+        <div className="lp-invest-grid">
+          {INVEST.map((v, i) => (
+            <article className="lp-inv lp-reveal" style={stagger(i)} key={v.title}>
+              <h3>{v.title}</h3>
+              <p>{v.text}</p>
+            </article>
+          ))}
+        </div>
+        <p className="lp-sec-note lp-reveal">
+          Sin prometer ventas garantizadas: IMVOLT aporta herramientas, estrategia y decisiones
+          informadas.
+        </p>
+      </div>
+      <div className="lp-plans__cta lp-reveal">{cta}</div>
+    </section>
   );
 }
 
@@ -833,11 +1074,50 @@ export default function LandingPage() {
       else if (scene.orbit > 0.15) idx = 2;
       else if (scene.hero < 0.5) idx = 1;
       const label = LABELS[idx];
-      if (label !== currentLabel) {
+      // Solo escribe la etiqueta del escenario mientras el escenario está a la vista
+      const sr = pin.getBoundingClientRect();
+      const mid = window.innerHeight / 2;
+      const stageVisible = sr.bottom > mid && sr.top < mid;
+      if (stageVisible && (label !== currentLabel || navLabel.textContent !== label)) {
         currentLabel = label;
         navLabel.textContent = label;
         sectionNo.textContent = `Sección 0${idx + 1}`;
       }
+    };
+
+    // ── Etiqueta del menú según la sección que cruza el centro de la pantalla ──
+    const labeled = Array.from(root.querySelectorAll<HTMLElement>("[data-lp-label]"));
+    const labelIO = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) navLabel.textContent = e.target.getAttribute("data-lp-label") ?? "";
+        });
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    labeled.forEach((el) => labelIO.observe(el));
+
+    // ── Aparición suave de las secciones comerciales (sin JS o con movimiento reducido: visibles) ──
+    let revealIO: IntersectionObserver | null = null;
+    if (!reduce) {
+      root.classList.add("lp-js");
+      revealIO = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add("is-in");
+              revealIO?.unobserve(e.target);
+            }
+          });
+        },
+        { rootMargin: "0px 0px -8% 0px" },
+      );
+      root.querySelectorAll(".lp-reveal").forEach((el) => revealIO?.observe(el));
+    }
+    const stopObservers = () => {
+      labelIO.disconnect();
+      revealIO?.disconnect();
+      root.classList.remove("lp-js");
     };
 
     // ── Modo movimiento reducido: sin pin, composición estática ──
@@ -847,7 +1127,10 @@ export default function LandingPage() {
       render();
       const onResize = () => render();
       window.addEventListener("resize", onResize);
-      return () => window.removeEventListener("resize", onResize);
+      return () => {
+        stopObservers();
+        window.removeEventListener("resize", onResize);
+      };
     }
 
     // ── Scroll suave ──
@@ -923,6 +1206,7 @@ export default function LandingPage() {
     window.addEventListener("resize", onRefresh);
 
     return () => {
+      stopObservers();
       ScrollTrigger.removeEventListener("refresh", onRefresh);
       window.removeEventListener("resize", onRefresh);
       ctx.revert();
@@ -1024,10 +1308,10 @@ export default function LandingPage() {
                 src="/logo/IMVOLT_Logo_Horizontal_Sobre_Oscuro.png"
                 alt="IMVOLT MARKETING INMOBILIARIO AI"
               />
-              <h1 className="lp-h1">Tu próxima campaña comienza con una propiedad.</h1>
+              <h1 className="lp-h1">Tu equipo completo de marketing inmobiliario, ahora con IA.</h1>
               <p className="lp-sub">
-                Crea imágenes, videos y campañas listas para revisar. Una nueva forma de impulsar tu
-                inventario inmobiliario.
+                Estrategia + creatividad + campañas + análisis. Una plataforma para impulsar tus
+                oportunidades.
               </p>
               <div className="lp-actions">
                 <a
@@ -1041,6 +1325,7 @@ export default function LandingPage() {
                   {BOOKING_LABEL} →
                 </a>
               </div>
+              <p className="lp-hero-note">Planes desde $39 al mes.</p>
             </div>
 
             {/* Acto 2 */}
@@ -1132,12 +1417,36 @@ export default function LandingPage() {
           </section>
         </div>
 
+        <TeamSection />
+
         <HowItWorks />
 
-        <section className="lp-cta" aria-labelledby="lp-cta-title">
+        <BenefitsSection />
+
+        <PlansSection
+          cta={
+            <a
+              href={BOOKING_URL}
+              className="lp-btn"
+              onClick={openBooking}
+              onPointerEnter={warmBooking}
+              onFocus={warmBooking}
+              onTouchStart={warmBooking}
+            >
+              {BOOKING_LABEL} →
+            </a>
+          }
+        />
+
+        <section
+          className="lp-cta"
+          aria-labelledby="lp-cta-title"
+          data-lp-label={SECTION_LABELS.cta}
+        >
           <h2 className="lp-h2" id="lp-cta-title">
-            Convierte tus proyectos en campañas que generan oportunidades.
+            Tu próximo proyecto merece una estrategia, no solo publicaciones.
           </h2>
+          <p className="lp-sub">Conoce cómo IMVOLT puede trabajar junto a tu equipo comercial.</p>
           <div className="lp-actions">
             <a
               href={BOOKING_URL}

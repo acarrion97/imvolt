@@ -55,6 +55,8 @@ def prefix(css):
                     parts.append(s)
                 elif s.startswith(".lp-root"):
                     parts.append("#imvolt-lp" + s)
+                elif s.startswith(".lp-js"):
+                    parts.append("#imvolt-lp" + s)   # .lp-js se agrega a la raíz misma
                 else:
                     parts.append("#imvolt-lp " + s)
             out.append(f"{','.join(parts)}{{{body.strip()}}}")
@@ -93,6 +95,7 @@ body { overflow-x: clip; }
 #imvolt-lp .lp-flow li, #imvolt-lp .lp-phone__rows li { list-style: none; }
 #imvolt-lp .lp-block li { list-style: decimal; }
 #imvolt-lp img { border: 0; box-shadow: none; outline: 0; }
+#imvolt-lp :where(section, article, header, footer, main) { border-width: 0; }
 #imvolt-lp iframe.lp-modal__frame { max-width: none; margin: 0; padding: 0; }
 #imvolt-lp :where(button) { margin: 0; text-transform: none; box-shadow: none; letter-spacing: normal; }
 """

@@ -210,6 +210,7 @@ html.lenis body {
   color: #fff;
 }
 .lp-h1 {
+  text-wrap: balance;
   margin: 0 0 20px;
   font-size: clamp(2.3rem, 5.6vw, 4.9rem);
   line-height: 1.02;
@@ -217,6 +218,7 @@ html.lenis body {
   font-weight: 800;
 }
 .lp-h2 {
+  text-wrap: balance;
   margin: 0;
   font-size: clamp(1.9rem, 4.2vw, 3.4rem);
   line-height: 1.05;
@@ -638,6 +640,362 @@ html.lenis body {
   }
 }
 
+/* ── Hero: titular más largo y nota de precio ────────────────────────────── */
+.lp-t--hero .lp-h1 {
+  font-size: clamp(2.1rem, 4.5vw, 4rem);
+}
+.lp-hero-note {
+  margin: 16px 0 0;
+  font-size: 14px;
+  color: var(--lp-muted);
+}
+
+/* ── Vista previa del estratega IA (chat) ────────────────────────────────── */
+.lp-chat {
+  display: grid;
+  gap: 10px;
+}
+.lp-bubble {
+  padding: 11px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.lp-bubble > span {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.lp-bubble--you {
+  justify-self: end;
+  max-width: 88%;
+  background: var(--lp-carbon);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.lp-bubble--you > span {
+  color: var(--lp-green);
+}
+.lp-bubble--ai {
+  background: #f2f7f4;
+  border-bottom-left-radius: 4px;
+}
+.lp-bubble--ai > span {
+  color: var(--lp-green-deep);
+}
+.lp-bubble ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+.lp-bubble li {
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.lp-bubble li::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--lp-green);
+}
+
+/* ── Secciones comerciales ───────────────────────────────────────────────── */
+.lp-sec {
+  padding: clamp(64px, 9vw, 120px) clamp(20px, 6vw, 84px);
+}
+.lp-sec-head {
+  max-width: 820px;
+  margin: 0 auto clamp(30px, 5vw, 54px);
+  text-align: center;
+}
+.lp-sec-head .lp-h2 {
+  font-size: clamp(1.7rem, 3.6vw, 2.8rem);
+}
+.lp-sec-sub {
+  max-width: 40em;
+  margin: 16px auto 0;
+  font-size: clamp(1rem, 1.4vw, 1.15rem);
+  color: #4a5a55;
+}
+.lp-sec-note {
+  max-width: 46em;
+  margin: 28px auto 0;
+  text-align: center;
+  font-size: 14px;
+  color: #4a5a55;
+}
+.lp-team,
+.lp-plans {
+  background: #fff;
+  color: var(--lp-carbon);
+}
+.lp-team .lp-kicker,
+.lp-plans .lp-kicker {
+  color: var(--lp-green-deep);
+}
+.lp-team .lp-h2,
+.lp-plans .lp-h2,
+.lp-plans .lp-invest__title {
+  color: var(--lp-carbon);
+}
+
+/* Hoy necesitas → Con IMVOLT */
+.lp-pairs {
+  display: grid;
+  gap: 14px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.lp-pair {
+  display: grid;
+  grid-template-columns: 1fr 56px 1fr;
+  align-items: stretch;
+}
+.lp-pair__from,
+.lp-pair__to {
+  padding: 20px 24px;
+  border-radius: 17px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.lp-pair__from {
+  background: var(--lp-mist);
+  border: 1px solid #e4ebe8;
+}
+.lp-pair__to {
+  background-color: var(--lp-carbon);
+  background-image: repeating-linear-gradient(
+    78deg,
+    transparent 0 46px,
+    rgba(0, 217, 75, 0.1) 46px 47px
+  );
+  color: #fff;
+}
+.lp-pair:hover .lp-pair__to {
+  transform: translateX(4px);
+  box-shadow: 0 18px 44px rgba(7, 31, 20, 0.22);
+}
+.lp-pair__tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.lp-pair__from .lp-pair__tag {
+  color: #5c6b66;
+}
+.lp-pair__to .lp-pair__tag {
+  color: var(--lp-green);
+}
+.lp-pair h3 {
+  margin: 6px 0 4px;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+.lp-pair__from h3 {
+  color: var(--lp-carbon);
+}
+.lp-pair__to h3 {
+  color: #fff;
+}
+.lp-pair p {
+  margin: 0;
+  font-size: 14.5px;
+}
+.lp-pair__from p {
+  color: #4a5a55;
+}
+.lp-pair__to p {
+  color: rgba(255, 255, 255, 0.8);
+}
+.lp-pair__arrow {
+  display: grid;
+  place-items: center;
+  color: var(--lp-green-deep);
+}
+
+/* Beneficios (fondo oscuro) */
+.lp-benefits {
+  background: var(--lp-carbon);
+  color: #fff;
+}
+.lp-benefits .lp-kicker {
+  color: var(--lp-green);
+}
+.lp-benefits .lp-h2 {
+  color: #fff;
+}
+.lp-bens {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.lp-ben {
+  padding: 24px;
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+.lp-ben:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.08);
+}
+.lp-ben h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lp-green);
+}
+.lp-ben p {
+  margin: 0;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* Planes */
+.lp-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.lp-plan {
+  padding: 28px;
+  border-radius: 20px;
+  background: var(--lp-mist);
+  border: 1px solid #e4ebe8;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.lp-plan.is-featured {
+  background: #e8f7ee;
+  border-color: var(--lp-green);
+}
+.lp-plan:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 50px rgba(7, 83, 53, 0.14);
+}
+.lp-plan__name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lp-green-deep);
+}
+.lp-plan__price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 10px 0 20px;
+  font-size: clamp(2.4rem, 4vw, 3.2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--lp-carbon);
+}
+.lp-plan__price small {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: #5c6b66;
+}
+.lp-plan ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  font-size: 15px;
+}
+.lp-plan li {
+  list-style: none;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.lp-plan li::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--lp-green);
+}
+.lp-plan li:first-child {
+  font-weight: 700;
+}
+.lp-invest {
+  max-width: 1080px;
+  margin: clamp(44px, 6vw, 80px) auto 0;
+}
+.lp-invest__title {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.6vw, 2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.lp-invest-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.lp-inv {
+  padding: 22px;
+  border-radius: 17px;
+  background: #fff;
+  border: 1px solid #e4ebe8;
+}
+.lp-inv h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lp-carbon);
+}
+.lp-inv p {
+  margin: 0;
+  font-size: 14.5px;
+  color: #4a5a55;
+}
+.lp-plans__cta {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(32px, 5vw, 52px);
+}
+
+/* Cierre */
+.lp-cta .lp-sub {
+  max-width: 34em;
+  margin: -8px auto 28px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* Aparición suave (solo cuando el script corre; sin él todo queda visible) */
+.lp-js .lp-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.lp-js .lp-reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
 /* ── Secciones posteriores ───────────────────────────────────────────────── */
 .lp-steps {
   background: var(--lp-mist);
@@ -1042,6 +1400,13 @@ html.lenis body {
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
+  .lp-bens {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .lp-plan-grid,
+  .lp-invest-grid {
+    grid-template-columns: 1fr;
+  }
   .lp-how {
     grid-template-columns: 1fr;
   }
@@ -1097,6 +1462,31 @@ html.lenis body {
   }
 }
 @media (max-width: 760px) {
+  /* Hero compacto: deja espacio a la tarjeta de la propiedad */
+  .lp-hero-logo {
+    width: 200px;
+    margin-bottom: 16px;
+  }
+  .lp-t--hero .lp-h1 {
+    font-size: clamp(1.8rem, 8vw, 2.3rem);
+    margin-bottom: 14px;
+  }
+  .lp-t--hero .lp-sub {
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+  }
+  .lp-hero-note {
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .lp-pair {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .lp-pair__arrow {
+    height: 30px;
+    transform: rotate(90deg);
+  }
   .lp-nav {
     grid-template-columns: 1fr auto;
   }
@@ -1131,6 +1521,12 @@ html.lenis body {
   }
   .lp-card__sub {
     font-size: 11px;
+  }
+}
+
+@media (max-width: 520px) {
+  .lp-bens {
+    grid-template-columns: 1fr;
   }
 }
 
