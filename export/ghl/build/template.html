@@ -157,8 +157,7 @@
         <h2 class="lp-h2" id="lp-steps-title">De una propiedad a una campaña profesional.</h2>
       </div>
       <div class="lp-how">
-      <div class="lp-how__side">
-        <div class="lp-how__tabs" role="tablist" aria-orientation="vertical">
+      <div class="lp-how__tabs" role="tablist" aria-orientation="vertical">
           <button type="button" role="tab" id="lp-tab-0" aria-selected="true" aria-controls="lp-panel-0" tabindex="0" class="lp-tab is-active">
             <span class="lp-tab__n">01</span><span class="lp-tab__t">Propiedad</span><span class="lp-tab__d">Carga tu casa, lote o proyecto con datos y fotografías verificados.</span><span class="lp-tab__bar" aria-hidden="true"></span>
           </button>
@@ -174,8 +173,6 @@
           <button type="button" role="tab" id="lp-tab-4" aria-selected="false" aria-controls="lp-panel-4" tabindex="-1" class="lp-tab">
             <span class="lp-tab__n">05</span><span class="lp-tab__t">Resultados</span><span class="lp-tab__d">Mide inversión, contactos y oportunidades en un solo lugar.</span><span class="lp-tab__bar" aria-hidden="true"></span>
           </button>
-        </div>
-        <button type="button" class="lp-how__ctl">Pausar recorrido</button>
       </div>
       <div class="lp-how__stage">
         <div class="lp-panel is-active" role="tabpanel" id="lp-panel-0" aria-labelledby="lp-tab-0">
@@ -346,71 +343,81 @@
     });
     select(0);
 
-    // ── "Cómo funciona": recorrido interactivo ──
+    // ── "Cómo funciona": la sección se fija y el scroll recorre los 5 pasos ──
     (function () {
+      var section = root.querySelector(".lp-steps");
       var how = root.querySelector(".lp-how");
-      if (!how) return;
+      if (!section || !how) return;
       var tabs = Array.prototype.slice.call(how.querySelectorAll(".lp-tab"));
       var panels = Array.prototype.slice.call(how.querySelectorAll(".lp-panel"));
-      var ctl = how.querySelector(".lp-how__ctl");
       var list = how.querySelector(".lp-how__tabs");
+      var n = tabs.length;
       var step = 0;
-      var auto = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      var inView = false;
+      var trigger = null;
 
       // Imágenes de las vistas previas (las mismas fotos del selector)
       Array.prototype.forEach.call(how.querySelectorAll("[data-lp-prop]"), function (img) {
         img.src = PROPS[parseInt(img.getAttribute("data-lp-prop"), 10)].img;
       });
 
-      function sync() {
-        how.classList.toggle("is-running", auto && inView);
-        ctl.textContent = auto ? "Pausar recorrido" : "Reanudar recorrido";
-      }
-      function pick(i, focus) {
-        var n = (i + tabs.length) % tabs.length;
-        step = n;
+      function pick(i) {
+        step = i;
         tabs.forEach(function (t, k) {
-          t.classList.toggle("is-active", k === n);
-          t.setAttribute("aria-selected", k === n ? "true" : "false");
-          t.tabIndex = k === n ? 0 : -1;
+          t.classList.toggle("is-active", k === i);
+          t.setAttribute("aria-selected", k === i ? "true" : "false");
+          t.tabIndex = k === i ? 0 : -1;
         });
         panels.forEach(function (p, k) {
-          p.classList.toggle("is-active", k === n);
-          if (k === n) p.removeAttribute("inert"); else p.setAttribute("inert", "");
+          p.classList.toggle("is-active", k === i);
+          if (k === i) p.removeAttribute("inert"); else p.setAttribute("inert", "");
         });
         // En móvil la lista es horizontal: centra el paso activo sin mover la página
-        var t = tabs[n];
+        var t = tabs[i];
         if (list.scrollWidth > list.clientWidth) {
           list.scrollTo({ left: t.offsetLeft - (list.clientWidth - t.clientWidth) / 2, behavior: "smooth" });
         }
-        if (focus) t.focus();
       }
       panels.forEach(function (p, k) { if (k !== 0) p.setAttribute("inert", ""); });
 
-      tabs.forEach(function (t, i) {
-        t.addEventListener("click", function () { auto = false; sync(); pick(i); });
-        t.querySelector(".lp-tab__bar").addEventListener("animationend", function () {
-          if (auto) pick(step + 1);
-        });
-      });
+      // Ir a un paso: con la sección fija se desplaza el scroll hasta ese tramo
+      function goTo(i, focus) {
+        var target = (i + n) % n;
+        if (trigger) {
+          var y = trigger.start + (trigger.end - trigger.start) * ((target + 0.5) / n);
+          window.scrollTo({ top: y, behavior: "smooth" });
+        } else {
+          pick(target);
+        }
+        if (focus) tabs[target].focus();
+      }
+      tabs.forEach(function (t, i) { t.addEventListener("click", function () { goTo(i, false); }); });
       list.addEventListener("keydown", function (e) {
         var next = e.key === "ArrowDown" || e.key === "ArrowRight";
         var prev = e.key === "ArrowUp" || e.key === "ArrowLeft";
-        if (next || prev) {
-          e.preventDefault(); auto = false; sync(); pick(step + (next ? 1 : -1), true);
-        } else if (e.key === "Home" || e.key === "End") {
-          e.preventDefault(); auto = false; sync(); pick(e.key === "Home" ? 0 : tabs.length - 1, true);
-        }
+        if (next || prev) { e.preventDefault(); goTo(step + (next ? 1 : -1), true); }
+        else if (e.key === "Home" || e.key === "End") { e.preventDefault(); goTo(e.key === "Home" ? 0 : n - 1, true); }
       });
-      ctl.addEventListener("click", function () { auto = !auto; sync(); });
 
-      if ("IntersectionObserver" in window) {
-        new IntersectionObserver(function (entries) {
-          inView = entries[0].isIntersecting; sync();
-        }, { threshold: 0.35 }).observe(how);
+      // Sin movimiento (o en pantallas demasiado bajas) no se fija: los pasos se eligen con clic
+      var noMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!noMotion && window.innerHeight >= 560) {
+        trigger = ScrollTrigger.create({
+          trigger: section,
+          start: "top top",
+          end: function () { return "+=" + Math.round(window.innerHeight * 0.6 * n); },
+          pin: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          refreshPriority: 1,
+          onUpdate: function (self) {
+            var x = Math.min(self.progress * n, n - 0.0001);
+            var idx = Math.floor(x);
+            if (idx !== step) pick(idx);
+            // La barra del paso activo se llena según el scroll dentro de ese paso
+            tabs.forEach(function (t, k) { t.style.setProperty("--p", k === idx ? (x - idx).toFixed(3) : "0"); });
+          }
+        });
       }
-      sync();
     })();
 
     var scene = { hero: 1, dark: 0, ribbon: 0, amp: 0, phase: 0, enter: 0, orbit: 0, angle: 0, lines: 0, fall: 0, phone: 0 };
@@ -589,6 +596,7 @@
     var tl = gsap.timeline({
       defaults: { ease: "power2.inOut" },
       scrollTrigger: {
+        refreshPriority: 2,
         trigger: pin,
         start: "top top",
         end: "+=480%",

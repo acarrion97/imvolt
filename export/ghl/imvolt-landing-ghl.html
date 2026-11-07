@@ -352,18 +352,26 @@ html.lenis,html.lenis body{height: auto;}
   outline-offset: 2px;}
 #imvolt-lp .lp-steps{background: var(--lp-mist);
   color: var(--lp-carbon);
-  padding: clamp(64px, 10vw, 128px) clamp(20px, 6vw, 84px);}
+  
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: calc(68px + 2.5vh) clamp(20px, 6vw, 84px) 3vh;}
 #imvolt-lp .lp-steps__head{max-width: 760px;
-  margin: 0 auto clamp(36px, 5vw, 64px);
+  margin: 0 auto clamp(14px, 3vh, 32px);
   text-align: center;}
+#imvolt-lp .lp-steps__head .lp-h2{font-size: clamp(1.6rem, 3.4vw, 2.6rem);}
 #imvolt-lp .lp-steps__head .lp-kicker{color: var(--lp-green-deep);}
 #imvolt-lp .lp-steps__head .lp-h2{color: var(--lp-carbon);}
 #imvolt-lp .lp-how{display: grid;
   grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
   gap: clamp(20px, 4vw, 56px);
+  width: 100%;
   max-width: 1180px;
   margin: 0 auto;
-  align-items: stretch;}
+  align-items: center;}
 #imvolt-lp .lp-how__side{display: flex;
   flex-direction: column;
   gap: 14px;
@@ -411,6 +419,8 @@ html.lenis,html.lenis body{height: auto;}
 #imvolt-lp .lp-tab__t{font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.01em;}
+#imvolt-lp .lp-tab:not(.is-active) .lp-tab__d{display: none;}
+#imvolt-lp .lp-tab:not(.is-active) .lp-tab__n{grid-row: auto;}
 #imvolt-lp .lp-tab__d{grid-column: 2;
   font-size: 14px;
   line-height: 1.45;
@@ -423,30 +433,9 @@ html.lenis,html.lenis body{height: auto;}
   background: linear-gradient(90deg, var(--lp-green-light), var(--lp-green-deep));
   transform-origin: left;
   transform: scaleX(0);}
-#imvolt-lp .lp-tab.is-active .lp-tab__bar{transform: scaleX(1);}
-#imvolt-lp .lp-how.is-running .lp-tab.is-active .lp-tab__bar{animation: lp-fill 6.5s linear forwards;}
-@keyframes lp-fill{from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }}
-#imvolt-lp .lp-how__ctl{align-self: flex-start;
-  height: 38px;
-  padding: 0 16px;
-  border: 1.5px solid #c9d8cf;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--lp-carbon);
-  font: inherit;
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;}
-#imvolt-lp .lp-how__ctl:hover{border-color: var(--lp-green-deep);}
-#imvolt-lp .lp-how__ctl:focus-visible{outline: 3px solid var(--lp-green-deep);
-  outline-offset: 2px;}
+#imvolt-lp .lp-tab.is-active .lp-tab__bar{transform: scaleX(var(--p, 1));}
 #imvolt-lp .lp-how__stage{position: relative;
-  min-height: 520px;
+  height: clamp(400px, calc(100svh - 300px), 540px);
   border-radius: 24px;
   background: var(--lp-carbon);
   background-image: repeating-linear-gradient(
@@ -644,9 +633,15 @@ html.lenis,html.lenis body{height: auto;}
     height: 34px;}
 #imvolt-lp .lp-tab__d{display: none;}
 #imvolt-lp .lp-tab__bar{height: 3px;}
-#imvolt-lp .lp-how__ctl{display: none;}
-#imvolt-lp .lp-how__stage{min-height: 500px;}
-#imvolt-lp .lp-panel__cap{display: block;}}
+#imvolt-lp .lp-how__stage{height: clamp(330px, calc(100svh - 340px), 520px);}
+#imvolt-lp .lp-panel__cap{display: block;
+    margin-top: 10px;
+    font-size: 13px;}
+#imvolt-lp .lp-win__bar{padding: 8px 12px;}
+#imvolt-lp .lp-win__body{gap: 8px;
+    padding: 12px;}
+#imvolt-lp .lp-field,#imvolt-lp .lp-block{padding: 7px 11px;
+    font-size: 12.5px;}}
 @media (max-width: 760px){#imvolt-lp .lp-nav{grid-template-columns: 1fr auto;}
 #imvolt-lp .lp-nav__label,#imvolt-lp .lp-nav .lp-link{display: none;}
 #imvolt-lp .lp-nav__logo img{height: 28px;}
@@ -661,6 +656,7 @@ html.lenis,html.lenis body{height: auto;}
 #imvolt-lp .lp-card{padding: 10px;}
 #imvolt-lp .lp-card__title{font-size: 13px;}
 #imvolt-lp .lp-card__sub{font-size: 11px;}}
+@media (max-width: 900px) and (max-height: 720px){#imvolt-lp .lp-panel__cap,#imvolt-lp .lp-chip-ok{display: none;}}
 @media (max-width: 760px) and (max-height: 720px){#imvolt-lp .lp-t--hero .lp-sub{display: none;}
 #imvolt-lp .lp-hero-logo{width: 190px;
     margin-bottom: 16px;}
@@ -837,8 +833,7 @@ body { overflow-x: clip; }
         <h2 class="lp-h2" id="lp-steps-title">De una propiedad a una campaña profesional.</h2>
       </div>
       <div class="lp-how">
-      <div class="lp-how__side">
-        <div class="lp-how__tabs" role="tablist" aria-orientation="vertical">
+      <div class="lp-how__tabs" role="tablist" aria-orientation="vertical">
           <button type="button" role="tab" id="lp-tab-0" aria-selected="true" aria-controls="lp-panel-0" tabindex="0" class="lp-tab is-active">
             <span class="lp-tab__n">01</span><span class="lp-tab__t">Propiedad</span><span class="lp-tab__d">Carga tu casa, lote o proyecto con datos y fotografías verificados.</span><span class="lp-tab__bar" aria-hidden="true"></span>
           </button>
@@ -854,8 +849,6 @@ body { overflow-x: clip; }
           <button type="button" role="tab" id="lp-tab-4" aria-selected="false" aria-controls="lp-panel-4" tabindex="-1" class="lp-tab">
             <span class="lp-tab__n">05</span><span class="lp-tab__t">Resultados</span><span class="lp-tab__d">Mide inversión, contactos y oportunidades en un solo lugar.</span><span class="lp-tab__bar" aria-hidden="true"></span>
           </button>
-        </div>
-        <button type="button" class="lp-how__ctl">Pausar recorrido</button>
       </div>
       <div class="lp-how__stage">
         <div class="lp-panel is-active" role="tabpanel" id="lp-panel-0" aria-labelledby="lp-tab-0">
@@ -1026,71 +1019,81 @@ body { overflow-x: clip; }
     });
     select(0);
 
-    // ── "Cómo funciona": recorrido interactivo ──
+    // ── "Cómo funciona": la sección se fija y el scroll recorre los 5 pasos ──
     (function () {
+      var section = root.querySelector(".lp-steps");
       var how = root.querySelector(".lp-how");
-      if (!how) return;
+      if (!section || !how) return;
       var tabs = Array.prototype.slice.call(how.querySelectorAll(".lp-tab"));
       var panels = Array.prototype.slice.call(how.querySelectorAll(".lp-panel"));
-      var ctl = how.querySelector(".lp-how__ctl");
       var list = how.querySelector(".lp-how__tabs");
+      var n = tabs.length;
       var step = 0;
-      var auto = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      var inView = false;
+      var trigger = null;
 
       // Imágenes de las vistas previas (las mismas fotos del selector)
       Array.prototype.forEach.call(how.querySelectorAll("[data-lp-prop]"), function (img) {
         img.src = PROPS[parseInt(img.getAttribute("data-lp-prop"), 10)].img;
       });
 
-      function sync() {
-        how.classList.toggle("is-running", auto && inView);
-        ctl.textContent = auto ? "Pausar recorrido" : "Reanudar recorrido";
-      }
-      function pick(i, focus) {
-        var n = (i + tabs.length) % tabs.length;
-        step = n;
+      function pick(i) {
+        step = i;
         tabs.forEach(function (t, k) {
-          t.classList.toggle("is-active", k === n);
-          t.setAttribute("aria-selected", k === n ? "true" : "false");
-          t.tabIndex = k === n ? 0 : -1;
+          t.classList.toggle("is-active", k === i);
+          t.setAttribute("aria-selected", k === i ? "true" : "false");
+          t.tabIndex = k === i ? 0 : -1;
         });
         panels.forEach(function (p, k) {
-          p.classList.toggle("is-active", k === n);
-          if (k === n) p.removeAttribute("inert"); else p.setAttribute("inert", "");
+          p.classList.toggle("is-active", k === i);
+          if (k === i) p.removeAttribute("inert"); else p.setAttribute("inert", "");
         });
         // En móvil la lista es horizontal: centra el paso activo sin mover la página
-        var t = tabs[n];
+        var t = tabs[i];
         if (list.scrollWidth > list.clientWidth) {
           list.scrollTo({ left: t.offsetLeft - (list.clientWidth - t.clientWidth) / 2, behavior: "smooth" });
         }
-        if (focus) t.focus();
       }
       panels.forEach(function (p, k) { if (k !== 0) p.setAttribute("inert", ""); });
 
-      tabs.forEach(function (t, i) {
-        t.addEventListener("click", function () { auto = false; sync(); pick(i); });
-        t.querySelector(".lp-tab__bar").addEventListener("animationend", function () {
-          if (auto) pick(step + 1);
-        });
-      });
+      // Ir a un paso: con la sección fija se desplaza el scroll hasta ese tramo
+      function goTo(i, focus) {
+        var target = (i + n) % n;
+        if (trigger) {
+          var y = trigger.start + (trigger.end - trigger.start) * ((target + 0.5) / n);
+          window.scrollTo({ top: y, behavior: "smooth" });
+        } else {
+          pick(target);
+        }
+        if (focus) tabs[target].focus();
+      }
+      tabs.forEach(function (t, i) { t.addEventListener("click", function () { goTo(i, false); }); });
       list.addEventListener("keydown", function (e) {
         var next = e.key === "ArrowDown" || e.key === "ArrowRight";
         var prev = e.key === "ArrowUp" || e.key === "ArrowLeft";
-        if (next || prev) {
-          e.preventDefault(); auto = false; sync(); pick(step + (next ? 1 : -1), true);
-        } else if (e.key === "Home" || e.key === "End") {
-          e.preventDefault(); auto = false; sync(); pick(e.key === "Home" ? 0 : tabs.length - 1, true);
-        }
+        if (next || prev) { e.preventDefault(); goTo(step + (next ? 1 : -1), true); }
+        else if (e.key === "Home" || e.key === "End") { e.preventDefault(); goTo(e.key === "Home" ? 0 : n - 1, true); }
       });
-      ctl.addEventListener("click", function () { auto = !auto; sync(); });
 
-      if ("IntersectionObserver" in window) {
-        new IntersectionObserver(function (entries) {
-          inView = entries[0].isIntersecting; sync();
-        }, { threshold: 0.35 }).observe(how);
+      // Sin movimiento (o en pantallas demasiado bajas) no se fija: los pasos se eligen con clic
+      var noMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!noMotion && window.innerHeight >= 560) {
+        trigger = ScrollTrigger.create({
+          trigger: section,
+          start: "top top",
+          end: function () { return "+=" + Math.round(window.innerHeight * 0.6 * n); },
+          pin: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          refreshPriority: 1,
+          onUpdate: function (self) {
+            var x = Math.min(self.progress * n, n - 0.0001);
+            var idx = Math.floor(x);
+            if (idx !== step) pick(idx);
+            // La barra del paso activo se llena según el scroll dentro de ese paso
+            tabs.forEach(function (t, k) { t.style.setProperty("--p", k === idx ? (x - idx).toFixed(3) : "0"); });
+          }
+        });
       }
-      sync();
     })();
 
     var scene = { hero: 1, dark: 0, ribbon: 0, amp: 0, phase: 0, enter: 0, orbit: 0, angle: 0, lines: 0, fall: 0, phone: 0 };
@@ -1269,6 +1272,7 @@ body { overflow-x: clip; }
     var tl = gsap.timeline({
       defaults: { ease: "power2.inOut" },
       scrollTrigger: {
+        refreshPriority: 2,
         trigger: pin,
         start: "top top",
         end: "+=480%",

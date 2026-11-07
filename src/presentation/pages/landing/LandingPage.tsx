@@ -216,8 +216,6 @@ const SCATTER_MOBILE: Array<[number, number]> = [
 ];
 
 // ── "Cómo funciona": recorrido interactivo de 5 pasos ───────────────────────
-const HOW_AUTO_MS = 6500;
-
 function HowWindow({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="lp-win">
@@ -368,25 +366,45 @@ function HowPanel({ i }: { i: number }) {
   }
 }
 
+/** Scroll por paso: la sección queda fija y cada tramo de scroll equivale a ~60 % del alto de pantalla. */
+const HOW_VH_PER_STEP = 0.6;
+
 function HowItWorks() {
   const [step, setStep] = useState(0);
-  // Sin avance automático si el usuario prefiere movimiento reducido
-  const [auto, setAuto] = useState(
-    () => !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
-  const [inView, setInView] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const triggerRef = useRef<ScrollTrigger | null>(null);
 
-  // El avance automático solo corre mientras la sección está a la vista
+  // El scroll recorre los 5 pasos mientras la sección permanece fija en pantalla.
   useEffect(() => {
-    const el = rootRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
-      threshold: 0.35,
+    const el = sectionRef.current;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Sin movimiento (o en pantallas demasiado bajas) no se fija: los pasos se eligen con clic.
+    if (!el || reduce || window.innerHeight < 560) return;
+    const n = STEPS.length;
+    const st = ScrollTrigger.create({
+      trigger: el,
+      start: "top top",
+      end: () => `+=${Math.round(window.innerHeight * HOW_VH_PER_STEP * n)}`,
+      pin: true,
+      anticipatePin: 1,
+      invalidateOnRefresh: true,
+      refreshPriority: 1,
+      onUpdate: (self) => {
+        const x = Math.min(self.progress * n, n - 0.0001);
+        const idx = Math.floor(x);
+        setStep(idx);
+        // La barra del paso activo se llena según el scroll dentro de ese paso
+        tabRefs.current.forEach((tab, k) =>
+          tab?.style.setProperty("--p", k === idx ? (x - idx).toFixed(3) : "0"),
+        );
+      },
     });
-    io.observe(el);
-    return () => io.disconnect();
+    triggerRef.current = st;
+    return () => {
+      st.kill();
+      triggerRef.current = null;
+    };
   }, []);
 
   // En móvil la lista es horizontal: centra el paso activo sin mover la página
@@ -401,10 +419,18 @@ function HowItWorks() {
     }
   }, [step]);
 
-  const pick = (i: number, focus = false) => {
-    const n = (i + STEPS.length) % STEPS.length;
-    setStep(n);
-    if (focus) tabRefs.current[n]?.focus();
+  /** Ir a un paso: con la sección fija se desplaza el scroll hasta ese tramo. */
+  const goTo = (i: number, focus = false) => {
+    const n = STEPS.length;
+    const target = (i + n) % n;
+    const st = triggerRef.current;
+    if (st) {
+      const y = st.start + (st.end - st.start) * ((target + 0.5) / n);
+      window.scrollTo({ top: y, behavior: "smooth" });
+    } else {
+      setStep(target);
+    }
+    if (focus) tabRefs.current[target]?.focus();
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -412,18 +438,23 @@ function HowItWorks() {
     const prev = e.key === "ArrowUp" || e.key === "ArrowLeft";
     if (next || prev) {
       e.preventDefault();
-      setAuto(false);
-      pick(step + (next ? 1 : -1), true);
+      goTo(step + (next ? 1 : -1), true);
     } else if (e.key === "Home" || e.key === "End") {
       e.preventDefault();
-      setAuto(false);
-      pick(e.key === "Home" ? 0 : STEPS.length - 1, true);
+      goTo(e.key === "Home" ? 0 : STEPS.length - 1, true);
     }
   };
 
   return (
-    <div className={`lp-how${auto && inView ? " is-running" : ""}`} ref={rootRef}>
-      <div className="lp-how__side">
+    <section className="lp-steps" aria-labelledby="lp-steps-title" ref={sectionRef}>
+      <div className="lp-steps__head">
+        <span className="lp-kicker">Cómo funciona</span>
+        <h2 className="lp-h2" id="lp-steps-title">
+          De una propiedad a una campaña profesional.
+        </h2>
+      </div>
+
+      <div className="lp-how">
         <div
           className="lp-how__tabs"
           role="tablist"
@@ -443,44 +474,33 @@ function HowItWorks() {
               aria-controls={`lp-panel-${i}`}
               tabIndex={i === step ? 0 : -1}
               className={`lp-tab${i === step ? " is-active" : ""}`}
-              onClick={() => {
-                setAuto(false);
-                pick(i);
-              }}
+              onClick={() => goTo(i)}
             >
               <span className="lp-tab__n">0{i + 1}</span>
               <span className="lp-tab__t">{s.title}</span>
               <span className="lp-tab__d">{s.text}</span>
-              <span
-                className="lp-tab__bar"
-                aria-hidden="true"
-                onAnimationEnd={() => auto && pick(step + 1)}
-                style={{ animationDuration: `${HOW_AUTO_MS}ms` }}
-              />
+              <span className="lp-tab__bar" aria-hidden="true" />
             </button>
           ))}
         </div>
-        <button type="button" className="lp-how__ctl" onClick={() => setAuto((a) => !a)}>
-          {auto ? "Pausar recorrido" : "Reanudar recorrido"}
-        </button>
-      </div>
 
-      <div className="lp-how__stage">
-        {STEPS.map((s, i) => (
-          <div
-            key={s.title}
-            className={`lp-panel${i === step ? " is-active" : ""}`}
-            role="tabpanel"
-            id={`lp-panel-${i}`}
-            aria-labelledby={`lp-tab-${i}`}
-            inert={i !== step}
-          >
-            <HowPanel i={i} />
-            <p className="lp-panel__cap">{s.text}</p>
-          </div>
-        ))}
+        <div className="lp-how__stage">
+          {STEPS.map((s, i) => (
+            <div
+              key={s.title}
+              className={`lp-panel${i === step ? " is-active" : ""}`}
+              role="tabpanel"
+              id={`lp-panel-${i}`}
+              aria-labelledby={`lp-tab-${i}`}
+              inert={i !== step}
+            >
+              <HowPanel i={i} />
+              <p className="lp-panel__cap">{s.text}</p>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -711,6 +731,7 @@ export default function LandingPage() {
       const tl = gsap.timeline({
         defaults: { ease: "power2.inOut" },
         scrollTrigger: {
+          refreshPriority: 2,
           trigger: pin,
           start: "top top",
           end: "+=480%",
@@ -958,15 +979,7 @@ export default function LandingPage() {
           </section>
         </div>
 
-        <section className="lp-steps" aria-labelledby="lp-steps-title">
-          <div className="lp-steps__head">
-            <span className="lp-kicker">Cómo funciona</span>
-            <h2 className="lp-h2" id="lp-steps-title">
-              De una propiedad a una campaña profesional.
-            </h2>
-          </div>
-          <HowItWorks />
-        </section>
+        <HowItWorks />
 
         <section className="lp-cta" aria-labelledby="lp-cta-title">
           <h2 className="lp-h2" id="lp-cta-title">

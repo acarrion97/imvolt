@@ -499,12 +499,21 @@ html.lenis body {
 .lp-steps {
   background: var(--lp-mist);
   color: var(--lp-carbon);
-  padding: clamp(64px, 10vw, 128px) clamp(20px, 6vw, 84px);
+  /* Pantalla completa: la sección se fija y el scroll recorre los 5 pasos */
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: calc(68px + 2.5vh) clamp(20px, 6vw, 84px) 3vh;
 }
 .lp-steps__head {
   max-width: 760px;
-  margin: 0 auto clamp(36px, 5vw, 64px);
+  margin: 0 auto clamp(14px, 3vh, 32px);
   text-align: center;
+}
+.lp-steps__head .lp-h2 {
+  font-size: clamp(1.6rem, 3.4vw, 2.6rem);
 }
 .lp-steps__head .lp-kicker {
   color: var(--lp-green-deep);
@@ -517,9 +526,10 @@ html.lenis body {
   display: grid;
   grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
   gap: clamp(20px, 4vw, 56px);
+  width: 100%;
   max-width: 1180px;
   margin: 0 auto;
-  align-items: stretch;
+  align-items: center;
 }
 .lp-how__side {
   display: flex;
@@ -586,6 +596,12 @@ html.lenis body {
   font-weight: 700;
   letter-spacing: -0.01em;
 }
+.lp-tab:not(.is-active) .lp-tab__d {
+  display: none;
+}
+.lp-tab:not(.is-active) .lp-tab__n {
+  grid-row: auto;
+}
 .lp-tab__d {
   grid-column: 2;
   font-size: 14px;
@@ -602,45 +618,15 @@ html.lenis body {
   transform-origin: left;
   transform: scaleX(0);
 }
+/* La barra se llena con el scroll dentro del paso (--p); sin scroll queda completa */
 .lp-tab.is-active .lp-tab__bar {
-  transform: scaleX(1);
-}
-.lp-how.is-running .lp-tab.is-active .lp-tab__bar {
-  animation: lp-fill 6.5s linear forwards;
-}
-@keyframes lp-fill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-.lp-how__ctl {
-  align-self: flex-start;
-  height: 38px;
-  padding: 0 16px;
-  border: 1.5px solid #c9d8cf;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--lp-carbon);
-  font: inherit;
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.lp-how__ctl:hover {
-  border-color: var(--lp-green-deep);
-}
-.lp-how__ctl:focus-visible {
-  outline: 3px solid var(--lp-green-deep);
-  outline-offset: 2px;
+  transform: scaleX(var(--p, 1));
 }
 
 /* Escenario con las vistas previas */
 .lp-how__stage {
   position: relative;
-  min-height: 520px;
+  height: clamp(400px, calc(100svh - 300px), 540px);
   border-radius: 24px;
   background: var(--lp-carbon);
   background-image: repeating-linear-gradient(
@@ -945,14 +931,26 @@ html.lenis body {
   .lp-tab__bar {
     height: 3px;
   }
-  .lp-how__ctl {
-    display: none;
-  }
   .lp-how__stage {
-    min-height: 500px;
+    height: clamp(330px, calc(100svh - 340px), 520px);
   }
   .lp-panel__cap {
     display: block;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  /* Vistas previas más compactas para que quepan en pantalla fija */
+  .lp-win__bar {
+    padding: 8px 12px;
+  }
+  .lp-win__body {
+    gap: 8px;
+    padding: 12px;
+  }
+  .lp-field,
+  .lp-block {
+    padding: 7px 11px;
+    font-size: 12.5px;
   }
 }
 @media (max-width: 760px) {
@@ -990,6 +988,14 @@ html.lenis body {
   }
   .lp-card__sub {
     font-size: 11px;
+  }
+}
+
+/* Celulares de pantalla corta: quita lo accesorio de las vistas previas */
+@media (max-width: 900px) and (max-height: 720px) {
+  .lp-panel__cap,
+  .lp-chip-ok {
+    display: none;
   }
 }
 
