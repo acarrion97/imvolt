@@ -6,7 +6,7 @@
       con padding 0 → agrega un elemento "Custom JS/HTML" → pega TODO este archivo.
    2. Todos los botones abren tu calendario de agendamiento ENCIMA de la página, sin salir
       de ella (bookingUrl en IMVOLT_CONFIG, más abajo, ya viene con tu enlace). Con
-      bookingMode: "link" se abre en una pestaña nueva. También puedes desactivar el scroll suave ahí.
+      bookingMode: "link" navega a la página del calendario en la misma ventana. También puedes desactivar el scroll suave ahí.
    3. Guarda y abre la vista previa/publicada (el editor de GHL no ejecuta scripts).
   Requiere internet en el navegador (carga GSAP y Lenis desde cdn.jsdelivr.net y la
   fuente Inter desde Google Fonts). Logos oficiales e imágenes de ejemplo embebidos: no depende de hosting.
@@ -800,7 +800,7 @@ body { overflow-x: clip; }
     </a>
     <span class="lp-nav__label" aria-hidden="true">01 · Propiedad</span>
     <div class="lp-nav__actions">
-      <a href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" class="lp-btn" data-lp-link="booking" target="_blank" rel="noopener noreferrer">Agendar sesión</a>
+      <a href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" class="lp-btn" data-lp-link="booking">Agendar sesión</a>
     </div>
   </header>
 
@@ -839,7 +839,7 @@ body { overflow-x: clip; }
             inventario inmobiliario.
           </p>
           <div class="lp-actions">
-            <a href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" class="lp-btn" data-lp-link="booking" target="_blank" rel="noopener noreferrer">Agendar sesión estratégica →</a>
+            <a href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" class="lp-btn" data-lp-link="booking">Agendar sesión estratégica →</a>
           </div>
         </div>
 
@@ -973,7 +973,7 @@ body { overflow-x: clip; }
     <section class="lp-cta" aria-labelledby="lp-cta-title">
       <h2 class="lp-h2" id="lp-cta-title">Convierte tus proyectos en campañas que generan oportunidades.</h2>
       <div class="lp-actions">
-        <a href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" class="lp-btn" data-lp-link="booking" target="_blank" rel="noopener noreferrer">Agendar sesión estratégica →</a>
+        <a href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" class="lp-btn" data-lp-link="booking">Agendar sesión estratégica →</a>
       </div>
     </section>
   </main>
@@ -999,7 +999,7 @@ body { overflow-x: clip; }
         <iframe class="lp-modal__frame" id="kZhfS4XGngvW84a4wI1z_1794025264609" allow="payment" title="Calendario para agendar la sesión estratégica"></iframe>
         <div class="lp-modal__loading">Cargando calendario…</div>
       </div>
-      <a class="lp-modal__fallback" href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" data-lp-link="booking" target="_blank" rel="noopener noreferrer">¿No ves el calendario? Ábrelo en una pestaña nueva</a>
+      <a class="lp-modal__fallback" href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" data-lp-link="booking">¿No ves el calendario? Ábrelo en esta ventana</a>
     </div>
   </div>
 </div>
@@ -1011,7 +1011,7 @@ body { overflow-x: clip; }
   /* ═══ CONFIGURACIÓN — edita solo este bloque ═══════════════════════════════ */
   var IMVOLT_CONFIG = {
     bookingUrl: "https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z",  // calendario de agendamiento (todos los botones)
-    bookingMode: "modal", // "modal" = se abre sobre la página · "link" = pestaña nueva
+    bookingMode: "modal", // "modal" = se abre sobre la página · "link" = va a la página del calendario en la misma ventana
     embedScript: "https://link.msgsndr.com/js/form_embed.js", // script oficial de GHL (ajusta el alto del calendario). "" = no cargarlo
     smoothScroll: true    // false = desactiva Lenis (scroll suave) si choca con GHL
   };

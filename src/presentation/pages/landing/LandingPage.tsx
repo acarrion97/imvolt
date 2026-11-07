@@ -617,13 +617,8 @@ function BookingModal({
           )}
           <div className={`lp-modal__loading${loaded ? " is-done" : ""}`}>Cargando calendario…</div>
         </div>
-        <a
-          className="lp-modal__fallback"
-          href={BOOKING_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          ¿No ves el calendario? Ábrelo en una pestaña nueva
+        <a className="lp-modal__fallback" href={BOOKING_URL}>
+          ¿No ves el calendario? Ábrelo en esta ventana
         </a>
       </div>
     </div>
@@ -948,8 +943,6 @@ export default function LandingPage() {
         <div className="lp-nav__actions">
           <a
             href={BOOKING_URL}
-            target="_blank"
-            rel="noopener noreferrer"
             className="lp-btn"
             onClick={openBooking}
             onPointerEnter={warmBooking}
@@ -1039,8 +1032,6 @@ export default function LandingPage() {
               <div className="lp-actions">
                 <a
                   href={BOOKING_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="lp-btn"
                   onClick={openBooking}
                   onPointerEnter={warmBooking}
@@ -1150,8 +1141,6 @@ export default function LandingPage() {
           <div className="lp-actions">
             <a
               href={BOOKING_URL}
-              target="_blank"
-              rel="noopener noreferrer"
               className="lp-btn"
               onClick={openBooking}
               onPointerEnter={warmBooking}
