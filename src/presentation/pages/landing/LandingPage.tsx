@@ -608,6 +608,8 @@ function BookingModal({
           {mounted && (
             <iframe
               className="lp-modal__frame"
+              id="kZhfS4XGngvW84a4wI1z_1794025264609"
+              allow="payment"
               src={BOOKING_URL}
               title="Calendario para agendar la sesión estratégica"
               onLoad={() => setLoaded(true)}

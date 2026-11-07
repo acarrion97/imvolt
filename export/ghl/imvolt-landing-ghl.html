@@ -411,10 +411,15 @@ html.lenis,html.lenis body{height: auto;}
 #imvolt-lp .lp-modal__body{position: relative;
   flex: 1;
   min-height: 0;
-  background: #fff;}
+  background: #fff;
+  
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;}
 #imvolt-lp .lp-modal__frame{display: block;
   width: 100%;
   height: 100%;
+  min-height: 100%;
   border: 0;
   background: #fff;}
 #imvolt-lp .lp-modal__loading{position: absolute;
@@ -991,7 +996,7 @@ body { overflow-x: clip; }
         </button>
       </div>
       <div class="lp-modal__body">
-        <iframe class="lp-modal__frame" title="Calendario para agendar la sesión estratégica"></iframe>
+        <iframe class="lp-modal__frame" id="kZhfS4XGngvW84a4wI1z_1794025264609" allow="payment" title="Calendario para agendar la sesión estratégica"></iframe>
         <div class="lp-modal__loading">Cargando calendario…</div>
       </div>
       <a class="lp-modal__fallback" href="https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z" data-lp-link="booking" target="_blank" rel="noopener noreferrer">¿No ves el calendario? Ábrelo en una pestaña nueva</a>
@@ -1007,6 +1012,7 @@ body { overflow-x: clip; }
   var IMVOLT_CONFIG = {
     bookingUrl: "https://api.leadconnectorhq.com/widget/booking/kZhfS4XGngvW84a4wI1z",  // calendario de agendamiento (todos los botones)
     bookingMode: "modal", // "modal" = se abre sobre la página · "link" = pestaña nueva
+    embedScript: "https://link.msgsndr.com/js/form_embed.js", // script oficial de GHL (ajusta el alto del calendario). "" = no cargarlo
     smoothScroll: true    // false = desactiva Lenis (scroll suave) si choca con GHL
   };
   /* ═════════════════════════════════════════════════════════════════════════ */
@@ -1060,8 +1066,17 @@ body { overflow-x: clip; }
       frame.addEventListener("load", function () { loading.classList.add("is-done"); });
 
       // Precarga: al acercarse al botón (ratón, teclado o dedo) el calendario empieza a cargarse sin abrirse
+      var embedLoaded = false;
       function warm() {
         if (!frame.getAttribute("src")) frame.setAttribute("src", IMVOLT_CONFIG.bookingUrl);
+        // El script oficial de GHL se carga una sola vez, después de que existe el iframe
+        if (!embedLoaded && IMVOLT_CONFIG.embedScript) {
+          embedLoaded = true;
+          var s = document.createElement("script");
+          s.src = IMVOLT_CONFIG.embedScript;
+          s.async = true;
+          document.body.appendChild(s);
+        }
       }
 
       function open(trigger) {
