@@ -13,6 +13,7 @@
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://api.leadconnectorhq.com" />
 <link
   rel="stylesheet"
   href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
@@ -293,9 +294,14 @@
 
       frame.addEventListener("load", function () { loading.classList.add("is-done"); });
 
+      // Precarga: al acercarse al botón (ratón, teclado o dedo) el calendario empieza a cargarse sin abrirse
+      function warm() {
+        if (!frame.getAttribute("src")) frame.setAttribute("src", IMVOLT_CONFIG.bookingUrl);
+      }
+
       function open(trigger) {
         lastTrigger = trigger;
-        if (!frame.getAttribute("src")) frame.setAttribute("src", IMVOLT_CONFIG.bookingUrl);
+        warm();
         isOpen = true;
         modal.classList.add("is-open");
         modal.removeAttribute("inert");
@@ -312,6 +318,9 @@
 
       // Clic normal: abre la ventana. Ctrl/Cmd/Mayús o botón del medio: enlace normal (pestaña nueva)
       Array.prototype.forEach.call(root.querySelectorAll('.lp-btn[data-lp-link="booking"]'), function (a) {
+        a.addEventListener("pointerenter", warm);
+        a.addEventListener("focus", warm);
+        a.addEventListener("touchstart", warm, { passive: true });
         a.addEventListener("click", function (e) {
           if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
           e.preventDefault();

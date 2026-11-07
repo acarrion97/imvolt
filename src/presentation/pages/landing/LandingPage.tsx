@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { preconnect } from "react-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
@@ -632,6 +633,9 @@ export default function LandingPage() {
   const rootRef = useRef<HTMLDivElement>(null);
   const [sel, setSel] = useState(0);
   // Calendario: se abre encima de la landing (el iframe se carga la primera vez que se abre)
+  useEffect(() => {
+    preconnect(new URL(BOOKING_URL).origin);
+  }, []);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingMounted, setBookingMounted] = useState(false);
   const bookingTrigger = useRef<HTMLElement | null>(null);
@@ -643,6 +647,8 @@ export default function LandingPage() {
     setBookingMounted(true);
     setBookingOpen(true);
   };
+  // Precarga: al acercarse al botón (ratón, teclado o dedo) el calendario empieza a cargarse sin abrirse
+  const warmBooking = () => setBookingMounted(true);
   const closeBooking = useCallback(() => {
     setBookingOpen(false);
     bookingTrigger.current?.focus();
@@ -944,6 +950,9 @@ export default function LandingPage() {
             rel="noopener noreferrer"
             className="lp-btn"
             onClick={openBooking}
+            onPointerEnter={warmBooking}
+            onFocus={warmBooking}
+            onTouchStart={warmBooking}
           >
             Agendar sesión
           </a>
@@ -1032,6 +1041,9 @@ export default function LandingPage() {
                   rel="noopener noreferrer"
                   className="lp-btn"
                   onClick={openBooking}
+                  onPointerEnter={warmBooking}
+                  onFocus={warmBooking}
+                  onTouchStart={warmBooking}
                 >
                   {BOOKING_LABEL} →
                 </a>
@@ -1140,6 +1152,9 @@ export default function LandingPage() {
               rel="noopener noreferrer"
               className="lp-btn"
               onClick={openBooking}
+              onPointerEnter={warmBooking}
+              onFocus={warmBooking}
+              onTouchStart={warmBooking}
             >
               {BOOKING_LABEL} →
             </a>
