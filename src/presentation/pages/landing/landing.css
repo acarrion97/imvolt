@@ -508,6 +508,131 @@ html.lenis body {
   outline-offset: 2px;
 }
 
+/* ── Calendario de agendamiento en ventana emergente ─────────────────────── */
+.lp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: clamp(10px, 3vw, 32px);
+  background: rgba(16, 23, 25, 0.74);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+  overscroll-behavior: contain;
+}
+.lp-modal.is-open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s ease;
+}
+.lp-modal__dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(760px, 100%);
+  height: min(92vh, 880px);
+  height: min(92dvh, 880px);
+  background: #fff;
+  color: var(--lp-carbon);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+  transform: translateY(18px) scale(0.98);
+  transition: transform 0.3s ease;
+}
+.lp-modal.is-open .lp-modal__dialog {
+  transform: none;
+}
+.lp-modal__bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px 10px 18px;
+  background: var(--lp-carbon);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+.lp-modal__close {
+  flex: none;
+  padding: 0;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.lp-modal__close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.lp-modal__close:focus-visible,
+.lp-modal__fallback:focus-visible {
+  outline: 3px solid var(--lp-green);
+  outline-offset: 2px;
+}
+.lp-modal__body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+}
+.lp-modal__frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+.lp-modal__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: #4a5a55;
+  font-size: 14px;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.lp-modal__loading.is-done {
+  opacity: 0;
+}
+.lp-modal__fallback,
+.lp-modal__fallback:hover,
+.lp-modal__fallback:visited {
+  color: #4a5a55;
+}
+.lp-modal__fallback {
+  flex: none;
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 12.5px;
+  color: #4a5a55;
+  background: #f2f7f4;
+  text-decoration: underline;
+}
+@media (max-width: 640px) {
+  .lp-modal {
+    padding: 0;
+  }
+  .lp-modal__dialog {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+  }
+}
+
 /* ── Secciones posteriores ───────────────────────────────────────────────── */
 .lp-steps {
   background: var(--lp-mist);

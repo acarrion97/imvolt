@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import type { KeyboardEvent, ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -508,10 +508,145 @@ function HowItWorks() {
   );
 }
 
+// ── Calendario de agendamiento en ventana emergente ─────────────────────────
+function BookingModal({
+  open,
+  mounted,
+  onClose,
+}: {
+  open: boolean;
+  mounted: boolean;
+  onClose: () => void;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const overlay = overlayRef.current;
+    const dialog = dialogRef.current;
+    if (!overlay || !dialog) return;
+    closeRef.current?.focus();
+
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      // El foco se queda dentro de la ventana: botón de cerrar → calendario → enlace de respaldo
+      const items = Array.from(dialog.querySelectorAll<HTMLElement>("button, iframe, a[href]"));
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    // Con la ventana abierta, la rueda o el dedo no mueven la página de fondo
+    const stop = (e: Event) => e.preventDefault();
+    document.addEventListener("keydown", onKey);
+    overlay.addEventListener("wheel", stop, { passive: false });
+    overlay.addEventListener("touchmove", stop, { passive: false });
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      overlay.removeEventListener("wheel", stop);
+      overlay.removeEventListener("touchmove", stop);
+    };
+  }, [open, onClose]);
+
+  return (
+    <div
+      className={`lp-modal${open ? " is-open" : ""}`}
+      ref={overlayRef}
+      data-lenis-prevent
+      aria-hidden={!open}
+      inert={!open}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="lp-modal__dialog"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={BOOKING_LABEL}
+      >
+        <div className="lp-modal__bar">
+          <span>Agenda tu sesión estratégica</span>
+          <button
+            type="button"
+            className="lp-modal__close"
+            ref={closeRef}
+            onClick={onClose}
+            aria-label="Cerrar calendario"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+        <div className="lp-modal__body">
+          {mounted && (
+            <iframe
+              className="lp-modal__frame"
+              src={BOOKING_URL}
+              title="Calendario para agendar la sesión estratégica"
+              onLoad={() => setLoaded(true)}
+            />
+          )}
+          <div className={`lp-modal__loading${loaded ? " is-done" : ""}`}>Cargando calendario…</div>
+        </div>
+        <a
+          className="lp-modal__fallback"
+          href={BOOKING_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ¿No ves el calendario? Ábrelo en una pestaña nueva
+        </a>
+      </div>
+    </div>
+  );
+}
+
 // ── Componente ──────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const rootRef = useRef<HTMLDivElement>(null);
   const [sel, setSel] = useState(0);
+  // Calendario: se abre encima de la landing (el iframe se carga la primera vez que se abre)
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingMounted, setBookingMounted] = useState(false);
+  const bookingTrigger = useRef<HTMLElement | null>(null);
+  const openBooking = (e: MouseEvent<HTMLAnchorElement>) => {
+    // Clic con Ctrl/Cmd/Mayús o botón del medio: se respeta el enlace normal (pestaña nueva)
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    bookingTrigger.current = e.currentTarget;
+    setBookingMounted(true);
+    setBookingOpen(true);
+  };
+  const closeBooking = useCallback(() => {
+    setBookingOpen(false);
+    bookingTrigger.current?.focus();
+  }, []);
   const prop = PROPS[sel];
 
   useEffect(() => {
@@ -803,7 +938,13 @@ export default function LandingPage() {
           01 · Propiedad
         </span>
         <div className="lp-nav__actions">
-          <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="lp-btn">
+          <a
+            href={BOOKING_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lp-btn"
+            onClick={openBooking}
+          >
             Agendar sesión
           </a>
         </div>
@@ -885,7 +1026,13 @@ export default function LandingPage() {
                 inventario inmobiliario.
               </p>
               <div className="lp-actions">
-                <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="lp-btn">
+                <a
+                  href={BOOKING_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lp-btn"
+                  onClick={openBooking}
+                >
                   {BOOKING_LABEL} →
                 </a>
               </div>
@@ -987,7 +1134,13 @@ export default function LandingPage() {
             Convierte tus proyectos en campañas que generan oportunidades.
           </h2>
           <div className="lp-actions">
-            <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="lp-btn">
+            <a
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lp-btn"
+              onClick={openBooking}
+            >
               {BOOKING_LABEL} →
             </a>
           </div>
@@ -1004,6 +1157,8 @@ export default function LandingPage() {
           campaña requiere tu aprobación antes de publicarse.
         </p>
       </footer>
+
+      <BookingModal open={bookingOpen} mounted={bookingMounted} onClose={closeBooking} />
     </div>
   );
 }
