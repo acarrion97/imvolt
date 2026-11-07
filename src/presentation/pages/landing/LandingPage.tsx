@@ -217,6 +217,7 @@ const PROPS = [
     place: "Samborondón, Ecuador",
     adLine: "Casa en Samborondón · Conoce la propiedad",
     img: "/landing/prop-casa.webp",
+    video: "/landing/muestra-casa.mp4",
     alt: "Render conceptual de una casa moderna rodeada de vegetación",
   },
   {
@@ -325,7 +326,56 @@ function HowWindow({ title, children }: { title: string; children: ReactNode }) 
 }
 
 /** Vistas previas de ejemplo (ilustrativas): no muestran cifras ni resultados reales. */
-function HowPanel({ i }: { i: number }) {
+function SampleVideo({ active }: { active: boolean }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const reduce =
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    if (active && !reduce) v.play().catch(() => undefined);
+    else v.pause();
+  }, [active, reduce]);
+
+  const toggle = () => {
+    const v = ref.current;
+    if (!v) return;
+    if (v.paused) v.play().catch(() => undefined);
+    else v.pause();
+  };
+
+  return (
+    <div className="lp-media">
+      <video
+        ref={ref}
+        src={PROPS[0].video}
+        poster={PROPS[0].img}
+        muted
+        loop
+        playsInline
+        preload="none"
+        aria-label="Video de muestra generado con IA. Render conceptual"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onClick={toggle}
+      />
+      <button
+        type="button"
+        className={`lp-play${playing ? " is-playing" : ""}`}
+        onClick={toggle}
+        aria-label={playing ? "Pausar video de muestra" : "Reproducir video de muestra"}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          {playing ? <path d="M7 5h4v14H7zM13 5h4v14h-4z" /> : <path d="M8 5v14l11-7z" />}
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+function HowPanel({ i, active }: { i: number; active: boolean }) {
   switch (i) {
     case 0:
       return (
@@ -386,14 +436,7 @@ function HowPanel({ i }: { i: number }) {
     case 2:
       return (
         <HowWindow title="Estudio IA">
-          <div className="lp-media">
-            <img src={PROPS[0].img} alt="" decoding="async" loading="lazy" />
-            <span className="lp-play" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </span>
-          </div>
+          <SampleVideo active={active} />
           <div className="lp-fmts">
             <span>Imagen IA</span>
             <span className="is-on">Video bajo demanda</span>
@@ -593,7 +636,7 @@ function HowItWorks() {
               aria-labelledby={`lp-tab-${i}`}
               inert={i !== step}
             >
-              <HowPanel i={i} />
+              <HowPanel i={i} active={i === step} />
               <p className="lp-panel__cap">{s.text}</p>
             </div>
           ))}
@@ -778,6 +821,65 @@ function TeamSection() {
   );
 }
 
+function BenViz({ i }: { i: number }) {
+  if (i === 0) {
+    return (
+      <div className="lp-viz lp-viz--rows" aria-hidden="true">
+        {["Diseño", "Planificación", "Tareas repetitivas"].map((t, k) => (
+          <div className="lp-viz__row" style={{ "--d": k } as CSSProperties} key={t}>
+            <span className="lp-viz__txt">{t}</span>
+            <i className="lp-viz__ok" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (i === 1) {
+    return (
+      <div className="lp-viz lp-viz--track" aria-hidden="true">
+        <span className="lp-viz__line" />
+        <span className="lp-viz__dot" />
+        {["Idea", "Piezas", "Campañas"].map((t) => (
+          <em key={t}>{t}</em>
+        ))}
+      </div>
+    );
+  }
+  if (i === 2) {
+    return (
+      <div className="lp-viz lp-viz--ads" aria-hidden="true">
+        {[0, 1, 2].map((k) => (
+          <span className="lp-viz__ad" style={{ "--k": k } as CSSProperties} key={k} />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="lp-viz lp-viz--chart" aria-hidden="true">
+      <svg viewBox="0 0 120 54" preserveAspectRatio="none">
+        {[8, 26, 44, 62, 80, 98].map((x, k) => (
+          <rect
+            className="lp-viz__bar"
+            style={{ "--d": k } as CSSProperties}
+            x={x}
+            y={50 - (10 + k * 6)}
+            width="10"
+            height={10 + k * 6}
+            rx="2"
+            key={x}
+          />
+        ))}
+        <polyline
+          className="lp-viz__trend"
+          pathLength="100"
+          points="13,38 31,32 49,34 67,22 85,16 103,6"
+        />
+      </svg>
+      <span className="lp-viz__pulse" />
+    </div>
+  );
+}
+
 function BenefitsSection() {
   return (
     <section
@@ -788,14 +890,17 @@ function BenefitsSection() {
       <div className="lp-sec-head lp-reveal">
         <span className="lp-kicker">El beneficio no es solo crear un anuncio</span>
         <h2 className="lp-h2" id="lp-ben-title">
-          Es contar con un proceso de marketing siempre disponible.
+          Es contar con un proceso de marketing <span className="lp-hl">siempre disponible.</span>
         </h2>
       </div>
       <div className="lp-bens">
         {BENEFITS.map((b, i) => (
           <article className="lp-ben lp-reveal" style={stagger(i)} key={b.title}>
-            <h3>{b.title}</h3>
-            <p>{b.text}</p>
+            <div className="lp-ben__in">
+              <BenViz i={i} />
+              <h3>{b.title}</h3>
+              <p>{b.text}</p>
+            </div>
           </article>
         ))}
       </div>
@@ -1114,7 +1219,9 @@ export default function LandingPage() {
       );
       root.querySelectorAll(".lp-reveal").forEach((el) => revealIO?.observe(el));
     }
+    const pointerAC = new AbortController();
     const stopObservers = () => {
+      pointerAC.abort();
       labelIO.disconnect();
       revealIO?.disconnect();
       root.classList.remove("lp-js");
@@ -1131,6 +1238,31 @@ export default function LandingPage() {
         stopObservers();
         window.removeEventListener("resize", onResize);
       };
+    }
+
+    // ── Beneficios: foco de luz + leve inclinación según el puntero ──
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      root.querySelectorAll<HTMLElement>(".lp-ben__in").forEach((card) => {
+        card.addEventListener(
+          "pointermove",
+          (e) => {
+            const r = card.getBoundingClientRect();
+            const x = (e.clientX - r.left) / r.width;
+            const y = (e.clientY - r.top) / r.height;
+            card.style.setProperty("--mx", `${x * 100}%`);
+            card.style.setProperty("--my", `${y * 100}%`);
+            card.style.transform = `perspective(700px) rotateX(${((0.5 - y) * 7).toFixed(2)}deg) rotateY(${((x - 0.5) * 9).toFixed(2)}deg) translateY(-3px)`;
+          },
+          { signal: pointerAC.signal },
+        );
+        card.addEventListener(
+          "pointerleave",
+          () => {
+            card.style.transform = "";
+          },
+          { signal: pointerAC.signal },
+        );
+      });
     }
 
     // ── Scroll suave ──

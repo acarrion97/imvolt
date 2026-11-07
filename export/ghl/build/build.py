@@ -113,6 +113,8 @@ img_depto, sz_d = prop_uri("departamento")
 print(f"propiedades: casa {sz_c/1024:.1f} KB · lote {sz_l/1024:.1f} KB · departamento {sz_d/1024:.1f} KB")
 
 html = open(HERE / "template.html", encoding="utf-8").read()
+vid_b64 = base64.b64encode(open(f"{REPO}/public/landing/muestra-casa.mp4", "rb").read()).decode()
+html = html.replace("{{VIDEO_URL}}", "data:video/mp4;base64," + vid_b64)
 html = (html.replace("/*__CSS__*/", css)
             .replace("__IMG_CASA__", img_casa)
             .replace("__IMG_LOTE__", img_lote)

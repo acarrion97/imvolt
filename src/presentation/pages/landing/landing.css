@@ -13,7 +13,12 @@
   --lp-muted: rgba(255, 255, 255, 0.68);
   background: var(--lp-carbon);
   color: #fff;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   font-size: 16px;
   line-height: 1.5;
   overflow-x: clip;
@@ -89,7 +94,9 @@ html.lenis body {
   text-decoration: none;
   border: 0;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   pointer-events: auto;
 }
 .lp-btn:hover {
@@ -350,7 +357,9 @@ html.lenis body {
   padding: 9px;
   background: #0b1112;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0, 217, 75, 0.18);
+  box-shadow:
+    0 40px 90px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(0, 217, 75, 0.18);
   opacity: 0;
   will-change: transform, opacity;
 }
@@ -495,7 +504,10 @@ html.lenis body {
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 .lp-chip:hover {
   background: rgba(255, 255, 255, 0.1);
@@ -523,7 +535,9 @@ html.lenis body {
   -webkit-backdrop-filter: blur(6px);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+  transition:
+    opacity 0.25s ease,
+    visibility 0s linear 0.25s;
   overscroll-behavior: contain;
 }
 .lp-modal.is-open {
@@ -765,7 +779,9 @@ html.lenis body {
 .lp-pair__to {
   padding: 20px 24px;
   border-radius: 17px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 .lp-pair__from {
   background: var(--lp-mist);
@@ -823,16 +839,71 @@ html.lenis body {
   color: var(--lp-green-deep);
 }
 
-/* Beneficios (fondo oscuro) */
+/* Beneficios (fondo oscuro, dinámico) */
 .lp-benefits {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   background: var(--lp-carbon);
   color: #fff;
+}
+.lp-benefits::before,
+.lp-benefits::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 217, 75, 0.2), rgba(0, 217, 75, 0) 68%);
+  pointer-events: none;
+  animation: lp-k-drift 14s ease-in-out infinite alternate;
+}
+.lp-benefits::before {
+  top: -160px;
+  left: -120px;
+}
+.lp-benefits::after {
+  bottom: -200px;
+  right: -140px;
+  animation-delay: -7s;
+  animation-direction: alternate-reverse;
+}
+@keyframes lp-k-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(90px, 50px, 0) scale(1.18);
+  }
 }
 .lp-benefits .lp-kicker {
   color: var(--lp-green);
 }
 .lp-benefits .lp-h2 {
   color: #fff;
+}
+.lp-hl {
+  color: var(--lp-green);
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .lp-hl {
+    background: linear-gradient(100deg, #04eb40 0%, #b6ffcb 45%, #04eb40 70%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: lp-k-shine 4.5s linear infinite;
+  }
+}
+@keyframes lp-k-shine {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
 }
 .lp-bens {
   display: grid;
@@ -842,15 +913,48 @@ html.lenis body {
   margin: 0 auto;
 }
 .lp-ben {
-  padding: 24px;
+  display: block;
+}
+.lp-ben__in {
+  --mx: 50%;
+  --my: 0%;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  padding: 22px 22px 24px;
   border-radius: 17px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.09);
-  transition: transform 0.3s ease, background 0.3s ease;
+  transition:
+    transform 0.25s ease,
+    background 0.3s ease,
+    border-color 0.3s ease;
+  will-change: transform;
 }
-.lp-ben:hover {
-  transform: translateY(-4px);
+.lp-ben__in::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(
+    260px circle at var(--mx) var(--my),
+    rgba(0, 217, 75, 0.22),
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.lp-ben__in:hover {
   background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 217, 75, 0.45);
+}
+.lp-ben__in:hover::before {
+  opacity: 1;
+}
+.lp-ben__in > * {
+  position: relative;
+  z-index: 1;
 }
 .lp-ben h3 {
   margin: 0 0 8px;
@@ -863,6 +967,288 @@ html.lenis body {
   margin: 0;
   font-size: 15px;
   color: rgba(255, 255, 255, 0.82);
+}
+
+/* Mini animaciones de cada beneficio (estado base = estado final) */
+.lp-viz {
+  position: relative;
+  height: 92px;
+  margin: 0 0 16px;
+}
+.lp-viz--rows {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.lp-viz__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  padding: 0 8px 0 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+}
+.lp-viz__txt {
+  position: relative;
+  animation: lp-k-dim 6s ease-in-out infinite;
+  animation-delay: calc(var(--d) * 0.7s);
+}
+.lp-viz__txt::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 50%;
+  height: 1.5px;
+  background: var(--lp-green);
+  transform-origin: left;
+  animation: lp-k-strike 6s ease-in-out infinite;
+  animation-delay: calc(var(--d) * 0.7s);
+}
+.lp-viz__ok {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--lp-green);
+  position: relative;
+  animation: lp-k-pop 6s ease-in-out infinite;
+  animation-delay: calc(var(--d) * 0.7s);
+}
+.lp-viz__ok::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 3px;
+  width: 4px;
+  height: 7px;
+  border: solid var(--lp-carbon);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+@keyframes lp-k-strike {
+  0%,
+  8% {
+    transform: scaleX(0);
+  }
+  28%,
+  86% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0);
+  }
+}
+@keyframes lp-k-dim {
+  0%,
+  8% {
+    opacity: 1;
+  }
+  28%,
+  86% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes lp-k-pop {
+  0%,
+  8% {
+    transform: scale(0);
+  }
+  32% {
+    transform: scale(1.25);
+  }
+  40%,
+  86% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+.lp-viz--track em {
+  position: absolute;
+  bottom: 6px;
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.7);
+}
+.lp-viz--track em:nth-of-type(1) {
+  left: 0;
+}
+.lp-viz--track em:nth-of-type(2) {
+  left: 50%;
+  transform: translateX(-50%);
+}
+.lp-viz--track em:nth-of-type(3) {
+  right: 0;
+}
+.lp-viz__line {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 34px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--lp-green), rgba(255, 255, 255, 0.12));
+}
+.lp-viz__dot {
+  position: absolute;
+  top: 27px;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--lp-green);
+  box-shadow:
+    0 0 0 6px rgba(0, 217, 75, 0.2),
+    0 0 18px rgba(0, 217, 75, 0.8);
+  animation: lp-k-run 3.4s cubic-bezier(0.6, 0, 0.3, 1) infinite;
+}
+@keyframes lp-k-run {
+  0% {
+    left: 0;
+  }
+  80%,
+  100% {
+    left: calc(100% - 16px);
+  }
+}
+.lp-viz--ads {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lp-viz__ad {
+  position: absolute;
+  width: 54px;
+  height: 74px;
+  border-radius: 9px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05));
+  border: 1.5px solid var(--lp-green);
+  transform: translateX(calc((var(--k) - 1) * 62px));
+  animation: lp-k-fan 5s ease-in-out infinite;
+}
+.lp-viz__ad::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 10px;
+  height: 28px;
+  border-radius: 5px;
+  background: rgba(0, 217, 75, 0.35);
+}
+.lp-viz__ad::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 18px;
+  bottom: 12px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 9px 0 rgba(255, 255, 255, 0.22);
+}
+@keyframes lp-k-fan {
+  0%,
+  12% {
+    transform: translateX(0) rotate(calc((var(--k) - 1) * 16deg));
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  40%,
+  85% {
+    transform: translateX(calc((var(--k) - 1) * 62px)) rotate(0);
+    border-color: #00d94b;
+  }
+  100% {
+    transform: translateX(0) rotate(calc((var(--k) - 1) * 16deg));
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+}
+.lp-viz--chart svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.lp-viz__bar {
+  fill: rgba(0, 217, 75, 0.35);
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: lp-k-grow 4.8s ease-in-out infinite;
+  animation-delay: calc(var(--d) * 0.12s);
+}
+.lp-viz__trend {
+  fill: none;
+  stroke: #04eb40;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  animation: lp-k-draw 4.8s ease-in-out infinite;
+}
+.lp-viz__pulse {
+  position: absolute;
+  right: 6.5%;
+  top: 4px;
+  width: 9px;
+  height: 9px;
+  margin: -4px -4px 0 0;
+  border-radius: 50%;
+  background: var(--lp-green);
+  animation: lp-k-ping 1.8s ease-out infinite;
+}
+@keyframes lp-k-grow {
+  0%,
+  6% {
+    transform: scaleY(0.05);
+  }
+  40%,
+  88% {
+    transform: scaleY(1);
+  }
+  100% {
+    transform: scaleY(0.05);
+  }
+}
+@keyframes lp-k-draw {
+  0%,
+  18% {
+    stroke-dashoffset: 100;
+  }
+  55%,
+  88% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 100;
+  }
+}
+@keyframes lp-k-ping {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 217, 75, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(0, 217, 75, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-benefits::before,
+  .lp-benefits::after,
+  .lp-hl,
+  .lp-viz *,
+  .lp-viz__txt::after {
+    animation: none !important;
+  }
+  .lp-viz__dot {
+    left: calc(100% - 16px);
+  }
 }
 
 /* Planes */
@@ -878,7 +1264,9 @@ html.lenis body {
   border-radius: 20px;
   background: var(--lp-mist);
   border: 1px solid #e4ebe8;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 .lp-plan.is-featured {
   background: #e8f7ee;
@@ -988,7 +1376,9 @@ html.lenis body {
 .lp-js .lp-reveal {
   opacity: 0;
   transform: translateY(22px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
   transition-delay: calc(var(--i, 0) * 90ms);
 }
 .lp-js .lp-reveal.is-in {
@@ -1060,7 +1450,10 @@ html.lenis body {
   font: inherit;
   cursor: pointer;
   overflow: hidden;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
 }
 .lp-tab:hover {
   border-color: #b9dcc7;
@@ -1086,7 +1479,9 @@ html.lenis body {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  transition: background 0.25s ease, color 0.25s ease;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
 }
 .lp-tab.is-active .lp-tab__n {
   background: var(--lp-green);
@@ -1147,7 +1542,9 @@ html.lenis body {
   opacity: 0;
   transform: translateY(14px) scale(0.98);
   pointer-events: none;
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
 }
 .lp-panel.is-active {
   opacity: 1;
@@ -1272,7 +1669,8 @@ html.lenis body {
   overflow: hidden;
   aspect-ratio: 16 / 9;
 }
-.lp-media img {
+.lp-media img,
+.lp-media video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1291,6 +1689,17 @@ html.lenis body {
   background: rgba(16, 23, 25, 0.62);
   color: #fff;
   backdrop-filter: blur(4px);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+.lp-play.is-playing {
+  opacity: 0;
+}
+.lp-media:hover .lp-play.is-playing,
+.lp-play:focus-visible {
+  opacity: 1;
 }
 .lp-fmts {
   display: flex;
