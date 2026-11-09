@@ -393,6 +393,15 @@ a { color: var(--green); }
   border-color: #DCE6E0;
 }
 .admin-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.admin-plan-limits { margin-top: 4px; }
+.admin-plan-limits-title { margin-bottom: 12px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.admin-plan-limits-title span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: #738579;
+}
 .admin-modal-company { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--ink); }
 .admin-templates-panel { background: transparent; }
 

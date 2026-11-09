@@ -59,7 +59,8 @@ local sin OAuth ni conexión importada, la API puede usar `META_ACCESS_TOKEN` y
 `META_AD_ACCOUNT_ID` del `.env` del backend.
 
 Para planes y administración, aplica además las migraciones 0037–0041; para
-registrar el precio USD de cada generación, aplica también la 0042.
+registrar el precio USD de cada generación, aplica también la 0042, y para que
+la API valide los límites de uso de cada plan, la 0043.
 
 Para habilitar las credenciales de Lotes al Mando en Configuración, ejecuta
 `imvolt-api/database/migrations/2026-11-06_04_seed_lotes_al_mando_integration.sql`.

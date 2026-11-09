@@ -49,7 +49,10 @@ interface PlanFormValues {
   descripcion: string;
   precio_mensual: number;
   limite_usuarios: number;
-  caracteristicas_texto: string;
+  limite_proyectos: number | null;
+  limite_imagenes_ia: number | null;
+  limite_videos_ia: number | null;
+  limite_campanias_meta: number | null;
   estado: "activo" | "inactivo";
 }
 
@@ -106,7 +109,10 @@ export function AdministracionPage() {
     planForm.setFieldsValue({
       precio_mensual: 0,
       limite_usuarios: 1,
-      caracteristicas_texto: "",
+      limite_proyectos: null,
+      limite_imagenes_ia: null,
+      limite_videos_ia: null,
+      limite_campanias_meta: null,
       estado: "activo",
     });
     setPlanModalOpen(true);
@@ -119,22 +125,26 @@ export function AdministracionPage() {
       descripcion: plan.descripcion,
       precio_mensual: Number(plan.precio_mensual),
       limite_usuarios: plan.limite_usuarios,
-      caracteristicas_texto: plan.caracteristicas.join("\n"),
+      limite_proyectos: plan.limite_proyectos,
+      limite_imagenes_ia: plan.limite_imagenes_ia,
+      limite_videos_ia: plan.limite_videos_ia,
+      limite_campanias_meta: plan.limite_campanias_meta,
       estado: plan.estado,
     });
     setPlanModalOpen(true);
   };
 
   const guardarPlanFormulario = async (values: PlanFormValues) => {
+    // `caracteristicas` no se envía: el backend lo deriva de estos límites.
     const data: PlanInput = {
       nombre: values.nombre.trim(),
       descripcion: values.descripcion.trim(),
       precio_mensual: values.precio_mensual,
       limite_usuarios: values.limite_usuarios,
-      caracteristicas: values.caracteristicas_texto
-        .split("\n")
-        .map((item) => item.trim())
-        .filter(Boolean),
+      limite_proyectos: values.limite_proyectos,
+      limite_imagenes_ia: values.limite_imagenes_ia,
+      limite_videos_ia: values.limite_videos_ia,
+      limite_campanias_meta: values.limite_campanias_meta,
       estado: values.estado,
     };
 
@@ -589,12 +599,42 @@ export function AdministracionPage() {
               <Select options={[{ value: "activo", label: "Activo" }, { value: "inactivo", label: "Inactivo" }]} />
             </Form.Item>
           </div>
-          <Form.Item name="caracteristicas_texto" label="Beneficios (uno por línea)">
-            <Input.TextArea
-              rows={4}
-              placeholder={"1 proyecto\n1 video IA de 10 s\n20 imágenes IA\n2 campañas Meta"}
-            />
-          </Form.Item>
+          <div className="admin-plan-limits">
+            <p className="admin-plan-limits-title">
+              Límites de uso
+              <span>Lo que la cuenta puede crear con este plan. Vacío = sin límite.</span>
+            </p>
+            <div className="admin-form-grid">
+              <Form.Item
+                name="limite_proyectos"
+                label="Proyectos"
+                rules={[{ type: "number", min: 1 }]}
+              >
+                <InputNumber min={1} precision={0} placeholder="Sin límite" style={{ width: "100%" }} />
+              </Form.Item>
+              <Form.Item
+                name="limite_imagenes_ia"
+                label="Imágenes IA"
+                rules={[{ type: "number", min: 1 }]}
+              >
+                <InputNumber min={1} precision={0} placeholder="Sin límite" style={{ width: "100%" }} />
+              </Form.Item>
+              <Form.Item
+                name="limite_videos_ia"
+                label="Videos IA"
+                rules={[{ type: "number", min: 1 }]}
+              >
+                <InputNumber min={1} precision={0} placeholder="Sin límite" style={{ width: "100%" }} />
+              </Form.Item>
+              <Form.Item
+                name="limite_campanias_meta"
+                label="Campañas Meta"
+                rules={[{ type: "number", min: 1 }]}
+              >
+                <InputNumber min={1} precision={0} placeholder="Sin límite" style={{ width: "100%" }} />
+              </Form.Item>
+            </div>
+          </div>
         </Form>
       </Modal>
 
