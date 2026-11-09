@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   ApartmentOutlined,
@@ -12,13 +12,14 @@ import {
   UsergroupAddOutlined,
 } from "@ant-design/icons";
 import { AUTH_ENABLED } from "@/presentation/auth/AuthProvider";
-import { useAuth } from "@/presentation/hooks";
+import { useAuth, useIntegracionesEmpresa } from "@/presentation/hooks";
 import { capitalize, initials } from "@/presentation/components/common/userLabel";
 
 /**
  * Barra lateral IMVOLT — UI Concept 01 del prototipo interactivo:
  * fondo carbón (#101719), logo horizontal sobre oscuro, dos secciones
- * (ESPACIO DE TRABAJO / ADMINISTRACIÓN) y perfil de la organización.
+ * (ESPACIO DE TRABAJO / ADMINISTRACIÓN), porcentaje de integraciones
+ * habilitadas por la empresa y perfil de la organización.
  */
 
 interface NavItem {
@@ -48,8 +49,29 @@ interface SidebarProps {
 
 export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   const navigate = useNavigate();
-  const { perfil, rol } = useAuth();
+  const { perfil, rol, tienePermiso } = useAuth();
   const esSuperAdmin = perfil?.es_super_admin === true;
+
+  // Porcentaje de integraciones habilitadas por la empresa. El API aplica
+  // `gestionar_integraciones` también en lectura de /v1/empresas-integraciones,
+  // así que sin ese permiso no hay dato que mostrar (la tarjeta no se pinta).
+  const puedeVerIntegraciones =
+    AUTH_ENABLED && tienePermiso("gestionar_integraciones");
+  const { data: integraciones } = useIntegracionesEmpresa(puedeVerIntegraciones);
+
+  const catalogo = integraciones?.catalogo ?? [];
+  const vinculos = integraciones?.conexiones ?? [];
+  const activas = catalogo.filter((item) => item.activa && item.estado === "activo");
+  const habilitadas = activas.filter((item) =>
+    vinculos.some(
+      (vinculo) =>
+        vinculo.integracion_id === item.integracion_id &&
+        vinculo.estado === "activo",
+    ),
+  ).length;
+  const pctIntegraciones = activas.length
+    ? Math.round((habilitadas / activas.length) * 100)
+    : 0;
 
   // Con sesión real: empresa activa + usuario/rol (modo mock: datos de ejemplo).
   const organizacion = perfil?.usuario.empresa?.razon_social ?? "Urbaniza Capital";
@@ -103,6 +125,21 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
 
       <div className="sidebar-bottom">
         <p className="workspace-label">WORKSPACE ACTIVO</p>
+
+        {integraciones && (
+          <div
+            className="quota"
+            style={{ "--progress": `${pctIntegraciones}%` } as CSSProperties}
+          >
+            <b>{pctIntegraciones}%</b>
+            <p>
+              Integraciones habilitadas en esta empresa ({habilitadas} de{" "}
+              {activas.length})
+            </p>
+            <div className="progress" />
+          </div>
+        )}
+
         <button
           type="button"
           className="sidebar-profile"
