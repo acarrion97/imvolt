@@ -61,6 +61,15 @@ local sin OAuth ni conexión importada, la API puede usar `META_ACCESS_TOKEN` y
 Para planes y administración, aplica además las migraciones 0037–0041; para
 registrar el precio USD de cada generación, aplica también la 0042.
 
+Para habilitar las credenciales de Lotes al Mando en Configuración, ejecuta
+`imvolt-api/database/migrations/2026-11-06_04_seed_lotes_al_mando_integration.sql`.
+Para importar proyectos y lotes al catálogo de IMVOLT, ejecuta además
+`imvolt-api/database/migrations/2026-11-06_05_lotes_al_mando_sync.sql`.
+El correo y la contraseña se guardan en la configuración privada de integración
+de cada empresa; no se configuran en variables `VITE_*`. Una vez conectada,
+usa **Sincronizar inventario** en Configuración: proyectos y lotes se importan
+como proyectos y propiedades, y las consultas de ambas pantallas se actualizan.
+
 ## Autenticación
 
 Con `VITE_DATA_PROVIDER=rest` la app exige sesión:

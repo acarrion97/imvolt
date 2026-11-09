@@ -17,6 +17,7 @@ import {
   CloudServerOutlined,
   DeleteOutlined,
   PlusOutlined,
+  SyncOutlined,
 } from "@ant-design/icons";
 import {
   useCompletarOAuthMeta,
@@ -26,6 +27,7 @@ import {
   useGuardarIntegracionEmpresa,
   useIniciarOAuthMeta,
   useIntegracionesEmpresa,
+  useSincronizarLotesAlMando,
 } from "@/presentation/hooks";
 import { useAuth } from "@/presentation/auth/AuthProvider";
 import type { Conexion } from "@/domain/conexion";
@@ -40,6 +42,13 @@ interface IntegracionFormValues {
   entorno: "sandbox" | "produccion";
   api_key: string;
   app_secret?: string;
+}
+
+function getIntegrationBaseUrl(nombre: string): string {
+  if (nombre === "Lotes al Mando") {
+    return "https://lotes-al-mando-api.onrender.com";
+  }
+  return "https://api.higgsfield.ai";
 }
 
 const ES_REST =
@@ -101,6 +110,7 @@ export function IntegracionesEmpresaPanel() {
     error: conexionesError,
   } = useConexiones();
   const guardar = useGuardarIntegracionEmpresa();
+  const sincronizarLotes = useSincronizarLotesAlMando();
   const desconectar = useDesconectarIntegracionEmpresa();
   const metaOAuth = useIniciarOAuthMeta();
   const refreshMetaOAuth = metaOAuth.refresh;
@@ -126,7 +136,7 @@ export function IntegracionesEmpresaPanel() {
         (item) =>
           item.activa &&
           item.estado === "activo" &&
-          item.nombre === "Higgsfield",
+          ["Higgsfield", "Lotes al Mando"].includes(item.nombre),
       ),
     [data?.catalogo],
   );
@@ -211,6 +221,7 @@ export function IntegracionesEmpresaPanel() {
     form.setFieldsValue({
       referencia: existente?.referencia_credencial ?? integracion.nombre,
       entorno:
+        integracion.nombre === "Lotes al Mando" ||
         existente?.configuracion_integracion?.entorno.toLowerCase() === "produccion"
           ? "produccion"
           : "sandbox",
@@ -225,8 +236,7 @@ export function IntegracionesEmpresaPanel() {
       integracion,
       existente: seleccion.existente,
       referencia: values.referencia.trim(),
-      url_base:
-        "https://api.higgsfield.ai",
+      url_base: getIntegrationBaseUrl(integracion.nombre),
       entorno: values.entorno,
       api_key: values.api_key.trim() || undefined,
       app_secret: values.app_secret?.trim() || undefined,
@@ -252,6 +262,27 @@ export function IntegracionesEmpresaPanel() {
         disconnectError instanceof Error
           ? disconnectError.message
           : "No se pudo desconectar la integración.",
+      );
+    }
+  };
+
+  const sincronizarInventario = async () => {
+    try {
+      const resultado = await sincronizarLotes.mutateAsync();
+      const omitidos =
+        resultado.lotes_sin_precio_omitidos + resultado.lotes_sin_proyecto_omitidos;
+      const detalleOmitidos = omitidos
+        ? ` Se omitieron ${resultado.lotes_sin_precio_omitidos} sin precio y ${resultado.lotes_sin_proyecto_omitidos} sin relación de proyecto.`
+        : "";
+      message.success(
+        `Sincronizados ${resultado.proyectos_sincronizados} proyectos y ${resultado.lotes_sincronizados} lotes.${detalleOmitidos}`,
+        8,
+      );
+    } catch (syncError) {
+      message.error(
+        syncError instanceof Error
+          ? syncError.message
+          : "No se pudo sincronizar el inventario de Lotes al Mando.",
       );
     }
   };
@@ -315,8 +346,8 @@ export function IntegracionesEmpresaPanel() {
         <h2 style={{ fontSize: 17 }}>Conexiones de esta empresa</h2>
       </div>
       <p className="sub" style={{ marginBottom: 16 }}>
-        Conecta cuentas de Meta desde Facebook Login y configura las credenciales privadas de
-        Higgsfield.
+        Conecta cuentas de Meta desde Facebook Login y configura las credenciales privadas de los
+        proveedores de IA e inventario.
       </p>
 
       {!ES_REST ? (
@@ -463,6 +494,15 @@ export function IntegracionesEmpresaPanel() {
                     <Tag>Sin configurar</Tag>
                   )}
                   <Space>
+                    {integracion.nombre === "Lotes al Mando" && conexion && (
+                      <Button
+                        icon={<SyncOutlined />}
+                        loading={sincronizarLotes.isPending}
+                        onClick={() => void sincronizarInventario()}
+                      >
+                        Sincronizar inventario
+                      </Button>
+                    )}
                     <Button
                       type="primary"
                       icon={conexion ? undefined : <PlusOutlined />}
@@ -540,15 +580,54 @@ export function IntegracionesEmpresaPanel() {
             </Form.Item>
 
             <Form.Item name="entorno" label="Entorno" rules={[{ required: true }]}>
-              <Select
-                options={[
-                  { value: "sandbox", label: "Sandbox — operaciones simuladas" },
-                  { value: "produccion", label: "Producción — usa credenciales reales" },
-                ]}
-              />
+              {seleccion.integracion.nombre === "Lotes al Mando" ? (
+                <Select
+                  disabled
+                  options={[{ value: "produccion", label: "Producción — API de Lotes al Mando" }]}
+                />
+              ) : (
+                <Select
+                  options={[
+                    { value: "sandbox", label: "Sandbox — operaciones simuladas" },
+                    { value: "produccion", label: "Producción — usa credenciales reales" },
+                  ]}
+                />
+              )}
             </Form.Item>
 
-            <>
+            {seleccion.integracion.nombre === "Lotes al Mando" ? (
+              <>
+                <Form.Item
+                  name="api_key"
+                  label="Correo de acceso de Lotes al Mando"
+                  rules={[
+                    {
+                      required: !configuracionActual?.api_key,
+                      type: "email",
+                      message: "Ingresa un correo válido.",
+                    },
+                  ]}
+                  extra={configuracionActual?.api_key ? "Ya hay un correo guardado." : undefined}
+                >
+                  <Input autoComplete="username" />
+                </Form.Item>
+                <Form.Item
+                  name="app_secret"
+                  label="Contraseña de Lotes al Mando"
+                  rules={[
+                    {
+                      required: !configuracionActual?.app_secret,
+                      whitespace: true,
+                      message: "Ingresa la contraseña.",
+                    },
+                  ]}
+                  extra={configuracionActual?.app_secret ? "Ya hay una contraseña guardada." : undefined}
+                >
+                  <Input.Password autoComplete="new-password" />
+                </Form.Item>
+              </>
+            ) : (
+              <>
                 <Form.Item
                   name="api_key"
                   label="Higgsfield API Key ID"
@@ -579,7 +658,8 @@ export function IntegracionesEmpresaPanel() {
                 >
                   <Input.Password autoComplete="new-password" />
                 </Form.Item>
-            </>
+              </>
+            )}
           </Form>
         )}
       </Drawer>

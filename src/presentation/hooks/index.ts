@@ -667,6 +667,29 @@ export function useGuardarIntegracionEmpresa() {
   });
 }
 
+export interface SincronizacionLotesAlMandoResult {
+  message: string;
+  proyectos_sincronizados: number;
+  lotes_sincronizados: number;
+  lotes_sin_precio_omitidos: number;
+  lotes_sin_proyecto_omitidos: number;
+  sincronizado_en: string;
+}
+
+export function useSincronizarLotesAlMando() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      http.post<SincronizacionLotesAlMandoResult>('/v1/integraciones/lotes-al-mando/sync', {}),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.proyectos() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.propiedades() }),
+      ]);
+    },
+  });
+}
+
 export function useDesconectarIntegracionEmpresa() {
   const queryClient = useQueryClient();
   return useMutation({
