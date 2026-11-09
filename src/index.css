@@ -140,34 +140,6 @@ a { color: var(--green); }
   margin: 0 0 10px 4px;
 }
 
-.quota {
-  background: #1b2b25;
-  border: 1px solid #2b4637;
-  padding: 15px 16px;
-  border-radius: 13px;
-}
-
-.quota b { color: #e9fff2; font-size: 15px; letter-spacing: -0.03em; display: block; }
-.quota p { color: #839d91; font-size: 11px; margin-top: 3px; }
-
-.progress {
-  background: #365548;
-  height: 6px;
-  border-radius: 99px;
-  position: relative;
-  overflow: hidden;
-  margin-top: 11px;
-}
-
-.progress::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--progress, 42%);
-  background: var(--green2);
-  border-radius: 99px;
-}
-
 .sidebar-profile {
   display: flex;
   align-items: center;
@@ -413,6 +385,13 @@ a { color: var(--green); }
 .admin-table-toolbar h2 { font-size: 17px; margin-bottom: 4px; }
 .admin-table-toolbar p, .admin-table-secondary { color: #738579; font-size: 11.5px; }
 .admin-table-secondary { margin-top: 3px; }
+.admin-plan-features { display: flex; flex-wrap: wrap; gap: 4px; }
+.admin-plan-features .ant-tag {
+  margin-inline-end: 0;
+  color: #3D4A4C;
+  background: #F2F7F4;
+  border-color: #DCE6E0;
+}
 .admin-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
 .admin-modal-company { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--ink); }
 .admin-templates-panel { background: transparent; }
@@ -650,7 +629,7 @@ a { color: var(--green); }
 .template-card .desc { color: var(--muted); font-size: 12px; min-height: 36px; }
 .template-card .meta { display: flex; gap: 7px; flex-wrap: wrap; }
 .template-card .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid #eef3f0; padding-top: 11px; }
-.template-card .credits { color: var(--green); font-size: 11.5px; font-weight: 730; }
+.template-card .template-logo-status { color: var(--green); font-size: 11.5px; font-weight: 730; }
 
 /* ── Estudio IA ───────────────────────────────────────────────────────────── */
 .studio-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 0.72fr); gap: 20px; }

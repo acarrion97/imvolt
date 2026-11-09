@@ -16,7 +16,6 @@ import {
   usePlantillas,
   usePropiedades,
   useQuoteGeneracion,
-  useWallet,
 } from "@/presentation/hooks";
 import type { Generacion } from "@/domain/generacion";
 import type { Modelo } from "@/domain/modelo";
@@ -70,10 +69,42 @@ const ENFOQUES = [
  * `capabilities.precio_desde` marca los precios que Higgsfield publica como "from".
  */
 function formatoPrecioModelo(modelo: Modelo | undefined): string | null {
-  if (!modelo || modelo.precio_usd == null) return null;
-  const unidad = modelo.precio_unidad === "segundo" ? "/ s" : "/ img";
+  if (!tienePrecioConfigurado(modelo)) return null;
+  const unidad = modelo.precio_unidad === "segundo" ? "/ segundo" : "/ imagen";
   const desde = modelo.capabilities?.precio_desde === true ? "desde " : "";
-  return `${desde}$${modelo.precio_usd.toFixed(3)} ${unidad}`;
+  return `${desde}${formatPrecioUSD(modelo.precio_usd)} ${unidad}`;
+}
+
+function tienePrecioConfigurado(
+  modelo: Modelo | undefined,
+): modelo is Modelo & { precio_usd: number; precio_unidad: "imagen" | "segundo" } {
+  return Boolean(
+    modelo &&
+      modelo.precio_usd != null &&
+      modelo.precio_usd > 0 &&
+      ((modelo.media_type === "image" && modelo.precio_unidad === "imagen") ||
+        (modelo.media_type === "video" && modelo.precio_unidad === "segundo")),
+  );
+}
+
+function formatPrecioUSD(value: number): string {
+  return new Intl.NumberFormat("es-EC", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(value);
+}
+
+function calcularPrecioGeneracion(modelo: Modelo | undefined, duration: number): number | null {
+  if (!tienePrecioConfigurado(modelo)) return null;
+  if (modelo.media_type === "image" && modelo.precio_unidad === "imagen") {
+    return modelo.precio_usd;
+  }
+  if (modelo.media_type === "video" && modelo.precio_unidad === "segundo") {
+    return Number((modelo.precio_usd * duration).toFixed(4));
+  }
+  return null;
 }
 
 export function EstudioPage() {
@@ -85,7 +116,6 @@ export function EstudioPage() {
   const { data: modelos } = useModelos();
   const { data: propiedades } = usePropiedades();
   const { data: generaciones, isLoading: loadingGeneraciones } = useGeneraciones();
-  const { data: wallet } = useWallet();
   const createGeneracion = useCreateGeneracion();
   const quoteGeneracion = useQuoteGeneracion();
   const generationConfirmationOpen = useRef(false);
@@ -109,9 +139,12 @@ export function EstudioPage() {
     [modelos, media],
   );
 
-  const selectedModelId = modelosFiltrados.some((m) => m.model_id === modelId)
+  const modelosConPrecio = modelosFiltrados.filter(
+    tienePrecioConfigurado,
+  );
+  const selectedModelId = modelosConPrecio.some((m) => m.model_id === modelId)
     ? modelId
-    : modelosFiltrados[0]?.model_id;
+    : modelosConPrecio[0]?.model_id;
 
   const handleMediaChange = (nextMedia: Media) => {
     if (nextMedia === media) return;
@@ -130,8 +163,8 @@ export function EstudioPage() {
     [propiedades, propertyId],
   );
   const modelo = useMemo(
-    () => modelosFiltrados.find((m) => m.model_id === selectedModelId),
-    [modelosFiltrados, selectedModelId],
+    () => modelosConPrecio.find((m) => m.model_id === selectedModelId),
+    [modelosConPrecio, selectedModelId],
   );
   const duracionesDisponibles = Array.isArray(modelo?.capabilities.duration_options)
     ? modelo.capabilities.duration_options.filter(
@@ -164,18 +197,10 @@ export function EstudioPage() {
 
   const promptActual = (modo === "pro" ? promptPro : promptGenerado).trim();
 
-  // §09: la cotización sale SIEMPRE del registro vivo de modelos (sin hardcodeo).
-  const creditosCotizados = useMemo(() => {
-    if (!modelo) return 0;
-    const extra =
-      modelo.media_type === "video"
-        ? Math.max(0, Math.ceil((duration ?? modelo.duracion_min_s ?? 5) / 5) - 1)
-        : 0;
-    return modelo.quote_creditos + extra;
-  }, [modelo, duration]);
-
-  const saldo = wallet?.saldo ?? 0;
-  const saldoSuficiente = saldo >= creditosCotizados;
+  const precioEstimado = calcularPrecioGeneracion(
+    modelo,
+    duration ?? modelo?.duracion_min_s ?? 5,
+  );
   const plantillasDeMedio = (plantillas ?? []).filter(
     (p) => p.estado === "activo",
   );
@@ -203,20 +228,12 @@ export function EstudioPage() {
         model_id: modelo.model_id,
         parametros,
       });
-      const availableCredits = quote.available_credits ?? saldo;
-      if (quote.credits_cost > availableCredits) {
-        message.error(
-          `Saldo insuficiente: necesitas ${quote.credits_cost} créditos y tienes ${availableCredits}.`,
-        );
-        generationConfirmationOpen.current = false;
-        return;
-      }
 
       const idempotencyKey = crypto.randomUUID();
       modal.confirm({
         title: "Confirmar generación",
-        content: `El modelo ${modelo.nombre} requiere ${quote.credits_cost} créditos. Se reservarán al aceptar y solo se confirmará el consumo cuando la generación finalice.`,
-        okText: "Confirmar y reservar",
+        content: `El precio estimado para ${modelo.nombre} es ${formatPrecioUSD(quote.price_usd)} antes de impuestos. El importe se calcula con la tarifa configurada por generación.`,
+        okText: "Confirmar generación",
         cancelText: "Cancelar",
         onCancel: () => {
           generationConfirmationOpen.current = false;
@@ -228,14 +245,12 @@ export function EstudioPage() {
               template_id: templateId ?? null,
               model_id: modelo.model_id,
               idempotency_key: idempotencyKey,
-              quoted_credits: quote.credits_cost,
+              quoted_price_usd: quote.price_usd,
               modo,
               prompt: promptActual,
               parametros,
             });
-            message.success(
-              `Generación encolada. Se reservaron ${quote.credits_cost} créditos.`,
-            );
+            message.success("Generación encolada.");
           } catch (error) {
             message.error(error instanceof Error ? error.message : "No se pudo crear la generación.");
           } finally {
@@ -288,11 +303,11 @@ export function EstudioPage() {
       ),
     },
     {
-      title: "Costo",
-      dataIndex: "credits_cost",
-      key: "credits_cost",
-      width: 95,
-      render: (v: number) => `${v} cr.`,
+      title: "Precio",
+      dataIndex: "price_usd",
+      key: "price_usd",
+      width: 130,
+      render: (value: number | null) => value == null ? "—" : formatPrecioUSD(value),
     },
     {
       title: "Estado",
@@ -482,7 +497,8 @@ export function EstudioPage() {
                   const precio = formatoPrecioModelo(m);
                   return {
                     value: m.model_id,
-                    label: `${m.nombre} — ${m.quote_creditos} cr.${precio ? ` · ${precio}` : ""}`,
+                    label: `${m.nombre} — ${precio ?? "precio por generación no configurado"}`,
+                    disabled: precio === null,
                   };
                 })}
               />
@@ -504,15 +520,15 @@ export function EstudioPage() {
             </small>
           </div>
 
-          <div className="notice warning">
-            En producción, el costo y las opciones se validarán con el modelo real de Higgsfield
-            antes de generar.
-          </div>
-
-          {!saldoSuficiente && (
-            <div className="notice warning" role="status" style={{ marginTop: 12 }}>
-              Estimación: {creditosCotizados} créditos (saldo actual: {saldo}). El servidor
-              confirmará el costo final antes de aceptar la generación.
+          {modelosFiltrados.length > 0 && !modelosConPrecio.length && (
+            <div className="notice warning" role="status">
+              No hay modelos con precio por generación configurado para este tipo de contenido.
+            </div>
+          )}
+          {precioEstimado !== null && (
+            <div className="notice" role="status">
+              Precio estimado: {formatPrecioUSD(precioEstimado)} antes de impuestos. Videos
+              adicionales y modelos premium se cotizan por generación.
             </div>
           )}
 
@@ -522,7 +538,7 @@ export function EstudioPage() {
               className="btn btn-primary"
               style={{ flex: 1 }}
               onClick={handleGenerar}
-              disabled={!modelo || quoteGeneracion.isPending || createGeneracion.isPending}
+              disabled={!modelo || precioEstimado === null || quoteGeneracion.isPending || createGeneracion.isPending}
             >
               <RobotOutlined />
               {quoteGeneracion.isPending

@@ -11,7 +11,6 @@ export interface Modelo {
   duracion_min_s: number | null;
   duracion_max_s: number | null;
   ratios: string[] | null;
-  quote_creditos: number;
   /** Precio de lista del proveedor en USD (por imagen o por segundo). */
   precio_usd: number | null;
   precio_unidad: "imagen" | "segundo" | null;
@@ -21,4 +20,4 @@ export interface Modelo {
 
 export type ModeloCreate = Omit<Modelo, "model_id" | "created_at">;
 
-export interface ModeloRepository extends CrudRepository<Modelo, string, ModeloCreate> {}
+export type ModeloRepository = CrudRepository<Modelo, string, ModeloCreate>;

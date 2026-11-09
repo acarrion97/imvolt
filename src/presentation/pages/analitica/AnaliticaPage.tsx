@@ -5,7 +5,7 @@ import {
   RiseOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
-import { useCampanas, useGeneraciones, useLeads, usePropiedades, useTransacciones } from "@/presentation/hooks";
+import { useCampanas, useGeneraciones, useLeads, usePropiedades } from "@/presentation/hooks";
 import type { LeadFuente } from "@/domain/lead";
 import dayjs from "dayjs";
 
@@ -28,14 +28,18 @@ export function AnaliticaPage() {
   const { data: campanas } = useCampanas();
   const { data: generaciones } = useGeneraciones();
   const { data: propiedades } = usePropiedades();
-  const { data: transacciones } = useTransacciones();
 
+  const generacionesCompletadas = useMemo(
+    () => (generaciones ?? []).filter((generation) => generation.status === "completed"),
+    [generaciones],
+  );
   const inversion = useMemo(
     () =>
-      (transacciones ?? [])
-        .filter((t) => t.tipo === "consumo")
-        .reduce((acc, t) => acc + Math.abs(Number(t.monto)), 0),
-    [transacciones],
+      generacionesCompletadas.reduce(
+        (total, generation) => total + Number(generation.price_usd ?? 0),
+        0,
+      ),
+    [generacionesCompletadas],
   );
 
   const contactados = (leads ?? []).filter((l) =>
@@ -74,7 +78,7 @@ export function AnaliticaPage() {
           <p className="eyebrow">Crecimiento</p>
           <h1>Analítica y desempeño</h1>
           <p className="sub">
-            Señales del workspace: creativos, campañas, contactos e inversión en créditos.
+            Señales del workspace: creativos, campañas, contactos e inversión en generación.
           </p>
         </div>
       </div>
@@ -113,9 +117,16 @@ export function AnaliticaPage() {
           <span className="stat-body">
             <span className="stat-label">Costo por lead</span>
             <div className="stat-value">
-              {costoPorLead > 0 ? `${Math.round(costoPorLead)} cr.` : "—"}
+              {costoPorLead > 0
+                ? new Intl.NumberFormat("es-EC", {
+                    style: "currency",
+                    currency: "USD",
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 4,
+                  }).format(costoPorLead)
+                : "—"}
             </div>
-            <span className="delta muted">Créditos consumidos / leads</span>
+            <span className="delta muted">Costo de generaciones completadas / leads</span>
           </span>
         </div>
 
@@ -124,9 +135,16 @@ export function AnaliticaPage() {
             <RiseOutlined />
           </span>
           <span className="stat-body">
-            <span className="stat-label">Inversión</span>
-            <div className="stat-value">{inversion} cr.</div>
-            <span className="delta muted">{activas} campañas en curso</span>
+            <span className="stat-label">Costo de generación</span>
+            <div className="stat-value">
+              {new Intl.NumberFormat("es-EC", {
+                style: "currency",
+                currency: "USD",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 4,
+              }).format(inversion)}
+            </div>
+            <span className="delta muted">{generacionesCompletadas.length} creativos completados</span>
           </span>
         </div>
       </div>

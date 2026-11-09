@@ -62,8 +62,8 @@ export function DashboardPage() {
       </div>
 
       <div className="notice">
-        <strong>Demo interactiva.</strong> Estás trabajando con datos de ejemplo: los créditos y la
-        conexión con Meta están simulados hasta conectar la API.
+        <strong>Demo interactiva.</strong> Estás trabajando con datos de ejemplo: la cotización por
+        generación y la conexión con Meta están simuladas hasta conectar la API.
       </div>
 
       <div className="grid cols4">

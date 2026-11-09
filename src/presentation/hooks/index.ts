@@ -85,8 +85,6 @@ export function useCreateGeneracion() {
     mutationFn: (input: GeneracionCreate) => generaciones.create.execute(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.generaciones() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.wallet() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.transacciones() });
     },
   });
 }
@@ -427,36 +425,6 @@ export function useEliminarMediaAssetVersion() {
     mutationFn: ({ assetId, versionId }: { assetId: string; versionId: string }) =>
       mediaAssetStorage.eliminarVersion(assetId, versionId),
     onSuccess: (_d, v) => invalidarMedia(queryClient, v.assetId),
-  });
-}
-
-// ── Créditos (billetera) ─────────────────────────────────────────────────────
-export function useWallet() {
-  const { getWallet } = getContainer();
-  return useQuery({
-    queryKey: queryKeys.wallet(),
-    queryFn: () => getWallet.execute(),
-  });
-}
-
-export function useTransacciones() {
-  const { getTransacciones } = getContainer();
-  return useQuery({
-    queryKey: queryKeys.transacciones(),
-    queryFn: () => getTransacciones.execute(),
-  });
-}
-
-export function useRecargarCreditos() {
-  const queryClient = useQueryClient();
-  const { recargarCreditos } = getContainer();
-  return useMutation({
-    mutationFn: ({ monto, idempotencyKey }: { monto: number; idempotencyKey: string }) =>
-      recargarCreditos.execute(monto, idempotencyKey),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.wallet() });
-      queryClient.invalidateQueries({ queryKey: domainKey("transacciones") });
-    },
   });
 }
 

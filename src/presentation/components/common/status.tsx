@@ -42,7 +42,7 @@ const GEN_COLORS: Record<GeneracionStatus, string> = {
 const GEN_LABELS: Record<GeneracionStatus, string> = {
   created: "CREADO",
   quoted: "COTIZADO",
-  credits_reserved: "CRÉDITOS RESERVADOS",
+  credits_reserved: "EN PROCESO",
   queued: "EN COLA",
   processing: "PROCESANDO",
   completed: "COMPLETADO",

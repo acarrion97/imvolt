@@ -49,7 +49,6 @@ interface PlanFormValues {
   descripcion: string;
   precio_mensual: number;
   limite_usuarios: number;
-  creditos_mensuales: number;
   caracteristicas_texto: string;
   estado: "activo" | "inactivo";
 }
@@ -107,7 +106,6 @@ export function AdministracionPage() {
     planForm.setFieldsValue({
       precio_mensual: 0,
       limite_usuarios: 1,
-      creditos_mensuales: 50,
       caracteristicas_texto: "",
       estado: "activo",
     });
@@ -121,7 +119,6 @@ export function AdministracionPage() {
       descripcion: plan.descripcion,
       precio_mensual: Number(plan.precio_mensual),
       limite_usuarios: plan.limite_usuarios,
-      creditos_mensuales: plan.creditos_mensuales,
       caracteristicas_texto: plan.caracteristicas.join("\n"),
       estado: plan.estado,
     });
@@ -134,7 +131,6 @@ export function AdministracionPage() {
       descripcion: values.descripcion.trim(),
       precio_mensual: values.precio_mensual,
       limite_usuarios: values.limite_usuarios,
-      creditos_mensuales: values.creditos_mensuales,
       caracteristicas: values.caracteristicas_texto
         .split("\n")
         .map((item) => item.trim())
@@ -231,11 +227,22 @@ export function AdministracionPage() {
       dataIndex: "precio_mensual",
       render: (precio: number) => <strong>{formatMoney(Number(precio))}</strong>,
     },
-    { title: "Usuarios", dataIndex: "limite_usuarios" },
     {
-      title: "Créditos / mes",
-      dataIndex: "creditos_mensuales",
-      render: (creditos: number) => Number(creditos).toLocaleString("es-EC"),
+      title: "Incluye",
+      dataIndex: "caracteristicas",
+      width: 430,
+      render: (caracteristicas: string[]) => (
+        <div className="admin-plan-features">
+          {caracteristicas.map((caracteristica) => (
+            <Tag key={caracteristica}>{caracteristica}</Tag>
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: "Usuarios",
+      dataIndex: "limite_usuarios",
+      render: (limite: number) => `${limite} ${limite === 1 ? "usuario" : "usuarios"}`,
     },
     {
       title: "Estado",
@@ -361,7 +368,10 @@ export function AdministracionPage() {
           <div className="admin-table-toolbar">
             <div>
               <h2>Planes de suscripción</h2>
-              <p>Define precios, capacidad y beneficios disponibles para las empresas.</p>
+              <p>
+                Videos adicionales y modelos premium: precio por generación. Valores en USD, antes
+                de impuestos.
+              </p>
             </div>
             <Button type="primary" icon={<PlusOutlined />} onClick={abrirCrearPlan}>
               Nuevo plan
@@ -373,7 +383,7 @@ export function AdministracionPage() {
             dataSource={planes}
             loading={planesQuery.isLoading}
             pagination={false}
-            scroll={{ x: 760 }}
+            scroll={{ x: 1280 }}
           />
         </Card>
       ),
@@ -575,19 +585,15 @@ export function AdministracionPage() {
             >
               <InputNumber min={1} precision={0} style={{ width: "100%" }} />
             </Form.Item>
-            <Form.Item
-              name="creditos_mensuales"
-              label="Créditos mensuales"
-              rules={[{ required: true, type: "number", min: 0 }]}
-            >
-              <InputNumber min={0} precision={0} style={{ width: "100%" }} />
-            </Form.Item>
             <Form.Item name="estado" label="Estado" rules={[{ required: true }]}>
               <Select options={[{ value: "activo", label: "Activo" }, { value: "inactivo", label: "Inactivo" }]} />
             </Form.Item>
           </div>
           <Form.Item name="caracteristicas_texto" label="Beneficios (uno por línea)">
-            <Input.TextArea rows={4} placeholder={"Créditos mensuales incluidos\nAcceso a campañas"} />
+            <Input.TextArea
+              rows={4}
+              placeholder={"1 proyecto\n1 video IA de 10 s\n20 imágenes IA\n2 campañas Meta"}
+            />
           </Form.Item>
         </Form>
       </Modal>

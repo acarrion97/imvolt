@@ -5,8 +5,8 @@ medir contenido inmobiliario generado con IA.
 
 La UI sigue el **prototipo interactivo (IMVOLT · UI Concept 01)** sobre Clean Architecture
 (Repository, TanStack Query + caché IndexedDB) y el **Manual de Marca IMVOLT v1**: tipografía
-Inter, sidebar carbón `#101719`, fondo niebla `#F5F8F6`, verde vivo `#00D94B` en acciones
-primarias y verde de enlace `#008E47` (contraste AA).
+Inter, carbón `#101719`, superficies claras `#F2F7F4`, verde profundo `#075335` para texto y
+acciones con contraste, y verde IMVOLT `#00D94B` como acento.
 
 ```
 Inicio · Mis propiedades · Estudio IA · Plantillas · Brand Kit · Campañas Meta · Contactos ·
@@ -41,8 +41,10 @@ secretos en el `.env` del frontend.
 
 El backend publica estos contratos REST sobre el esquema IMVOLT: campañas y
 leads se traducen sobre las tablas existentes; el catálogo de modelos, los jobs
-de generación, conexiones y ledger de créditos se habilitan con migraciones
-separadas que responden al Documento Maestro. Antes de desplegar la API, ejecuta
+de generación, conexiones y precios USD por generación se habilitan con
+migraciones separadas que responden al Documento Maestro. La migración del
+ledger de créditos se conserva únicamente para mantener datos históricos; el
+frontend y la API ya no consultan ni modifican esas tablas. Antes de desplegar la API, ejecuta
 en orden `imvolt-api/database/migrations/2026-10-27_01_ai_connections.sql`,
 `2026-10-27_02_campaign_lead_contract.sql` y
 `2026-10-27_03_credit_ledger.sql`; ejecuta también
@@ -55,6 +57,9 @@ y `imvolt-api/database/migrations/2026-11-05_meta_oauth_state.sql`, y configura
 permisos y variables OAuth descritos en el README de la API. Para una prueba
 local sin OAuth ni conexión importada, la API puede usar `META_ACCESS_TOKEN` y
 `META_AD_ACCOUNT_ID` del `.env` del backend.
+
+Para planes y administración, aplica además las migraciones 0037–0041; para
+registrar el precio USD de cada generación, aplica también la 0042.
 
 ## Autenticación
 
@@ -123,12 +128,12 @@ En Configuración, el perfil de trabajo edita razón social y RUC (`PATCH /v1/em
 |------|----------|-----------|
 | `/inicio` | Inicio | Hero de marca, 4 métricas, acciones rápidas y propiedades recientes |
 | `/propiedades` | Mis propiedades | Rejilla de tarjetas con ilustración (terreno/casa/torre/oficina), filtros y alta en Drawer |
-| `/estudio` | Estudio IA | Modo fácil/pro, plantilla + modelo (§09 catálogo vivo), prompt generado y preview con cotización en créditos |
+| `/estudio` | Estudio IA | Modo fácil/pro, plantilla + modelo (§09 catálogo vivo), prompt generado y cotización en USD por generación |
 | `/plantillas` | Plantillas | Pestañas por categoría y tarjetas listas para usar en el Estudio |
 | `/campanas` | Campañas Meta | Asistente 3 pasos (Datos → Objetivo → Revisión) + resumen + flujo §10 |
 | `/contactos` | Contactos | Pipeline de leads por fuente y estado (§11) |
 | `/analitica` | Analítica | Leads por día, lectura de resultados y distribución por fuente |
-| `/configuracion` | Configuración | Integraciones (Higgsfield/Meta/Lotes al Mando), billetera de créditos y perfil |
+| `/configuracion` | Configuración | Integraciones (Higgsfield/Meta/Lotes al Mando) y perfil de la organización |
 | `/brand-kit` | Brand Kit | Subida de archivos de marca (logos, iconos, fuentes…) y paleta de colores; máximo 10 MB por archivo y tipos según categoría, con descarga por URL firmada desde el bucket privado `brand-kit` |
 | `/proyectos` | Proyectos | ABM de desarrollos (enlace desde Mis propiedades) |
 
@@ -138,9 +143,9 @@ En Configuración, el perfil de trabajo edita razón social y RUC (`PATCH /v1/em
 src/
 ├── domain/            Entidades IMVOLT (snake_case, IDs UUID = esquema SQL)
 │   ├── proyecto/  propiedad/  plantilla/  modelo/  generacion/
-│   ├── campana/   lead/       credito/    conexion/   auth/      brand-kit/
+│   ├── campana/   lead/       conexion/   auth/       brand-kit/
 │   └── core/repositories/CrudRepository.ts   Contrato CRUD genérico
-├── application/       Casos de uso (CRUD genérico + negocio: recarga, validar campaña)
+├── application/       Casos de uso (CRUD genérico + negocio: cotización y campañas)
 ├── infrastructure/
 │   ├── container/     Composition root: repositorio → caso de uso
 │   ├── repositories/  mock (InMemory, con semillas) y rest (Fetch)

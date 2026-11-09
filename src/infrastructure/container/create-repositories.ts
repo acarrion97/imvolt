@@ -15,7 +15,6 @@ import type {
   MiembroRepository,
   RolRepository,
 } from "@/domain/identity";
-import type { TransaccionRepository, WalletRepository } from "@/domain/credito";
 
 import {
   MockAuditoriaRepository,
@@ -36,8 +35,6 @@ import {
   MockTipoPlantillaRepository,
   MockRolRepository,
   MockTipoPropiedadRepository,
-  MockTransaccionRepository,
-  MockWalletRepository,
 } from "@/infrastructure/repositories/mock/MockRepositories";
 import {
   RestAuditoriaRepository,
@@ -58,8 +55,6 @@ import {
   RestTipoPlantillaRepository,
   RestRolRepository,
   RestTipoPropiedadRepository,
-  RestTransaccionRepository,
-  RestWalletRepository,
 } from "@/infrastructure/repositories/rest/RestRepositories";
 
 /**
@@ -81,8 +76,6 @@ export interface Repositories {
   brandAssetRepo: BrandAssetRepository;
   brandColorRepo: BrandColorRepository;
   mediaAssetRepo: MediaAssetRepository;
-  walletRepo: WalletRepository;
-  transaccionRepo: TransaccionRepository;
   miembroRepo: MiembroRepository;
   rolRepo: RolRepository;
   auditoriaRepo: AuditoriaRepository;
@@ -106,8 +99,6 @@ function createMockRepositories(): Repositories {
     brandAssetRepo: new MockBrandAssetRepository(),
     brandColorRepo: new MockBrandColorRepository(),
     mediaAssetRepo: new MockMediaAssetRepository(),
-    walletRepo: new MockWalletRepository(),
-    transaccionRepo: new MockTransaccionRepository(),
     miembroRepo: new MockMiembroRepository(),
     rolRepo: new MockRolRepository(),
     auditoriaRepo: new MockAuditoriaRepository(),
@@ -138,8 +129,6 @@ function createRestRepositories(): Repositories {
     brandAssetRepo: new RestBrandAssetRepository(),
     brandColorRepo: new RestBrandColorRepository(),
     mediaAssetRepo: new RestMediaAssetRepository(),
-    walletRepo: new RestWalletRepository(),
-    transaccionRepo: new RestTransaccionRepository(),
     miembroRepo: new RestMiembroRepository(),
     rolRepo: new RestRolRepository(),
     auditoriaRepo: new RestAuditoriaRepository(),

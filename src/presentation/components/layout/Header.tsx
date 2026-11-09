@@ -1,12 +1,12 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Dropdown } from "antd";
 import { LogoutOutlined, ThunderboltOutlined, MenuOutlined } from "@ant-design/icons";
-import { useAuth, useWallet } from "@/presentation/hooks";
+import { useAuth } from "@/presentation/hooks";
 import { capitalize, initials } from "@/presentation/components/common/userLabel";
 
 /**
  * Barra superior — UI Concept 01 del prototipo:
- * migas "IMVOLT / Página", píldoras de demo y créditos, y el CTA
+ * migas "IMVOLT / Página", píldora de demo y el CTA
  * "Crear con AI" que abre el Estudio IA.
  *
  * Con el API real (VITE_DATA_PROVIDER=rest) agrega el menú de usuario:
@@ -34,7 +34,6 @@ interface HeaderProps {
 export function Header({ onToggleMobile }: HeaderProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { data: wallet } = useWallet();
   const { status, perfil, rol, logout } = useAuth();
 
   const label = ROUTE_LABELS[pathname] ?? "Inicio";
@@ -60,7 +59,6 @@ export function Header({ onToggleMobile }: HeaderProps) {
           <span className="dot" />
           DEMO INTERACTIVA
         </span>
-        <span className="pill hide-sm">◈ {wallet?.saldo ?? 0} créditos simulados</span>
         <button
           type="button"
           className="btn btn-primary"

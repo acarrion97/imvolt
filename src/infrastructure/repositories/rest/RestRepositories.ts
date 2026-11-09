@@ -81,13 +81,6 @@ import type {
   RolRepository,
 } from "@/domain/identity";
 import type { FilterParams } from "@/domain/core/repositories/CrudRepository";
-import type {
-  TransaccionCredito,
-  TransaccionCreditoCreate,
-  TransaccionRepository,
-  Wallet,
-  WalletRepository,
-} from "@/domain/credito";
 
 import { RestCrudRepository } from "@/infrastructure/repositories/rest/RestCrudRepository";
 import { ApiError, buildQuery, http } from "@/infrastructure/http/httpClient";
@@ -104,7 +97,6 @@ import { ApiError, buildQuery, http } from "@/infrastructure/http/httpClient";
  *   conexiones         → /v1/conexiones
  *   campañas           → /v1/campaigns
  *   leads              → /v1/leads
- *   billetera          → /v1/billing/...
  */
 
 export class RestProyectoRepository
@@ -371,32 +363,6 @@ export class RestLeadRepository
 
   async getByCampanaId(campaignId: string): Promise<Lead[]> {
     return this.getAll({ campaign_id: campaignId });
-  }
-}
-
-export class RestWalletRepository implements WalletRepository {
-  async getWallet(): Promise<Wallet> {
-    return http.get<Wallet>(`/v1/billing/wallet${buildQuery()}`);
-  }
-
-  async getTransacciones(): Promise<TransaccionCredito[]> {
-    return http.get<TransaccionCredito[]>(`/v1/billing/transactions${buildQuery()}`);
-  }
-
-  async recargar(monto: number, idempotencyKey: string): Promise<Wallet> {
-    return http.post<Wallet>("/v1/billing/recharge", {
-      monto,
-      idempotency_key: idempotencyKey,
-    });
-  }
-}
-
-export class RestTransaccionRepository
-  extends RestCrudRepository<TransaccionCredito, string, TransaccionCreditoCreate>
-  implements TransaccionRepository
-{
-  constructor() {
-    super("v1/billing/transactions");
   }
 }
 

@@ -2,7 +2,7 @@ import type { CrudRepository, FilterParams } from "@/domain/core/repositories/Cr
 
 /**
  * Máquina de estados §09:
- * created → quoted → credits_reserved → queued → processing → completed/failed/canceled
+ * created → quoted → queued → processing → completed/failed/canceled
  */
 export type GeneracionStatus =
   | "created"
@@ -36,7 +36,7 @@ export interface Generacion {
   prompt: string;
   parametros: Record<string, unknown>;
   status: GeneracionStatus;
-  credits_cost: number;
+  price_usd: number | null;
   provider_request_id: string | null;
   error_message: string | null;
   created_at: string;
@@ -50,19 +50,17 @@ export interface GeneracionQuoteInput {
 }
 
 export interface GeneracionQuote {
-  credits_cost: number;
-  available_credits?: number;
-  sufficient_credits?: boolean;
+  price_usd: number;
 }
 
 export type GeneracionCreate = Omit<
   Generacion,
-  "generation_id" | "organization_id" | "status" | "credits_cost" | "provider_request_id" | "error_message" | "created_at" | "updated_at"
+  "generation_id" | "organization_id" | "status" | "price_usd" | "provider_request_id" | "error_message" | "created_at" | "updated_at"
 > & {
   idempotency_key: string;
-  quoted_credits: number;
+  quoted_price_usd: number;
   status?: GeneracionStatus;
-  credits_cost?: number;
+  price_usd?: number | null;
 };
 
 export interface GeneracionRepository

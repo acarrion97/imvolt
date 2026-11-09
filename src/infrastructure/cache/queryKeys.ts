@@ -42,9 +42,6 @@ export const queryKeys = {
   lead: (id: string) => ["leads", id] as const,
   leadsByCampana: (campaignId: string) => ["leads", "campana", campaignId] as const,
 
-  wallet: () => ["wallet"] as const,
-  transacciones: () => ["transacciones"] as const,
-
   brandAssets: () => ["brand_assets"] as const,
   brandAsset: (id: string) => ["brand_assets", id] as const,
   brandAssetVersiones: (assetId: string) => ["brand_assets", assetId, "versiones"] as const,

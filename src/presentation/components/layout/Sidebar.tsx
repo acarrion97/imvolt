@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   ApartmentOutlined,
@@ -12,14 +12,13 @@ import {
   UsergroupAddOutlined,
 } from "@ant-design/icons";
 import { AUTH_ENABLED } from "@/presentation/auth/AuthProvider";
-import { useAuth, useWallet } from "@/presentation/hooks";
+import { useAuth } from "@/presentation/hooks";
 import { capitalize, initials } from "@/presentation/components/common/userLabel";
 
 /**
  * Barra lateral IMVOLT — UI Concept 01 del prototipo interactivo:
  * fondo carbón (#101719), logo horizontal sobre oscuro, dos secciones
- * (ESPACIO DE TRABAJO / ADMINISTRACIÓN) y bloque inferior con la cuota de
- * créditos + perfil de la organización.
+ * (ESPACIO DE TRABAJO / ADMINISTRACIÓN) y perfil de la organización.
  */
 
 interface NavItem {
@@ -42,9 +41,6 @@ const ADMIN: NavItem[] = [
   { key: "/configuracion", label: "Configuración", icon: <SettingOutlined /> },
 ];
 
-/** Cuota de referencia: el MVP simulate un límite mensual de créditos. */
-const CUOTA_MENSUAL = 500;
-
 interface SidebarProps {
   open?: boolean;
   onNavigate?: () => void;
@@ -52,11 +48,8 @@ interface SidebarProps {
 
 export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   const navigate = useNavigate();
-  const { data: wallet } = useWallet();
   const { perfil, rol } = useAuth();
   const esSuperAdmin = perfil?.es_super_admin === true;
-  const saldo = wallet?.saldo ?? 0;
-  const pct = Math.max(4, Math.min(100, Math.round((saldo / CUOTA_MENSUAL) * 100)));
 
   // Con sesión real: empresa activa + usuario/rol (modo mock: datos de ejemplo).
   const organizacion = perfil?.usuario.empresa?.razon_social ?? "Urbaniza Capital";
@@ -110,18 +103,6 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
 
       <div className="sidebar-bottom">
         <p className="workspace-label">WORKSPACE ACTIVO</p>
-
-        <div
-          className="quota"
-          style={{ "--progress": `${pct}%` } as CSSProperties}
-        >
-          <b>{saldo} créditos</b>
-          <p>
-            Disponibles de {CUOTA_MENSUAL} / mes
-          </p>
-          <div className="progress" />
-        </div>
-
         <button
           type="button"
           className="sidebar-profile"

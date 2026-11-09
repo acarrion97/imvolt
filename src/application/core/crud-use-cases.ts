@@ -5,7 +5,7 @@ import type { CrudRepository, FilterParams } from "@/domain/core/repositories/Cr
  *
  * Cada entidad no reinventa el ABM: el container ensambla estos casos de uso
  * apuntando al repositorio concreto. Las operaciones de negocio específicas
- * (p.ej. recargar créditos) viven en casos de uso propios del dominio.
+ * (p.ej. validar una campaña) viven en casos de uso propios del dominio.
  *
  * Nota: se evitan los parámetros de constructor con modificador (`private readonly`)
  * porque el proyecto usa `erasableSyntaxOnly`.

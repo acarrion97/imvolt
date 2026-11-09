@@ -79,13 +79,6 @@ import type {
   MediaAssetRepository,
   MediaAssetVersion,
 } from "@/domain/media-asset";
-import type {
-  TransaccionCredito,
-  TransaccionCreditoCreate,
-  TransaccionRepository,
-  Wallet,
-  WalletRepository,
-} from "@/domain/credito";
 
 import { InMemoryCrudRepository } from "@/infrastructure/repositories/mock/InMemoryCrudRepository";
 import {
@@ -110,8 +103,6 @@ import {
   seedProyectos,
   seedTiposPlantilla,
   seedTiposPropiedad,
-  seedTransacciones,
-  seedWallet,
 } from "@/infrastructure/seeds/seeds";
 
 const uuid = (): string =>
@@ -530,7 +521,7 @@ export class MockGeneracionRepository
         parametros: data.parametros ?? {},
         // §09: toda generación nueva entra a la cola simulada.
         status: data.status ?? "queued",
-        credits_cost: data.credits_cost ?? data.quoted_credits,
+        price_usd: data.price_usd ?? data.quoted_price_usd,
         provider_request_id: null,
         error_message: null,
         created_at: nowIso(),
@@ -577,9 +568,19 @@ export class MockGeneracionRepository
     if (ratio && model.ratios && !model.ratios.includes(String(ratio))) {
       throw new Error("Selecciona una relación de aspecto disponible para este modelo.");
     }
+    if (model.precio_usd == null || !model.precio_unidad) {
+      throw new Error("Este modelo no tiene un precio por generación configurado.");
+    }
+    if (
+      (model.media_type === "image" && model.precio_unidad !== "imagen") ||
+      (model.media_type === "video" && model.precio_unidad !== "segundo")
+    ) {
+      throw new Error("La unidad de precio del modelo no es válida.");
+    }
     return {
-      credits_cost: model.quote_creditos +
-        (model.media_type === "video" ? Math.max(0, Math.ceil(duration / 5) - 1) : 0),
+      price_usd: Number(
+        (model.precio_usd * (model.media_type === "video" ? duration : 1)).toFixed(4),
+      ),
     };
   }
 }
@@ -780,72 +781,6 @@ export class MockLeadRepository
 
   async getByCampanaId(campaignId: string): Promise<Lead[]> {
     return this.applyFilters(await this.getAll(), { campaign_id: campaignId });
-  }
-}
-
-// ── Billetera de créditos ────────────────────────────────────────────────────
-export class MockWalletRepository implements WalletRepository {
-  private wallet: Wallet = { ...seedWallet };
-  private transacciones: TransaccionCredito[] = [...seedTransacciones];
-
-  async getWallet(): Promise<Wallet> {
-    return { ...this.wallet };
-  }
-
-  async getTransacciones(): Promise<TransaccionCredito[]> {
-    return [...this.transacciones];
-  }
-
-  async recargar(monto: number, idempotencyKey: string): Promise<Wallet> {
-    if (monto <= 0) throw new Error("El monto de la recarga debe ser mayor a cero.");
-    if (!idempotencyKey.trim()) throw new Error("La recarga requiere una clave de idempotencia.");
-    const existing = this.transacciones.find((t) => t.idempotency_key === idempotencyKey);
-    if (existing) {
-      if (existing.tipo !== "recarga" || existing.creditos !== monto) {
-        throw new Error("La clave de idempotencia ya se usó con otros datos.");
-      }
-      return { ...this.wallet }; // idempotente: ya procesada
-    }
-    this.wallet = { ...this.wallet, saldo: this.wallet.saldo + monto, updated_at: nowIso() };
-    this.transacciones = [
-      {
-        transaction_id: uuid(),
-        wallet_id: this.wallet.wallet_id,
-        organization_id: this.wallet.organization_id,
-        tipo: "recarga",
-        monto,
-        creditos: monto,
-        generation_id: null,
-        descripcion: "Recarga de créditos",
-        idempotency_key: idempotencyKey,
-        created_at: nowIso(),
-      },
-      ...this.transacciones,
-    ];
-    return { ...this.wallet };
-  }
-}
-
-export class MockTransaccionRepository
-  extends InMemoryCrudRepository<TransaccionCredito, string, TransaccionCreditoCreate>
-  implements TransaccionRepository
-{
-  constructor() {
-    super(
-      (row) => row.transaction_id,
-      (data, id) => ({
-        ...data,
-        transaction_id: id,
-        wallet_id: seedWallet.wallet_id,
-        organization_id: ORGANIZATION_ID,
-        created_at: nowIso(),
-      }),
-      seedTransacciones,
-    );
-  }
-
-  override async create(data: TransaccionCreditoCreate): Promise<TransaccionCredito> {
-    return super.createWithId(uuid(), data);
   }
 }
 

@@ -230,7 +230,9 @@ export function PlantillasPage() {
               </div>
 
               <div className="foot">
-                <span className="credits">{plantilla.url_logo ? "Logo configurado" : "Sin logo"}</span>
+                <span className="template-logo-status">
+                  {plantilla.url_logo ? "Logo configurado" : "Sin logo"}
+                </span>
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {puedeAdministrar && (
                     <>

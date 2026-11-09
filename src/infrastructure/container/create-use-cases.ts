@@ -51,10 +51,8 @@ import type {
   Rol,
 } from "@/domain/identity";
 import type { FilterParams } from "@/domain/core/repositories/CrudRepository";
-import type { TransaccionCredito, TransaccionCreditoCreate, Wallet } from "@/domain/credito";
 
 import { buildCrudUseCases } from "@/application/core/crud-use-cases";
-import { RecargarCreditosUseCase } from "@/application/credito/use-cases/RecargarCreditosUseCase";
 import { ValidarCampanaUseCase } from "@/application/campana/use-cases/ValidarCampanaUseCase";
 
 /** Casos de uso expuestos a la presentación: `container.proyectos.list.execute(...)`. */
@@ -71,7 +69,6 @@ export interface UseCases {
   conexiones: CrudUseCases<Conexion, string, ConexionCreate>;
   campanas: CrudUseCases<Campana, string, CampanaCreate>;
   leads: CrudUseCases<Lead, string, LeadCreate>;
-  transacciones: CrudUseCases<TransaccionCredito, string, TransaccionCreditoCreate>;
 
   // Brand Kit: CRUD de archivos + operaciones de storage (versiones/descarga)
   // y CRUD de colores de la paleta.
@@ -109,9 +106,6 @@ export interface UseCases {
   };
 
   // casos de uso de negocio (no CRUD)
-  getWallet: { execute(): Promise<Wallet> };
-  getTransacciones: { execute(): Promise<TransaccionCredito[]> };
-  recargarCreditos: RecargarCreditosUseCase;
   validarCampana: ValidarCampanaUseCase;
   solicitarAprobacionCampana: { execute(campaignId: string): Promise<Campana> };
   aprobarCampana: { execute(campaignId: string): Promise<Campana> };
@@ -142,7 +136,6 @@ export function createUseCases(repos: Repositories): UseCases {
     conexiones: buildCrudUseCases(repos.conexionRepo),
     campanas: buildCrudUseCases(repos.campanaRepo),
     leads: buildCrudUseCases(repos.leadRepo),
-    transacciones: buildCrudUseCases(repos.transaccionRepo),
 
     brandAssets: buildCrudUseCases(repos.brandAssetRepo),
     brandColors: buildCrudUseCases(repos.brandColorRepo),
@@ -183,9 +176,6 @@ export function createUseCases(repos: Repositories): UseCases {
       actualizar: { execute: (data) => repos.empresaRepo.actualizar(data) },
     },
 
-    getWallet: { execute: () => repos.walletRepo.getWallet() },
-    getTransacciones: { execute: () => repos.walletRepo.getTransacciones() },
-    recargarCreditos: new RecargarCreditosUseCase(repos.walletRepo),
     validarCampana: new ValidarCampanaUseCase(repos.campanaRepo),
     solicitarAprobacionCampana: {
       execute: (campaignId) => repos.campanaRepo.solicitarAprobacion(campaignId),
