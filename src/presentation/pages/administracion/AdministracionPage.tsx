@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  Alert,
   App,
   Button,
   Card,
@@ -37,9 +38,11 @@ import {
   useActualizarEmpresaAdmin,
   useAdminConfiguraciones,
   useAdminEmpresas,
+  useAdminHiggsfield,
   useAdminPlanes,
   useAdminResumenEmpresas,
   useGuardarConfiguracion,
+  useGuardarAdminHiggsfield,
   useGuardarPlan,
 } from "@/presentation/hooks/usePlatformAdmin";
 import { PlantillasPage } from "@/presentation/pages/plantillas/PlantillasPage";
@@ -59,6 +62,12 @@ interface PlanFormValues {
 interface EmpresaFormValues {
   plan_id: number | null;
   estado: "activo" | "inactivo";
+}
+
+interface HiggsfieldFormValues {
+  entorno: "sandbox" | "produccion";
+  api_key: string;
+  app_secret: string;
 }
 
 interface ConfiguracionFormValues {
@@ -87,15 +96,18 @@ export function AdministracionPage() {
   const [configuracionModalOpen, setConfiguracionModalOpen] = useState(false);
   const [planForm] = Form.useForm<PlanFormValues>();
   const [empresaForm] = Form.useForm<EmpresaFormValues>();
+  const [higgsfieldForm] = Form.useForm<HiggsfieldFormValues>();
   const [configuracionForm] = Form.useForm<ConfiguracionFormValues>();
 
   const planesQuery = useAdminPlanes();
   const empresasQuery = useAdminEmpresas(pagina, busqueda, estadoFiltro);
   const empresasResumenQuery = useAdminResumenEmpresas();
   const configuracionesQuery = useAdminConfiguraciones();
+  const higgsfieldQuery = useAdminHiggsfield(editingEmpresa?.empresa_id, editingEmpresa !== null);
   const plantillasQuery = usePlantillas();
   const guardarPlan = useGuardarPlan();
   const actualizarEmpresa = useActualizarEmpresaAdmin();
+  const guardarHiggsfield = useGuardarAdminHiggsfield(editingEmpresa?.empresa_id ?? 0);
   const guardarConfiguracion = useGuardarConfiguracion();
 
   const planes = planesQuery.data ?? [];
@@ -159,10 +171,35 @@ export function AdministracionPage() {
 
   const abrirEditarEmpresa = (empresa: EmpresaAdmin) => {
     setEditingEmpresa(empresa);
+    higgsfieldForm.resetFields();
     empresaForm.setFieldsValue({
       plan_id: empresa.plan_id,
       estado: empresa.estado,
     });
+  };
+
+  useEffect(() => {
+    if (!editingEmpresa || !higgsfieldQuery.data) return;
+    higgsfieldForm.setFieldsValue({
+      entorno: higgsfieldQuery.data.entorno,
+      api_key: "",
+      app_secret: "",
+    });
+  }, [editingEmpresa, higgsfieldForm, higgsfieldQuery.data]);
+
+  const guardarHiggsfieldFormulario = async (values: HiggsfieldFormValues) => {
+    if (!editingEmpresa) return;
+    try {
+      await guardarHiggsfield.mutateAsync({
+        entorno: values.entorno,
+        ...(values.api_key.trim() ? { api_key: values.api_key.trim() } : {}),
+        ...(values.app_secret.trim() ? { app_secret: values.app_secret.trim() } : {}),
+      });
+      higgsfieldForm.resetFields(["api_key", "app_secret"]);
+      message.success(`Higgsfield configurado para ${editingEmpresa.razon_social}.`);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "No se pudo guardar Higgsfield.");
+    }
   };
 
   const guardarEmpresaFormulario = async (values: EmpresaFormValues) => {
@@ -649,38 +686,126 @@ export function AdministracionPage() {
         destroyOnHidden
       >
         {editingEmpresa && (
-          <Form
-            form={empresaForm}
-            layout="vertical"
-            onFinish={(values) => void guardarEmpresaFormulario(values)}
-          >
-            <p className="admin-modal-company">{editingEmpresa.razon_social}</p>
-            <Form.Item name="plan_id" label="Plan asignado">
-              <Select
-                allowClear
-                placeholder="Selecciona un plan"
-                onChange={(value) => empresaForm.setFieldValue("plan_id", value ?? null)}
-                options={planes
-                  .filter(
-                    (plan) =>
-                      plan.estado === "activo" || plan.plan_id === editingEmpresa.plan_id,
-                  )
-                  .map((plan) => ({
-                    value: plan.plan_id,
-                    label: plan.estado === "activo" ? plan.nombre : `${plan.nombre} (inactivo)`,
-                    disabled: plan.estado !== "activo",
-                  }))}
-              />
-            </Form.Item>
-            <Form.Item name="estado" label="Acceso" rules={[{ required: true }]}>
-              <Select
-                options={[
-                  { value: "activo", label: "Activa" },
-                  { value: "inactivo", label: "Suspendida" },
-                ]}
-              />
-            </Form.Item>
-          </Form>
+          <>
+            <Form
+              form={empresaForm}
+              layout="vertical"
+              onFinish={(values) => void guardarEmpresaFormulario(values)}
+            >
+              <p className="admin-modal-company">{editingEmpresa.razon_social}</p>
+              <Form.Item name="plan_id" label="Plan asignado">
+                <Select
+                  allowClear
+                  placeholder="Selecciona un plan"
+                  onChange={(value) => empresaForm.setFieldValue("plan_id", value ?? null)}
+                  options={planes
+                    .filter(
+                      (plan) =>
+                        plan.estado === "activo" || plan.plan_id === editingEmpresa.plan_id,
+                    )
+                    .map((plan) => ({
+                      value: plan.plan_id,
+                      label: plan.estado === "activo" ? plan.nombre : `${plan.nombre} (inactivo)`,
+                      disabled: plan.estado !== "activo",
+                    }))}
+                />
+              </Form.Item>
+              <Form.Item name="estado" label="Acceso" rules={[{ required: true }]}>
+                <Select
+                  options={[
+                    { value: "activo", label: "Activa" },
+                    { value: "inactivo", label: "Suspendida" },
+                  ]}
+                />
+              </Form.Item>
+            </Form>
+            <Card
+              size="small"
+              title="Credenciales de Higgsfield"
+              extra={
+                higgsfieldQuery.data?.configurado ? (
+                  <Tag color="green">Configurado</Tag>
+                ) : (
+                  <Tag>Sin configurar</Tag>
+                )
+              }
+            >
+              <Spin spinning={higgsfieldQuery.isLoading}>
+                {higgsfieldQuery.error ? (
+                  <Alert
+                    type="error"
+                    showIcon
+                    message="No se pudo cargar la configuración de Higgsfield"
+                    description={higgsfieldQuery.error.message}
+                  />
+                ) : (
+                  <>
+                    <p className="admin-table-secondary">
+                      Estas credenciales se administran aquí por empresa. Deja los campos secretos
+                      vacíos para conservar los valores guardados.
+                    </p>
+                    <Form
+                      form={higgsfieldForm}
+                      layout="vertical"
+                      onFinish={(values) => void guardarHiggsfieldFormulario(values)}
+                    >
+                      <Form.Item name="entorno" label="Entorno" rules={[{ required: true }]}>
+                        <Select
+                          options={[
+                            { value: "sandbox", label: "Sandbox" },
+                            { value: "produccion", label: "Producción" },
+                          ]}
+                        />
+                      </Form.Item>
+                      <Form.Item
+                        name="api_key"
+                        label="Higgsfield API Key ID"
+                        rules={[
+                          {
+                            required: !higgsfieldQuery.data?.api_key_configurada,
+                            whitespace: true,
+                            message: "Ingresa el API Key ID.",
+                          },
+                        ]}
+                        extra={
+                          higgsfieldQuery.data?.api_key_configurada
+                            ? "Ya hay una clave guardada."
+                            : undefined
+                        }
+                      >
+                        <Input.Password autoComplete="new-password" />
+                      </Form.Item>
+                      <Form.Item
+                        name="app_secret"
+                        label="Higgsfield API Key Secret"
+                        rules={[
+                          {
+                            required: !higgsfieldQuery.data?.app_secret_configurado,
+                            whitespace: true,
+                            message: "Ingresa el API Key Secret.",
+                          },
+                        ]}
+                        extra={
+                          higgsfieldQuery.data?.app_secret_configurado
+                            ? "Ya hay un secreto guardado."
+                            : undefined
+                        }
+                      >
+                        <Input.Password autoComplete="new-password" />
+                      </Form.Item>
+                      <Button
+                        type="primary"
+                        loading={guardarHiggsfield.isPending}
+                        onClick={() => void higgsfieldForm.submit()}
+                      >
+                        Guardar Higgsfield
+                      </Button>
+                    </Form>
+                  </>
+                )}
+              </Spin>
+            </Card>
+          </>
         )}
       </Modal>
 

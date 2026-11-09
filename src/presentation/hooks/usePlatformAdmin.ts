@@ -71,6 +71,36 @@ export function useActualizarEmpresaAdmin() {
   });
 }
 
+export interface AdminHiggsfieldConfig {
+  configurado: boolean;
+  entorno: "sandbox" | "produccion";
+  api_key_configurada: boolean;
+  app_secret_configurado: boolean;
+}
+
+export function useAdminHiggsfield(empresaId: number | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: [...ADMIN_QUERY_KEY, "empresas", empresaId, "higgsfield"],
+    queryFn: () => http.get<AdminHiggsfieldConfig>(`/v1/admin/empresas/${empresaId}/higgsfield`),
+    enabled: Boolean(empresaId) && enabled,
+  });
+}
+
+export function useGuardarAdminHiggsfield(empresaId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      entorno: "sandbox" | "produccion";
+      api_key?: string;
+      app_secret?: string;
+    }) => http.put<AdminHiggsfieldConfig>(`/v1/admin/empresas/${empresaId}/higgsfield`, data),
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey: [...ADMIN_QUERY_KEY, "empresas", empresaId, "higgsfield"],
+      }),
+  });
+}
+
 export function useGuardarConfiguracion() {
   const queryClient = useQueryClient();
   return useMutation({

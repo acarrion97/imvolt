@@ -143,7 +143,8 @@ En Configuración, el perfil de trabajo edita razón social y RUC (`PATCH /v1/em
 | `/campanas` | Campañas Meta | Asistente 3 pasos (Datos → Objetivo → Revisión) + resumen + flujo §10 |
 | `/contactos` | Contactos | Pipeline de leads por fuente y estado (§11) |
 | `/analitica` | Analítica | Leads por día, lectura de resultados y distribución por fuente |
-| `/configuracion` | Configuración | Integraciones (Higgsfield/Meta/Lotes al Mando) y perfil de la organización |
+| `/configuracion` | Configuración | Integración de Meta, Lotes al Mando y perfil de la organización |
+| `/administracion` | Administración | Gestión de empresas, planes y configuración de credenciales Higgsfield por empresa (superadministrador) |
 | `/brand-kit` | Brand Kit | Subida de archivos de marca (logos, iconos, fuentes…) y paleta de colores; máximo 10 MB por archivo y tipos según categoría, con descarga por URL firmada desde el bucket privado `brand-kit` |
 | `/proyectos` | Proyectos | ABM de desarrollos (enlace desde Mis propiedades) |
 

@@ -44,13 +44,6 @@ interface IntegracionFormValues {
   app_secret?: string;
 }
 
-function getIntegrationBaseUrl(nombre: string): string {
-  if (nombre === "Lotes al Mando") {
-    return "https://lotes-al-mando-api.onrender.com";
-  }
-  return "https://api.higgsfield.ai";
-}
-
 const ES_REST =
   String(import.meta.env.VITE_DATA_PROVIDER ?? "mock")
     .trim()
@@ -88,7 +81,7 @@ export function IntegracionesEmpresaPanel() {
         (item) =>
           item.activa &&
           item.estado === "activo" &&
-          ["Higgsfield", "Lotes al Mando"].includes(item.nombre),
+          item.nombre === "Lotes al Mando",
       ),
     [data?.catalogo],
   );
@@ -141,7 +134,7 @@ export function IntegracionesEmpresaPanel() {
       integracion,
       existente: seleccion.existente,
       referencia: values.referencia.trim(),
-      url_base: getIntegrationBaseUrl(integracion.nombre),
+      url_base: "https://lotes-al-mando-api.onrender.com",
       entorno: values.entorno,
       api_key: values.api_key.trim() || undefined,
       app_secret: values.app_secret?.trim() || undefined,
@@ -243,8 +236,8 @@ export function IntegracionesEmpresaPanel() {
         <h2 style={{ fontSize: 17 }}>Conexiones de esta empresa</h2>
       </div>
       <p className="sub" style={{ marginBottom: 16 }}>
-        Conecta cuentas de Meta desde Facebook Login y configura las credenciales privadas de los
-        proveedores de IA e inventario.
+        Conecta cuentas de Meta desde Facebook Login y configura las credenciales privadas de
+        inventario.
       </p>
 
       {!ES_REST ? (
@@ -473,86 +466,40 @@ export function IntegracionesEmpresaPanel() {
             </Form.Item>
 
             <Form.Item name="entorno" label="Entorno" rules={[{ required: true }]}>
-              {seleccion.integracion.nombre === "Lotes al Mando" ? (
-                <Select
-                  disabled
-                  options={[{ value: "produccion", label: "Producción — API de Lotes al Mando" }]}
-                />
-              ) : (
-                <Select
-                  options={[
-                    { value: "sandbox", label: "Sandbox — operaciones simuladas" },
-                    { value: "produccion", label: "Producción — usa credenciales reales" },
-                  ]}
-                />
-              )}
+              <Select
+                disabled
+                options={[{ value: "produccion", label: "Producción — API de Lotes al Mando" }]}
+              />
             </Form.Item>
 
-            {seleccion.integracion.nombre === "Lotes al Mando" ? (
-              <>
-                <Form.Item
-                  name="api_key"
-                  label="Correo de acceso de Lotes al Mando"
-                  rules={[
-                    {
-                      required: !configuracionActual?.api_key,
-                      type: "email",
-                      message: "Ingresa un correo válido.",
-                    },
-                  ]}
-                  extra={configuracionActual?.api_key ? "Ya hay un correo guardado." : undefined}
-                >
-                  <Input autoComplete="username" />
-                </Form.Item>
-                <Form.Item
-                  name="app_secret"
-                  label="Contraseña de Lotes al Mando"
-                  rules={[
-                    {
-                      required: !configuracionActual?.app_secret,
-                      whitespace: true,
-                      message: "Ingresa la contraseña.",
-                    },
-                  ]}
-                  extra={configuracionActual?.app_secret ? "Ya hay una contraseña guardada." : undefined}
-                >
-                  <Input.Password autoComplete="new-password" />
-                </Form.Item>
-              </>
-            ) : (
-              <>
-                <Form.Item
-                  name="api_key"
-                  label="Higgsfield API Key ID"
-                  rules={[
-                    {
-                      required: !configuracionActual?.api_key,
-                      whitespace: true,
-                      message: "Ingresa el API Key ID.",
-                    },
-                  ]}
-                  extra={configuracionActual?.api_key ? "Ya hay una clave guardada." : undefined}
-                >
-                  <Input.Password autoComplete="new-password" />
-                </Form.Item>
-                <Form.Item
-                  name="app_secret"
-                  label="Higgsfield API Key Secret"
-                  rules={[
-                    {
-                      required: !configuracionActual?.app_secret,
-                      whitespace: true,
-                      message: "Ingresa el API Key Secret.",
-                    },
-                  ]}
-                  extra={
-                    configuracionActual?.app_secret ? "Ya hay un secreto guardado." : undefined
-                  }
-                >
-                  <Input.Password autoComplete="new-password" />
-                </Form.Item>
-              </>
-            )}
+            <Form.Item
+              name="api_key"
+              label="Correo de acceso de Lotes al Mando"
+              rules={[
+                {
+                  required: !configuracionActual?.api_key,
+                  type: "email",
+                  message: "Ingresa un correo válido.",
+                },
+              ]}
+              extra={configuracionActual?.api_key ? "Ya hay un correo guardado." : undefined}
+            >
+              <Input autoComplete="username" />
+            </Form.Item>
+            <Form.Item
+              name="app_secret"
+              label="Contraseña de Lotes al Mando"
+              rules={[
+                {
+                  required: !configuracionActual?.app_secret,
+                  whitespace: true,
+                  message: "Ingresa la contraseña.",
+                },
+              ]}
+              extra={configuracionActual?.app_secret ? "Ya hay una contraseña guardada." : undefined}
+            >
+              <Input.Password autoComplete="new-password" />
+            </Form.Item>
           </Form>
         )}
       </Drawer>

@@ -5,8 +5,7 @@ import { empresaSchema } from "@/presentation/validations";
 import { IntegracionesEmpresaPanel } from "./IntegracionesEmpresaPanel";
 
 /**
- * Configuración — UI Concept 01: integraciones (Higgsfield / Meta /
- * Lotes al Mando) y perfil de trabajo.
+ * Configuración — integraciones de Meta e inventario y perfil de trabajo.
  */
 export function ConfiguracionPage() {
   const { message } = App.useApp();
