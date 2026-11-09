@@ -15,6 +15,15 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    server: {
+      allowedHosts: ["mothproof-manlike-vocalist.ngrok-free.dev"],
+      proxy: {
+        "/api": {
+          target: "http://localhost:3000",
+          changeOrigin: true,
+        },
+      },
+    },
     define: Object.fromEntries(
       Object.entries(publicMetaEnv).map(([key, value]) => [
         `import.meta.env.${key}`,

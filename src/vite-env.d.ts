@@ -23,25 +23,3 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
-
-interface MetaLoginResponse {
-  status: "connected" | "not_authorized" | "unknown";
-  authResponse?: {
-    accessToken: string;
-    userID: string;
-    expiresIn: number;
-    grantedScopes?: string;
-  };
-}
-
-interface MetaFacebookSdk {
-  init(options: { appId: string; cookie: boolean; xfbml: boolean; version: string }): void;
-  getLoginStatus(callback: (response: MetaLoginResponse) => void): void;
-  XFBML: { parse(element?: HTMLElement): void };
-}
-
-interface Window {
-  FB?: MetaFacebookSdk;
-  fbAsyncInit?: () => void;
-  checkLoginState?: () => void;
-}

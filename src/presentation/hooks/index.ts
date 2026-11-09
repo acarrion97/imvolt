@@ -545,18 +545,6 @@ export function useIniciarOAuthMeta() {
   };
 }
 
-export function useCompletarOAuthMeta() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { state: string; access_token: string }) =>
-      http.post<{ connected: boolean; accounts_connected: number }>(
-        "/v1/conexiones/meta/oauth/complete",
-        input,
-      ),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.conexiones() }),
-  });
-}
-
 export function useIntegracionesEmpresa(enabled = true) {
   return useQuery({
     queryKey: queryKeys.integracionesEmpresa(),
