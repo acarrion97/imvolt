@@ -34,7 +34,7 @@ interface AuthContextValue {
   rol: string | null;
   /** Comprueba permisos de escritura (el API sigue siendo la autoridad). */
   tienePermiso(permiso: string): boolean;
-  login(input: LoginInput): Promise<void>;
+  login(input: LoginInput): Promise<Perfil | null>;
   logout(): Promise<void>;
 }
 
@@ -111,13 +111,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const login = useCallback(async (input: LoginInput): Promise<void> => {
+  const login = useCallback(async (input: LoginInput): Promise<Perfil | null> => {
     const container = getContainer();
     const session = await container.login.execute(input);
     writeSession(session);
+    let authenticatedProfile: Perfil | null = null;
 
     try {
       const data = await container.obtenerPerfil.execute();
+      authenticatedProfile = data;
       setPerfil(data);
       syncEmpresa(data, session);
     } catch (error) {
@@ -132,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setStatus("authenticated");
+    return authenticatedProfile;
   }, []);
 
   const logout = useCallback(async (): Promise<void> => {

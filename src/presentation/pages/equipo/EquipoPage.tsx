@@ -353,8 +353,8 @@ export function EquipoPage() {
             <Select options={ROLES_ORG.map((r) => ({ value: r, label: ROL_LABEL[r] }))} />
           </Form.Item>
           <p className="footer-note">
-            No se envía correo: al invitar verás una contraseña temporal (válida 7 días) para
-            compartirla por otro canal.
+            La contraseña inicial será la parte del correo anterior a @ seguida de *. No se envía
+            correo: compártela por otro canal. Tiene una vigencia de 7 días.
           </p>
         </Form>
       </Drawer>

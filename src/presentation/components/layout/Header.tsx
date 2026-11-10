@@ -35,6 +35,7 @@ export function Header({ onToggleMobile }: HeaderProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { status, perfil, rol, logout } = useAuth();
+  const esSuperAdmin = perfil?.es_super_admin === true;
 
   const label = ROUTE_LABELS[pathname] ?? "Inicio";
 
@@ -55,21 +56,21 @@ export function Header({ onToggleMobile }: HeaderProps) {
       </div>
 
       <div className="top-actions">
-        <span className="pill demo-pill hide-sm">
-          <span className="dot" />
-          DEMO INTERACTIVA
-        </span>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => navigate("/estudio")}
-        >
-          <ThunderboltOutlined />
-          Crear con AI
-        </button>
-        <Link to="/configuracion" className="pill" title="Configuración" style={{ padding: "7px 11px" }}>
-          ⚙
-        </Link>
+        {!esSuperAdmin && (
+          <>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => navigate("/estudio")}
+            >
+              <ThunderboltOutlined />
+              Crear con AI
+            </button>
+            <Link to="/configuracion" className="pill" title="Configuración" style={{ padding: "7px 11px" }}>
+              ⚙
+            </Link>
+          </>
+        )}
 
         {status === "authenticated" && (
           <Dropdown

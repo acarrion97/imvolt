@@ -9,6 +9,7 @@ import {
   NotificationOutlined,
   RobotOutlined,
   SettingOutlined,
+  TeamOutlined,
   UsergroupAddOutlined,
 } from "@ant-design/icons";
 import { AUTH_ENABLED } from "@/presentation/auth/AuthProvider";
@@ -51,6 +52,12 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   const navigate = useNavigate();
   const { perfil, rol, tienePermiso } = useAuth();
   const esSuperAdmin = perfil?.es_super_admin === true;
+  const itemsAdminEmpresa: NavItem[] = [
+    ...(tienePermiso("gestionar_usuarios")
+      ? [{ key: "/equipo", label: "Equipo", icon: <TeamOutlined /> }]
+      : []),
+    ...ADMIN,
+  ];
 
   // Porcentaje de integraciones habilitadas por la empresa. El API aplica
   // `gestionar_integraciones` también en lectura de /v1/empresas-integraciones,
@@ -97,7 +104,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
 
   return (
     <aside className={`sidebar${open ? " open" : ""}`}>
-      <NavLink to="/inicio" onClick={onNavigate} className="logo">
+      <NavLink to={esSuperAdmin ? "/administracion" : "/inicio"} onClick={onNavigate} className="logo">
         <img
           src="/logo/IMVOLT_Logo_Horizontal_Sobre_Oscuro.png"
           alt="IMVOLT — Marketing Inmobiliario AI"
@@ -105,23 +112,28 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
         />
       </NavLink>
 
-      <div className="section-cap">Espacio de trabajo</div>
-      <nav className="nav">{renderItems(ESPACIO)}</nav>
-
-      <div className="section-cap">Administración</div>
-      <nav className="nav">
-        {renderItems(ADMIN)}
-        {(esSuperAdmin || !AUTH_ENABLED) && (
+      {esSuperAdmin ? (
+        <>
+          <div className="section-cap">Administración de plataforma</div>
+          <nav className="nav">
           <NavLink
             to="/administracion"
             onClick={onNavigate}
             className={({ isActive }) => (isActive ? "nav-item active" : "nav-item")}
           >
             <span className="symbol"><ControlOutlined /></span>
-            Panel de plataforma
+            Centro de control
           </NavLink>
-        )}
-      </nav>
+          </nav>
+        </>
+      ) : (
+        <>
+          <div className="section-cap">Espacio de trabajo</div>
+          <nav className="nav">{renderItems(ESPACIO)}</nav>
+          <div className="section-cap">Administración</div>
+          <nav className="nav">{renderItems(itemsAdminEmpresa)}</nav>
+        </>
+      )}
 
       <div className="sidebar-bottom">
         <p className="workspace-label">WORKSPACE ACTIVO</p>
@@ -144,8 +156,8 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
           type="button"
           className="sidebar-profile"
           style={{ background: "none", border: 0, width: "100%", cursor: "pointer", textAlign: "left" }}
-          onClick={() => navigate("/configuracion")}
-          title="Abrir configuración"
+          onClick={() => navigate(esSuperAdmin ? "/administracion" : "/configuracion")}
+          title={esSuperAdmin ? "Abrir centro de control" : "Abrir configuración"}
         >
           <span className="avatar">{avatar}</span>
           <span className="profile">

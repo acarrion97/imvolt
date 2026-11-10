@@ -25,6 +25,7 @@ import {
   PlusOutlined,
   SettingOutlined,
   TeamOutlined,
+  SafetyOutlined,
 } from "@ant-design/icons";
 import type {
   ConfiguracionSistema,
@@ -46,6 +47,7 @@ import {
   useGuardarPlan,
 } from "@/presentation/hooks/usePlatformAdmin";
 import { PlantillasPage } from "@/presentation/pages/plantillas/PlantillasPage";
+import { RolesPermisosPanel } from "@/presentation/pages/administracion/RolesPermisosPanel";
 
 interface PlanFormValues {
   nombre: string;
@@ -535,6 +537,15 @@ export function AdministracionPage() {
           />
         </Card>
       ),
+    },
+    {
+      key: "roles-permisos",
+      label: (
+        <span>
+          <SafetyOutlined /> Roles y permisos
+        </span>
+      ),
+      children: <RolesPermisosPanel />,
     },
   ];
 

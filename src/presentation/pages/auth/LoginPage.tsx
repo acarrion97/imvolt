@@ -19,13 +19,16 @@ interface LoginValues {
 }
 
 export function LoginPage() {
-  const { status, login } = useAuth();
+  const { status, perfil, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { message } = App.useApp();
   const [submitting, setSubmitting] = useState(false);
 
-  const from = (location.state as { from?: string } | null)?.from ?? "/inicio";
+  const requestedDestination = (location.state as { from?: string } | null)?.from;
+  const from = perfil?.es_super_admin
+    ? "/administracion"
+    : requestedDestination ?? "/inicio";
 
   // Modo mock (sin backend) o ya autenticado: /login no corresponde.
   if (status === "disabled") return <Navigate to="/inicio" replace />;
@@ -34,8 +37,13 @@ export function LoginPage() {
   const onFinish = async (values: LoginValues) => {
     setSubmitting(true);
     try {
-      await login(values);
-      navigate(from, { replace: true });
+      const authenticatedProfile = await login(values);
+      navigate(
+        authenticatedProfile?.es_super_admin
+          ? "/administracion"
+          : requestedDestination ?? "/inicio",
+        { replace: true },
+      );
     } catch (error) {
       message.error(error instanceof ApiError ? error.message : "No se pudo iniciar sesión");
     } finally {
