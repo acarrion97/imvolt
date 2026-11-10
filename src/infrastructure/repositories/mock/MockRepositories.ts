@@ -691,7 +691,11 @@ export class MockCampanaRepository
   async generarEstrategia(
     propertyId: string,
     objective: CampanaObjetivo,
+    presupuesto: number,
+    publicoObjetivo: string,
   ): Promise<EstrategiaCampana> {
+    void presupuesto;
+    void publicoObjetivo;
     const property = seedPropiedades.find((item) => String(item.propiedad_id) === propertyId);
     if (!property) throw new Error("La propiedad no existe.");
     const location = property.ubicacion?.trim();

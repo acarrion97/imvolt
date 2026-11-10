@@ -111,7 +111,7 @@ export interface UseCases {
   aprobarCampana: { execute(campaignId: string): Promise<Campana> };
   sincronizarEstadoCampanaMeta: { execute(campaignId: string): Promise<Campana> };
   generarEstrategiaCampana: {
-    execute(propertyId: string, objective: CampanaObjetivo): Promise<EstrategiaCampana>;
+    execute(propertyId: string, objective: CampanaObjetivo, presupuesto: number, publicoObjetivo: string): Promise<EstrategiaCampana>;
   };
   publicarCampana: {
     execute(campaignId: string, idempotencyKey: string): Promise<PublicacionCampana>;
@@ -185,7 +185,7 @@ export function createUseCases(repos: Repositories): UseCases {
       execute: (campaignId) => repos.campanaRepo.sincronizarEstadoMeta(campaignId),
     },
     generarEstrategiaCampana: {
-      execute: (propertyId, objective) => repos.campanaRepo.generarEstrategia(propertyId, objective),
+      execute: (propertyId, objective, presupuesto, publicoObjetivo) => repos.campanaRepo.generarEstrategia(propertyId, objective, presupuesto, publicoObjetivo),
     },
     publicarCampana: {
       execute: (campaignId, idempotencyKey) => repos.campanaRepo.publicar(campaignId, idempotencyKey),

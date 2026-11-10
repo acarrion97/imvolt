@@ -214,8 +214,8 @@ export function useSincronizarEstadoMetaCampana() {
 export function useGenerarEstrategiaCampana() {
   const { generarEstrategiaCampana } = getContainer();
   return useMutation({
-    mutationFn: (input: { propertyId: string; objective: import("@/domain/campana").CampanaObjetivo }) =>
-      generarEstrategiaCampana.execute(input.propertyId, input.objective),
+    mutationFn: (input: { propertyId: string; objective: import("@/domain/campana").CampanaObjetivo; presupuesto: number; publicoObjetivo: string }) =>
+      generarEstrategiaCampana.execute(input.propertyId, input.objective, input.presupuesto, input.publicoObjetivo),
   });
 }
 
