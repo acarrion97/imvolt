@@ -337,10 +337,12 @@ export class RestCampanaRepository
     return http.post<Campana>(`/v1/campaigns/${campaignId}/sync-status`, {});
   }
 
-  generarEstrategia(propertyId: string, objective: CampanaObjetivo): Promise<EstrategiaCampana> {
+  generarEstrategia(propertyId: string, objective: CampanaObjetivo, presupuesto: number, publicoObjetivo: string): Promise<EstrategiaCampana> {
     return http.post<EstrategiaCampana>("/v1/campaigns/strategist", {
       property_id: propertyId,
       objetivo: objective,
+      presupuesto,
+      publico_objetivo: publicoObjetivo,
     });
   }
 

@@ -70,6 +70,7 @@ interface FormValues {
   objetivo: CampanaObjetivo;
   destino: CampanaDestino;
   presupuesto_maximo: number;
+  publico_objetivo?: string;
   titulo?: string | null;
   copy: string;
   cta?: string | null;
@@ -143,6 +144,7 @@ export function CampanasPage() {
   const objetivo = Form.useWatch("objetivo", form);
   const destino = Form.useWatch("destino", form);
   const presupuesto = Form.useWatch("presupuesto_maximo", form);
+  const publicoObjetivo = Form.useWatch("publico_objetivo", form);
   const copy = Form.useWatch("copy", form);
   const fechas = Form.useWatch("fechas", form);
   const selectedConnectionId = Form.useWatch("connection_id", form);
@@ -177,13 +179,13 @@ export function CampanasPage() {
   }, [locationQuery]);
 
   const handleGenerarEstrategia = async () => {
-    if (!propertyId || !objetivo) {
-      message.warning("Selecciona una propiedad y un objetivo para generar la estrategia.");
+    if (!propertyId || !objetivo || !presupuesto || !publicoObjetivo?.trim()) {
+      message.warning("Completa propiedad, objetivo, presupuesto y público objetivo para generar la estrategia.");
       return;
     }
     try {
       setEstrategia(
-        await generarEstrategia.mutateAsync({ propertyId, objective: objetivo }),
+        await generarEstrategia.mutateAsync({ propertyId, objective: objetivo, presupuesto: Number(presupuesto), publicoObjetivo: publicoObjetivo.trim() }),
       );
     } catch (error) {
       message.error(error instanceof Error ? error.message : "No se pudo generar la estrategia.");
@@ -800,6 +802,13 @@ export function CampanasPage() {
               </div>
 
               <div className="field full">
+                <span className="lbl">Público objetivo para la estrategia</span>
+                <Form.Item name="publico_objetivo" noStyle rules={[{ required: true, min: 2, max: 500, message: "Describe el público objetivo (2 a 500 caracteres)." }]}>
+                  <Input maxLength={500} placeholder="Ej: Familias que buscan vivienda cerca de servicios" />
+                </Form.Item>
+              </div>
+
+              <div className="field full">
                 <span className="lbl">Copy del anuncio</span>
                 <Form.Item
                   name="copy"
@@ -818,7 +827,7 @@ export function CampanasPage() {
                   className="btn btn-soft"
                   style={{ marginTop: 8 }}
                   onClick={() => void handleGenerarEstrategia()}
-                  disabled={strategyPending || !propertyId || !objetivo}
+                  disabled={strategyPending || !propertyId || !objetivo || !presupuesto || !publicoObjetivo?.trim()}
                 >
                   <BulbOutlined /> {strategyPending ? "Generando…" : "Generar estrategia y variantes A/B"}
                 </button>
@@ -930,6 +939,23 @@ export function CampanasPage() {
               Propuestas construidas únicamente con los datos registrados en la ficha. Revisa y
               confirma precio, disponibilidad y condiciones antes de publicar.
             </p>
+            <div className="card card-pad" style={{ display: "grid", gap: 8 }}>
+              <h3 style={{ margin: 0 }}>Contexto de la estrategia</h3>
+              <p style={{ margin: 0 }}><strong>Presupuesto diario:</strong> {estrategia.presupuesto == null ? "—" : formatPrecio(estrategia.presupuesto)}</p>
+              <p style={{ margin: 0 }}><strong>Público objetivo:</strong> {estrategia.publico_objetivo ?? "—"}</p>
+              {estrategia.generador_version && <p style={{ margin: 0 }}><strong>Versión del generador:</strong> {estrategia.generador_version}</p>}
+              {estrategia.estrategia_id != null && <p style={{ margin: 0 }}><strong>Registro de auditoría:</strong> #{estrategia.estrategia_id}{estrategia.creado_en ? ` · ${formatFecha(estrategia.creado_en)}` : ""}</p>}
+              <div>
+                <strong>Datos confirmados de la ficha</strong>
+                {Object.keys(estrategia.datos_confirmados ?? {}).length ? (
+                  <ul>{Object.entries(estrategia.datos_confirmados ?? {}).map(([field, value]) => <li key={field}><strong>{field.replaceAll("_", " ")}:</strong> {String(value)}</li>)}</ul>
+                ) : <p className="sub">La ficha no contiene datos confirmados.</p>}
+              </div>
+              <div>
+                <strong>Datos faltantes</strong>
+                {estrategia.datos_faltantes?.length ? <ul>{estrategia.datos_faltantes.map((field) => <li key={field}>{field.replaceAll("_", " ")}</li>)}</ul> : <p className="sub">No se identificaron campos faltantes.</p>}
+              </div>
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
               {estrategia.variantes_ab.map((variant) => (
                 <div key={variant.variante} className="card card-pad">
@@ -949,6 +975,12 @@ export function CampanasPage() {
               ))}
             </div>
             <section>
+              <h3>Ángulos recomendados</h3>
+              <div style={{ display: "grid", gap: 8 }}>
+                {estrategia.angulos.map((angle) => <div className="notice" key={angle.id}><strong>{angle.nombre}</strong><p>{angle.enfoque}</p><p>{angle.copy_sugerido}</p></div>)}
+              </div>
+              <h3>Guion audiovisual</h3>
+              <p>{estrategia.guion_audiovisual}</p>
               <h3>Formatos recomendados</h3>
               <p>{estrategia.formatos_recomendados.join(" · ")}</p>
               <h3>Guion de 15 segundos</h3>

@@ -79,6 +79,13 @@ export interface VarianteEstrategia {
 }
 
 export interface EstrategiaCampana {
+  estrategia_id?: number;
+  creado_en?: string;
+  presupuesto?: number;
+  publico_objetivo?: string;
+  datos_confirmados?: Record<string, string | number>;
+  datos_faltantes?: string[];
+  generador_version?: string;
   propiedad: string;
   objetivo: string;
   angulos: Array<{ id: string; nombre: string; enfoque: string; copy_sugerido: string }>;
@@ -101,6 +108,6 @@ export interface CampanaRepository extends CrudRepository<Campana, string, Campa
   solicitarAprobacion(campaignId: string): Promise<Campana>;
   aprobar(campaignId: string): Promise<Campana>;
   sincronizarEstadoMeta(campaignId: string): Promise<Campana>;
-  generarEstrategia(propertyId: string, objective: CampanaObjetivo): Promise<EstrategiaCampana>;
+  generarEstrategia(propertyId: string, objective: CampanaObjetivo, presupuesto: number, publicoObjetivo: string): Promise<EstrategiaCampana>;
   publicar(campaignId: string, idempotencyKey: string): Promise<PublicacionCampana>;
 }
