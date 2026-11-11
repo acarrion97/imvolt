@@ -1,9 +1,14 @@
 import react from "@vitejs/plugin-react";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 import { defineConfig, loadEnv } from "vite";
+import fs from "node:fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const localCertPath = path.resolve(__dirname, ".cert/localhost.pem");
+const localKeyPath = path.resolve(__dirname, ".cert/localhost-key.pem");
+const hasTrustedLocalCert = fs.existsSync(localCertPath) && fs.existsSync(localKeyPath);
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -14,8 +19,16 @@ export default defineConfig(({ mode }) => {
   };
 
   return {
-    plugins: [react()],
+    plugins: [react(), ...(hasTrustedLocalCert ? [] : [basicSsl()])],
     server: {
+      ...(hasTrustedLocalCert
+        ? {
+            https: {
+              cert: fs.readFileSync(localCertPath),
+              key: fs.readFileSync(localKeyPath),
+            },
+          }
+        : {}),
       allowedHosts: ["mothproof-manlike-vocalist.ngrok-free.dev"],
       proxy: {
         "/api": {
