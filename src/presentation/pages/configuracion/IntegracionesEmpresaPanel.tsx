@@ -97,6 +97,7 @@ export function IntegracionesEmpresaPanel() {
 
     const mensajes: Record<string, [string, "success" | "warning" | "error"]> = {
       connected: ["Cuenta(s) de Meta conectada(s).", "success"],
+      connected_limited: ["Autorización de Meta guardada para pruebas. Faltan ads_read y ads_management; las funciones de anuncios siguen deshabilitadas.", "warning"],
       cancelled: ["Cancelaste la conexión con Meta.", "warning"],
       no_accounts: ["Meta autorizó el acceso, pero no encontramos cuentas publicitarias activas.", "warning"],
       error: ["No se pudo completar la conexión con Meta. Inténtalo otra vez.", "error"],
