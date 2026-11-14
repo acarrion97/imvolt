@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Alert,
   App,
@@ -18,6 +19,7 @@ import {
   DeleteOutlined,
   PlusOutlined,
   SyncOutlined,
+  WhatsAppOutlined,
 } from "@ant-design/icons";
 import {
   useConexiones,
@@ -29,6 +31,7 @@ import {
   useSincronizarLotesAlMando,
 } from "@/presentation/hooks";
 import { resolveApiUrl } from "@/infrastructure/http/apiUrl";
+import { http } from "@/infrastructure/http/httpClient";
 import { useAuth } from "@/presentation/auth/AuthProvider";
 import type { Conexion } from "@/domain/conexion";
 import type {
@@ -87,6 +90,19 @@ export function IntegracionesEmpresaPanel() {
   );
   const cuentasMeta = (conexiones ?? []).filter((item) => item.estado === "conectada");
   const metaLoginConfigId = import.meta.env.META_LOGIN_CONFIG_ID?.trim();
+  const whatsappStatus = useQuery({
+    queryKey: ["whatsapp_webhook_status"],
+    queryFn: () =>
+      http.get<{
+        webhook_configured: boolean;
+        signature_validation: boolean;
+        receives_events: boolean;
+        processes_messages: boolean;
+      }>("/webhooks/whatsapp/status"),
+    enabled: ES_REST,
+    retry: false,
+    staleTime: 60_000,
+  });
   const conexionDe = (integracionId: number) =>
     data?.conexiones.find((item) => item.integracion_id === integracionId);
 
@@ -294,6 +310,49 @@ export function IntegracionesEmpresaPanel() {
                 Conectar con Facebook
               </Button>
             </div>
+            <div className="integration">
+              <span className="connect-logo"><WhatsAppOutlined /></span>
+              <span className="info">
+                <b>WhatsApp Business</b>
+                <span>
+                  {whatsappStatus.data?.receives_events
+                    ? "Webhook configurado y listo para recibir eventos."
+                    : "Webhook pendiente de configuración en el API."}
+                </span>
+                <span>
+                  Estado de recepción y validación de eventos de Meta.
+                </span>
+              </span>
+              <Tag color={whatsappStatus.data?.receives_events ? "green" : "orange"}>
+                {whatsappStatus.isLoading
+                  ? "Verificando"
+                  : whatsappStatus.data?.receives_events
+                    ? "Habilitado"
+                    : "Pendiente"}
+              </Tag>
+            </div>
+            {whatsappStatus.data && (
+              <Alert
+                type={whatsappStatus.data.processes_messages ? "success" : "info"}
+                showIcon
+                message="Capacidades de WhatsApp"
+                description={
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    <li>Webhook: {whatsappStatus.data.webhook_configured ? "configurado" : "pendiente"}</li>
+                    <li>Validación de firma: {whatsappStatus.data.signature_validation ? "habilitada" : "pendiente"}</li>
+                    <li>Procesamiento automático de mensajes: {whatsappStatus.data.processes_messages ? "habilitado" : "no implementado aún"}</li>
+                  </ul>
+                }
+              />
+            )}
+            {whatsappStatus.error && (
+              <Alert
+                type="warning"
+                showIcon
+                message="No se pudo verificar WhatsApp"
+                description="El API no respondió al estado del webhook. Revisa el despliegue del backend."
+              />
+            )}
             {!import.meta.env.META_APP_ID && (
               <Alert
                 type="warning"
