@@ -16,8 +16,10 @@ import {
 import {
   ApiOutlined,
   CloudServerOutlined,
+  CheckCircleOutlined,
   DeleteOutlined,
   PlusOutlined,
+  ReloadOutlined,
   SyncOutlined,
   WhatsAppOutlined,
 } from "@ant-design/icons";
@@ -337,11 +339,28 @@ export function IntegracionesEmpresaPanel() {
                 showIcon
                 message="Capacidades de WhatsApp"
                 description={
-                  <ul style={{ margin: 0, paddingLeft: 18 }}>
-                    <li>Webhook: {whatsappStatus.data.webhook_configured ? "configurado" : "pendiente"}</li>
-                    <li>Validación de firma: {whatsappStatus.data.signature_validation ? "habilitada" : "pendiente"}</li>
-                    <li>Procesamiento automático de mensajes: {whatsappStatus.data.processes_messages ? "habilitado" : "no implementado aún"}</li>
-                  </ul>
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <CheckCircleOutlined style={{ color: whatsappStatus.data.webhook_configured ? "#16a34a" : "#d97706" }} />
+                      <span>Webhook {whatsappStatus.data.webhook_configured ? "configurado" : "pendiente"}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <CheckCircleOutlined style={{ color: whatsappStatus.data.signature_validation ? "#16a34a" : "#d97706" }} />
+                      <span>Validación de firma {whatsappStatus.data.signature_validation ? "habilitada" : "pendiente"}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <CheckCircleOutlined style={{ color: whatsappStatus.data.processes_messages ? "#16a34a" : "#64748b" }} />
+                      <span>Procesamiento de mensajes {whatsappStatus.data.processes_messages ? "habilitado" : "pendiente de implementar"}</span>
+                    </div>
+                    <Button
+                      icon={<ReloadOutlined />}
+                      loading={whatsappStatus.isFetching}
+                      onClick={() => void whatsappStatus.refetch()}
+                      style={{ justifySelf: "start" }}
+                    >
+                      Ejecutar prueba de conexión
+                    </Button>
+                  </div>
                 }
               />
             )}
