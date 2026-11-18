@@ -95,8 +95,13 @@ crea la cuenta con `POST /api/auth/register` y entra con las credenciales nuevas
 ## Seguridad: HTTPS/TLS, secretos y mínimos privilegios
 
 - **HTTPS/TLS:** `VITE_API_URL` se valida al arrancar (`infrastructure/http/apiUrl.ts`):
-  en producción solo `https://`; en desarrollo `http://` únicamente hacia `localhost`;
-  nunca credenciales embebidas. `vercel.json` añade HSTS, CSP (`upgrade-insecure-requests`,
+  en producción solo `https://`; en desarrollo se admite `http://` hacia cualquier
+  host (localhost, IP de la red local, ngrok); nunca credenciales embebidas.
+  El dev server de Vite arranca en **HTTP** por defecto (`http://localhost:5173`)
+  para poder llamar al API local sin "mixed content"; pon `VITE_HTTPS=true` en
+  `frontend/.env` si necesitas HTTPS (OAuth de Meta, abrir desde el móvil), o
+  deja un certificado en `frontend/.cert/localhost.pem` + `localhost-key.pem`.
+  `vercel.json` añade HSTS, CSP (`upgrade-insecure-requests`,
   `frame-ancestors 'none'`, `object-src 'none'`), `nosniff`, `Referrer-Policy` y
   `Permissions-Policy`. Si despliegas en otro host, replica esas cabeceras allí.
 - **Secretos:** toda variable `VITE_*` se incrusta en el bundle público, así que aquí no

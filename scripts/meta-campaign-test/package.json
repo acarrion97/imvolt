@@ -4,7 +4,7 @@
   "description": "",
   "main": "create-campaign.mjs",
   "scripts": {
-    "validar": "META_VALIDATE_ONLY=1 node --env-file=.env create-campaign.mjs",
+    "validar": "node --env-file=.env create-campaign.mjs --validate-only",
     "crear": "node --env-file=.env create-campaign.mjs"
   },
   "keywords": [],

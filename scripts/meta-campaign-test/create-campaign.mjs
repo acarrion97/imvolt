@@ -5,6 +5,9 @@ const AdAccount = bizSdk.AdAccount;
 const access_token = process.env.META_ACCESS_TOKEN;
 const ad_account_id = process.env.META_AD_ACCOUNT_ID || 'act_1118923347168196';
 const campaign_name = process.env.META_CAMPAIGN_NAME || `IMVOLT test ${new Date().toISOString()}`;
+// META_VALIDATE_ONLY=1 o `npm run validar` (--validate-only) → Meta valida sin crear.
+const validate_only =
+  process.env.META_VALIDATE_ONLY === '1' || process.argv.includes('--validate-only');
 
 if (!access_token) {
   console.error('Falta META_ACCESS_TOKEN');
@@ -29,7 +32,7 @@ void (async function () {
       is_adset_budget_sharing_enabled: false,
     };
     // META_VALIDATE_ONLY=1 → Meta valida la petición pero NO crea la campaña
-    if (process.env.META_VALIDATE_ONLY === '1') {
+    if (validate_only) {
       params.execution_options = ['validate_only'];
     }
     const campaign = await new AdAccount(ad_account_id).createCampaign(fields, params);

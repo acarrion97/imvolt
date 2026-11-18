@@ -1,17 +1,16 @@
 /**
- * Resolución y validación de la URL base del API (HTTPS/TLS).
+ * Resolución y validación de la URL base del API.
  *
  * Reglas:
  *  - Producción: solo `https://`. El token Bearer y los datos de la
  *    organización nunca deben viajar en claro.
- *  - Desarrollo: se tolera `http://` únicamente hacia loopback
- *    (`localhost`, `127.0.0.1`, `[::1]`).
+ *  - Desarrollo: se admite `http://` hacia cualquier host (localhost, IP de la
+ *    red local, ngrok…). Así el dev server en HTTP puede llamar al API local
+ *    sin que el navegador bloquee la petición por "mixed content".
  *  - Nunca se aceptan credenciales embebidas (`https://user:pass@host`).
  *
  * Devuelve la URL sin barras finales, o lanza `Error` con el motivo.
  */
-const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
-
 export function resolveApiUrl(raw: string | undefined, isProd: boolean): string {
   const value = (raw ?? "").trim();
   if (!value) return "";
@@ -29,13 +28,13 @@ export function resolveApiUrl(raw: string | undefined, isProd: boolean): string 
 
   if (url.protocol === "https:") return value.replace(/\/+$/, "");
 
-  if (url.protocol === "http:" && !isProd && LOOPBACK.has(url.hostname)) {
+  if (url.protocol === "http:" && !isProd) {
     return value.replace(/\/+$/, "");
   }
 
   throw new Error(
     isProd
       ? "VITE_API_URL debe usar https:// en producción (TLS obligatorio)."
-      : "VITE_API_URL debe usar https://; http:// solo se admite hacia localhost en desarrollo.",
+      : "VITE_API_URL debe usar https:// o, en desarrollo, http://.",
   );
 }

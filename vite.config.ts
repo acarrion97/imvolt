@@ -12,6 +12,23 @@ const hasTrustedLocalCert = fs.existsSync(localCertPath) && fs.existsSync(localK
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+
+  /**
+   * HTTPS en el dev server.
+   *
+   * Por defecto el dev server va en HTTP plano para poder llamar al API local
+   * (`VITE_API_URL=http://localhost:3000/api`): si Vite sirviera HTTPS, el
+   * navegador bloquearía el API por "mixed content".
+   *
+   * - `.cert/localhost.pem` + `.cert/localhost-key.pem` → HTTPS con ese certificado.
+   * - `VITE_HTTPS=true` → HTTPS autofirmado (plugin basic-ssl). Útil para probar
+   *   OAuth de Meta u otras APIs que exigen HTTPS, o para abrir la app desde el
+   *   móvil por la IP de la red.
+   * - Sin nada de lo anterior → `http://localhost:5173`.
+   */
+  const httpsFlag = env.VITE_HTTPS === "true";
+  const useHttps = hasTrustedLocalCert || httpsFlag;
+
   const publicMetaEnv = {
     META_APP_ID: env.META_APP_ID || env.VITE_META_APP_ID || "",
     META_LOGIN_CONFIG_ID: env.META_LOGIN_CONFIG_ID || env.VITE_META_LOGIN_CONFIG_ID || "",
@@ -19,7 +36,7 @@ export default defineConfig(({ mode }) => {
   };
 
   return {
-    plugins: [react(), ...(hasTrustedLocalCert ? [] : [basicSsl()])],
+    plugins: [react(), ...(useHttps && !hasTrustedLocalCert ? [basicSsl()] : [])],
     server: {
       ...(hasTrustedLocalCert
         ? {

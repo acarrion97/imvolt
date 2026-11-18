@@ -6,6 +6,7 @@ import {
   ControlOutlined,
   HomeOutlined,
   LayoutOutlined,
+  MessageOutlined,
   NotificationOutlined,
   RobotOutlined,
   SettingOutlined,
@@ -36,6 +37,7 @@ const ESPACIO: NavItem[] = [
   { key: "/plantillas", label: "Plantillas", icon: <LayoutOutlined /> },
   { key: "/campanas", label: "Campañas Meta", icon: <NotificationOutlined /> },
   { key: "/contactos", label: "Contactos", icon: <UsergroupAddOutlined /> },
+  { key: "/whatsapp", label: "WhatsApp Business", icon: <MessageOutlined /> },
   { key: "/analitica", label: "Analítica", icon: <BarChartOutlined /> },
 ];
 

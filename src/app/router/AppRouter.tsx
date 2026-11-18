@@ -12,6 +12,7 @@ import { BrandKitPage } from "@/presentation/pages/brand-kit/BrandKitPage";
 import { EstudioPage } from "@/presentation/pages/estudio/EstudioPage";
 import { CampanasPage } from "@/presentation/pages/campanas/CampanasPage";
 import { ContactosPage } from "@/presentation/pages/contactos/ContactosPage";
+import { WhatsAppDemoPage } from "@/presentation/pages/whatsapp/WhatsAppDemoPage";
 import { AnaliticaPage } from "@/presentation/pages/analitica/AnaliticaPage";
 import { MediosPage } from "@/presentation/pages/medios/MediosPage";
 import { EquipoPage } from "@/presentation/pages/equipo/EquipoPage";
@@ -53,6 +54,7 @@ export function AppRouter() {
           <Route path="/estudio" element={<EstudioPage />} />
           <Route path="/campanas" element={<CampanasPage />} />
           <Route path="/contactos" element={<ContactosPage />} />
+          <Route path="/whatsapp" element={<WhatsAppDemoPage />} />
           <Route path="/analitica" element={<AnaliticaPage />} />
           <Route path="/medios" element={<MediosPage />} />
           <Route

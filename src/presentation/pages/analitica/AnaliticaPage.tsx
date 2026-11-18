@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, Button, DatePicker, Select, Spin } from "antd";
+import { Alert, Button, DatePicker, Select, Spin, Tag } from "antd";
 import { AimOutlined, DollarOutlined, RiseOutlined, TeamOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { AUTH_ENABLED } from "@/presentation/auth/AuthProvider";
@@ -34,16 +34,16 @@ export function AnaliticaPage() {
   const defaultDesde = dayjs().subtract(29, "day").format("YYYY-MM-DD");
   const [desdeDraft, setDesdeDraft] = useState(defaultDesde);
   const [hastaDraft, setHastaDraft] = useState(defaultHasta);
+  const [fuenteDraft, setFuenteDraft] = useState<"meta" | "demo">("meta");
   const [sistemaDesdeDraft, setSistemaDesdeDraft] = useState(defaultDesde);
   const [sistemaHastaDraft, setSistemaHastaDraft] = useState(defaultHasta);
   const [sistemaRango, setSistemaRango] = useState({ desde: defaultDesde, hasta: defaultHasta });
   const [campaniaDraft, setCampaniaDraft] = useState<string>();
-  const [filtros, setFiltros] = useState({ desde: defaultDesde, hasta: defaultHasta, campania_id: undefined as string | undefined, offset: 0 });
+  const [filtros, setFiltros] = useState({ desde: defaultDesde, hasta: defaultHasta, campania_id: undefined as string | undefined, offset: 0, fuente: "meta" as "meta" | "demo" });
   const analytics = useCampaignAnalytics({
     ...filtros,
-    fuente: "meta",
     limit: PAGE_SIZE,
-    enabled: AUTH_ENABLED && puedeVer && metaConfigurado,
+    enabled: AUTH_ENABLED && puedeVer && (filtros.fuente === "demo" || metaConfigurado),
   });
 
   const leadsSistema = (leads ?? []).filter((lead) => {
@@ -100,7 +100,7 @@ export function AnaliticaPage() {
   const sistemaDateRangeValid = Boolean(sistemaDesdeDraft && sistemaHastaDraft && sistemaDesdeDraft <= sistemaHastaDraft &&
     dayjs(sistemaHastaDraft).diff(dayjs(sistemaDesdeDraft), "day") <= 90);
 
-  const aplicarFiltros = () => setFiltros({ desde: desdeDraft, hasta: hastaDraft, campania_id: campaniaDraft, offset: 0 });
+  const aplicarFiltros = () => setFiltros({ desde: desdeDraft, hasta: hastaDraft, campania_id: campaniaDraft, offset: 0, fuente: fuenteDraft });
   const aplicarFiltroSistema = () => setSistemaRango({ desde: sistemaDesdeDraft, hasta: sistemaHastaDraft });
   const cambiarPagina = (offset: number) => setFiltros((current) => ({ ...current, offset }));
 
@@ -166,7 +166,7 @@ export function AnaliticaPage() {
       {!AUTH_ENABLED && <Alert type="info" showIcon message="La sección Meta requiere la API autenticada y una conexión activa." style={{ marginBottom: 16 }} />}
       {AUTH_ENABLED && !metaConfigurado && <Alert type="info" showIcon message="Meta no está configurado para esta empresa. Las métricas de Meta se ocultan hasta conectar una cuenta autenticada." style={{ marginBottom: 16 }} />}
 
-      {metaConfigurado && <section>
+      {(metaConfigurado || filtros.fuente === "demo") && <section>
       <h2 style={{ fontSize: 19, marginBottom: 12 }}>Métricas de Meta Ads</h2>
 
       <section className="card card-pad" aria-label="Filtros de analítica de Meta" style={{ marginBottom: 18 }}>
@@ -185,9 +185,17 @@ export function AnaliticaPage() {
               }}
             />
           </label>
-          <label className="field" style={{ minWidth: 170 }}>
+          <label className="field" style={{ minWidth: 240 }}>
             <span className="lbl">Fuente</span>
-            <Select value="meta" options={[{ value: "meta", label: "Meta Ads" }]} disabled style={{ width: "100%" }} />
+            <Select
+              value={fuenteDraft}
+              onChange={(value) => setFuenteDraft(value)}
+              options={[
+                { value: "meta", label: "Meta Ads · datos reales" },
+                { value: "demo", label: "Demostración · datos de ejemplo" },
+              ]}
+              style={{ width: "100%" }}
+            />
           </label>
           <label className="field" style={{ minWidth: 230 }}>
             <span className="lbl">Campaña</span>
@@ -221,7 +229,10 @@ export function AnaliticaPage() {
       <div className="card card-pad" style={{ marginTop: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start", flexWrap: "wrap" }}>
           <div>
-            <h2 style={{ fontSize: 17, marginBottom: 4 }}>Campañas</h2>
+            <h2 style={{ fontSize: 17, marginBottom: 4 }}>
+              Campañas
+              {filtros.fuente === "demo" && <Tag color="gold" style={{ marginLeft: 8, verticalAlign: "middle" }}>Datos de demostración</Tag>}
+            </h2>
             <p className="sub" style={{ marginBottom: 12 }}>CTR = clics / impresiones × 100. CPL = gasto / leads. Si el denominador es cero o no hay dato, se muestra como no disponible.</p>
           </div>
           {analytics.data && <span className="delta muted">Consulta: {dayjs(analytics.data.datos.actualizado_en).format("DD/MM/YYYY HH:mm")}</span>}
@@ -238,7 +249,7 @@ export function AnaliticaPage() {
                 <td style={{ padding: "10px 8px" }}>{metric(item.leads, (value) => integer.format(value))}</td>
                 <td style={{ padding: "10px 8px" }}>{metric(item.ctr, (value) => `${value.toFixed(2)}%`)}</td>
                 <td style={{ padding: "10px 8px" }}>{metric(item.cpl, (value) => money.format(value))}</td>
-                <td style={{ padding: "10px 8px" }}>{item.metricas_disponibles ? "Disponible" : "No disponible"}</td>
+                <td style={{ padding: "10px 8px" }}>{item.metricas_disponibles ? "Disponible" : item.actualizado_en ? "Consultado · sin datos" : "No disponible"}</td>
               </tr>)}</tbody>
             </table>
           </div>

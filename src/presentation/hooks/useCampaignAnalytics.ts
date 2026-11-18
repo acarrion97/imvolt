@@ -4,7 +4,7 @@ import { http } from "@/infrastructure/http/httpClient";
 export interface CampaignAnalyticsItem {
   campaign_id: string;
   campaign_name: string | null;
-  fuente: "meta";
+  fuente: "meta" | "demo";
   gasto: number | null;
   impresiones: number | null;
   clics: number | null;
@@ -25,7 +25,7 @@ export interface CampaignAnalyticsResponse {
 export interface CampaignAnalyticsFilters {
   desde: string;
   hasta: string;
-  fuente: "meta";
+  fuente: "meta" | "demo";
   campania_id?: string;
   limit: number;
   offset: number;
