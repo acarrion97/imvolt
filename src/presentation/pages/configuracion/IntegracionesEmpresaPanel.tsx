@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Alert,
   App,
@@ -15,9 +16,12 @@ import {
 import {
   ApiOutlined,
   CloudServerOutlined,
+  CheckCircleOutlined,
   DeleteOutlined,
   PlusOutlined,
+  ReloadOutlined,
   SyncOutlined,
+  WhatsAppOutlined,
 } from "@ant-design/icons";
 import {
   useConexiones,
@@ -29,6 +33,7 @@ import {
   useSincronizarLotesAlMando,
 } from "@/presentation/hooks";
 import { resolveApiUrl } from "@/infrastructure/http/apiUrl";
+import { http } from "@/infrastructure/http/httpClient";
 import { useAuth } from "@/presentation/auth/AuthProvider";
 import type { Conexion } from "@/domain/conexion";
 import type {
@@ -87,6 +92,36 @@ export function IntegracionesEmpresaPanel() {
   );
   const cuentasMeta = (conexiones ?? []).filter((item) => item.estado === "conectada");
   const metaLoginConfigId = import.meta.env.META_LOGIN_CONFIG_ID?.trim();
+  const whatsappStatus = useQuery({
+    queryKey: ["whatsapp_webhook_status"],
+    queryFn: () =>
+      http.get<{
+        webhook_configured: boolean;
+        signature_validation: boolean;
+        receives_events: boolean;
+        stores_messages: boolean;
+        processes_messages: boolean;
+      }>("/webhooks/whatsapp/status"),
+    enabled: ES_REST,
+    retry: false,
+    staleTime: 60_000,
+  });
+  const whatsappMessages = useQuery({
+    queryKey: ["whatsapp_messages"],
+    queryFn: () =>
+      http.get<Array<{
+        message_id: number;
+        sender_phone: string;
+        sender_name: string | null;
+        message_type: string;
+        message_text: string | null;
+        meta_timestamp: string | null;
+        recibido_en: string;
+      }>>("/v1/whatsapp/messages"),
+    enabled: ES_REST && puedeGestionar,
+    retry: false,
+    refetchInterval: 15_000,
+  });
   const conexionDe = (integracionId: number) =>
     data?.conexiones.find((item) => item.integracion_id === integracionId);
 
@@ -294,6 +329,81 @@ export function IntegracionesEmpresaPanel() {
                 Conectar con Facebook
               </Button>
             </div>
+            <div className="integration">
+              <span className="connect-logo"><WhatsAppOutlined /></span>
+              <span className="info">
+                <b>WhatsApp Business</b>
+                <span>
+                  {whatsappStatus.data?.receives_events
+                    ? "Webhook configurado y listo para recibir eventos."
+                    : "Webhook pendiente de configuración en el API."}
+                </span>
+                <span>
+                  Estado de recepción y validación de eventos de Meta.
+                </span>
+              </span>
+              <Tag color={whatsappStatus.data?.receives_events ? "green" : "orange"}>
+                {whatsappStatus.isLoading
+                  ? "Verificando"
+                  : whatsappStatus.data?.receives_events
+                    ? "Habilitado"
+                    : "Pendiente"}
+              </Tag>
+            </div>
+            {whatsappStatus.data && (
+              <Alert
+                type={whatsappStatus.data.processes_messages ? "success" : "info"}
+                showIcon
+                message="Capacidades de WhatsApp"
+                description={
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <CheckCircleOutlined style={{ color: whatsappStatus.data.webhook_configured ? "#16a34a" : "#d97706" }} />
+                      <span>Webhook {whatsappStatus.data.webhook_configured ? "configurado" : "pendiente"}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <CheckCircleOutlined style={{ color: whatsappStatus.data.signature_validation ? "#16a34a" : "#d97706" }} />
+                      <span>Validación de firma {whatsappStatus.data.signature_validation ? "habilitada" : "pendiente"}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <CheckCircleOutlined style={{ color: whatsappStatus.data.stores_messages ? "#16a34a" : "#d97706" }} />
+                      <span>Guardado de mensajes {whatsappStatus.data.stores_messages ? "habilitado" : "pendiente de configurar"}</span>
+                    </div>
+                    <div style={{ marginTop: 8, borderTop: "1px solid #e5e7eb", paddingTop: 12 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <b>Mensajes recibidos</b>
+                        <Button size="small" icon={<ReloadOutlined />} loading={whatsappMessages.isFetching} onClick={() => void whatsappMessages.refetch()}>
+                          Actualizar
+                        </Button>
+                      </div>
+                      {whatsappMessages.data?.length ? (
+                        <div style={{ display: "grid", gap: 8 }}>
+                          {whatsappMessages.data.map((item) => (
+                            <div key={item.message_id} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 10px" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                                <b>{item.sender_name || item.sender_phone}</b>
+                                <small>{new Date(item.meta_timestamp ?? item.recibido_en).toLocaleString("es-EC")}</small>
+                              </div>
+                              <div>{item.message_text || `Mensaje de tipo ${item.message_type}`}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span>Aún no se han recibido mensajes de WhatsApp.</span>
+                      )}
+                    </div>
+                  </div>
+                }
+              />
+            )}
+            {whatsappStatus.error && (
+              <Alert
+                type="warning"
+                showIcon
+                message="No se pudo verificar WhatsApp"
+                description="El API no respondió al estado del webhook. Revisa el despliegue del backend."
+              />
+            )}
             {!import.meta.env.META_APP_ID && (
               <Alert
                 type="warning"
