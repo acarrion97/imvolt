@@ -79,6 +79,18 @@ export function IntegracionesEmpresaPanel() {
     integracion: IntegracionCatalogo;
     existente?: EmpresaIntegracionConfig;
   } | null>(null);
+  const [threadsAccount, setThreadsAccount] = useState<{
+    username: string;
+    id: string;
+    connected_at?: string;
+  } | null>(() => {
+    try {
+      const saved = localStorage.getItem("imvolt_threads_account");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
 
   const proveedores = useMemo(
     () =>
@@ -128,20 +140,45 @@ export function IntegracionesEmpresaPanel() {
   useEffect(() => {
     const url = new URL(window.location.href);
     const resultado = url.searchParams.get("meta");
-    if (!resultado) return;
+    if (resultado) {
+      const mensajes: Record<string, [string, "success" | "warning" | "error"]> = {
+        connected: ["Cuenta(s) de Meta conectada(s).", "success"],
+        connected_limited: ["Autorización de Meta guardada para pruebas. Faltan ads_read y ads_management; las funciones de anuncios siguen deshabilitadas.", "warning"],
+        cancelled: ["Cancelaste la conexión con Meta.", "warning"],
+        no_accounts: ["Meta autorizó el acceso, pero no encontramos cuentas publicitarias activas.", "warning"],
+        error: ["No se pudo completar la conexión con Meta. Inténtalo otra vez.", "error"],
+      };
+      const resultadoConocido = mensajes[resultado];
+      if (resultadoConocido) message[resultadoConocido[1]](resultadoConocido[0]);
+      url.searchParams.delete("meta");
+    }
 
-    const mensajes: Record<string, [string, "success" | "warning" | "error"]> = {
-      connected: ["Cuenta(s) de Meta conectada(s).", "success"],
-      connected_limited: ["Autorización de Meta guardada para pruebas. Faltan ads_read y ads_management; las funciones de anuncios siguen deshabilitadas.", "warning"],
-      cancelled: ["Cancelaste la conexión con Meta.", "warning"],
-      no_accounts: ["Meta autorizó el acceso, pero no encontramos cuentas publicitarias activas.", "warning"],
-      error: ["No se pudo completar la conexión con Meta. Inténtalo otra vez.", "error"],
-    };
-    const resultadoConocido = mensajes[resultado];
-    if (resultadoConocido) message[resultadoConocido[1]](resultadoConocido[0]);
+    const threadsRes = url.searchParams.get("threads");
+    if (threadsRes) {
+      if (threadsRes === "connected") {
+        const username = url.searchParams.get("threads_username") || "";
+        const id = url.searchParams.get("threads_id") || "";
+        const account = { username, id, connected_at: new Date().toISOString() };
+        setThreadsAccount(account);
+        try {
+          localStorage.setItem("imvolt_threads_account", JSON.stringify(account));
+        } catch {
+          // ignore
+        }
+        message.success(`Cuenta de Threads @${username || "autorizada"} conectada con éxito.`);
+      } else if (threadsRes === "cancelled") {
+        message.warning("Cancelaste la conexión con Threads.");
+      } else if (threadsRes === "error") {
+        message.error("No se pudo completar la conexión con Threads. Revisa la configuración del API.");
+      }
+      url.searchParams.delete("threads");
+      url.searchParams.delete("threads_username");
+      url.searchParams.delete("threads_id");
+    }
 
-    url.searchParams.delete("meta");
-    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    if (resultado || threadsRes) {
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    }
   }, [message]);
 
   useEffect(() => {
@@ -264,6 +301,28 @@ export function IntegracionesEmpresaPanel() {
         disconnectError instanceof Error ? disconnectError.message : "No se pudo desconectar la cuenta.",
       );
     }
+  };
+
+  const iniciarThreadsOAuth = () => {
+    try {
+      const apiBase = resolveApiUrl(import.meta.env.VITE_API_URL, import.meta.env.PROD);
+      if (!apiBase) throw new Error("Configura VITE_API_URL en frontend/.env.");
+      window.location.assign(`${apiBase}/v1/threads/oauth/start`);
+    } catch (err) {
+      message.error(
+        err instanceof Error ? err.message : "No se pudo iniciar la conexión con Threads.",
+      );
+    }
+  };
+
+  const desconectarThreads = () => {
+    setThreadsAccount(null);
+    try {
+      localStorage.removeItem("imvolt_threads_account");
+    } catch {
+      // ignore
+    }
+    message.success("Cuenta de Threads desconectada.");
   };
 
   return (
@@ -402,6 +461,64 @@ export function IntegracionesEmpresaPanel() {
                 showIcon
                 message="No se pudo verificar WhatsApp"
                 description="El API no respondió al estado del webhook. Revisa el despliegue del backend."
+              />
+            )}
+            <div className="integration">
+              <span className="connect-logo" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="22" height="22" viewBox="0 0 192 192" fill="currentColor">
+                  <path d="M141.537 88.9883C140.71 88.5919 139.87 88.2109 139.019 87.8451C137.587 60.5305 122.241 44.0583 96.6579 44.0583C70.4705 44.0583 53.6499 62.4533 53.6499 90.0763C53.6499 118.067 71.0768 136.216 96.6579 136.216C112.564 136.216 124.619 128.879 130.686 115.485L113.826 105.78C109.919 113.844 103.585 117.828 96.6579 117.828C81.8211 117.828 72.8444 105.78 72.0437 87.8451C79.8732 89.9691 88.1697 91.0772 96.6579 91.0772C101.408 91.0772 106.012 90.7516 110.428 90.1171C109.782 99.4975 104.787 104.428 96.6579 104.428C91.4335 104.428 86.8523 101.693 85.0658 97.4363L68.7495 107.039C73.3444 116.175 83.8967 122.816 96.6579 122.816C115.228 122.816 128.005 111.435 128.784 89.7042C133.023 91.5036 137.042 93.6823 140.796 96.2238C145.452 99.3769 148.063 103.743 148.063 108.384C148.063 118.239 139.771 125.795 125.688 125.795C108.309 125.795 95.0449 114.502 94.6748 97.2343H76.2872C76.7118 124.788 98.4111 144.183 125.688 144.183C148.742 144.183 166.45 130.638 166.45 108.384C166.45 99.8247 161.464 92.4288 152.88 87.2796C149.336 85.1507 145.498 83.3768 141.537 81.9883V88.9883ZM96.6579 72.6884C108.823 72.6884 115.545 80.5957 116.634 92.4347C110.428 93.3087 103.738 93.7744 96.6579 93.7744C87.6973 93.7744 80.4497 92.8385 75.1278 91.0772C76.2255 79.9197 83.6705 72.6884 96.6579 72.6884Z" />
+                </svg>
+              </span>
+              <span className="info">
+                <b>Threads</b>
+                <span>
+                  {threadsAccount
+                    ? `Cuenta autorizada: @${threadsAccount.username}`
+                    : "Conecta una cuenta de Threads autorizada para consultar la información básica de su perfil."}
+                </span>
+                <span>
+                  IMVOLT utilizaría este permiso para conectar una cuenta de Threads autorizada y permitir al usuario consultar la información básica de esa cuenta dentro de su espacio de trabajo. No se utiliza para acceder a mensajes privados ni para publicar sin una acción expresa del usuario.
+                </span>
+              </span>
+              <Space>
+                {threadsAccount ? (
+                  <>
+                    <Tag color="green">Conectada</Tag>
+                    <Popconfirm
+                      title="¿Desconectar cuenta de Threads?"
+                      description="Se desvinculará la cuenta de Threads de la sesión actual."
+                      okText="Desconectar"
+                      cancelText="Cancelar"
+                      onConfirm={desconectarThreads}
+                    >
+                      <Button danger icon={<DeleteOutlined />}>
+                        Desconectar
+                      </Button>
+                    </Popconfirm>
+                  </>
+                ) : (
+                  <Button
+                    type="primary"
+                    onClick={iniciarThreadsOAuth}
+                    style={{ background: "#000", borderColor: "#000" }}
+                  >
+                    Conectar con Threads
+                  </Button>
+                )}
+              </Space>
+            </div>
+            {threadsAccount && (
+              <Alert
+                type="success"
+                showIcon
+                message="Perfil de Threads consultado con éxito (threads_basic)"
+                description={
+                  <div style={{ display: "grid", gap: 6, marginTop: 4 }}>
+                    <div><b>Usuario de Threads:</b> @{threadsAccount.username}</div>
+                    <div><b>ID de perfil:</b> <code>{threadsAccount.id}</code></div>
+                    <div><b>Permiso verificado:</b> <code>threads_basic</code> (consulta de ID y nombre de usuario sin acceso a mensajes ni publicación)</div>
+                  </div>
+                }
               />
             )}
             {!import.meta.env.META_APP_ID && (
